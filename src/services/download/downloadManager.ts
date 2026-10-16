@@ -3,17 +3,20 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { resolveYouTubeDownloadUrl } from '../api/youtubeResolver';
 
 export interface DownloadProgressInfo {
   percent: number; // 0 to 100
   totalBytesWritten: number;
   totalBytesExpectedToWrite: number;
+  statusText?: string;
 }
 
 export interface DownloadOptions {
   url: string;
   filename: string;
   isAudio?: boolean;
+  originalUrl?: string;
   onProgress?: (info: DownloadProgressInfo) => void;
 }
 
@@ -37,7 +40,31 @@ export async function requestGalleryPermissions(): Promise<boolean> {
 }
 
 export async function downloadAndSaveMedia(options: DownloadOptions): Promise<DownloadResult> {
-  const { url, filename, isAudio = false, onProgress } = options;
+  const { url, filename, isAudio = false, originalUrl, onProgress } = options;
+
+  let finalDirectUrl = url;
+
+  // Resolve cloud conversion stream if option requires loader resolution
+  if (url.startsWith('loader:')) {
+    const parts = url.split(':');
+    const format = parts[1] || (isAudio ? 'mp3' : '720');
+    const targetIdOrUrl = parts[2] || originalUrl || url;
+
+    finalDirectUrl = await resolveYouTubeDownloadUrl(
+      targetIdOrUrl,
+      format,
+      (conversionPct, status) => {
+        if (onProgress) {
+          onProgress({
+            percent: Math.min(45, Math.round(conversionPct * 45)),
+            totalBytesWritten: 0,
+            totalBytesExpectedToWrite: 0,
+            statusText: status,
+          });
+        }
+      }
+    );
+  }
 
   // Clean filename
   const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -47,21 +74,35 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
   const targetDir = FileSystem.documentDirectory || '';
   const localUri = `${targetDir}${targetName}`;
 
+  if (onProgress) {
+    onProgress({
+      percent: url.startsWith('loader:') ? 45 : 5,
+      totalBytesWritten: 0,
+      totalBytesExpectedToWrite: 0,
+      statusText: isAudio ? 'Downloading MP3 song...' : 'Downloading HD video...',
+    });
+  }
+
   // Create download resumable
   const downloadResumable = FileSystem.createDownloadResumable(
-    url,
+    finalDirectUrl,
     localUri,
     {},
     (downloadProgress) => {
       if (onProgress && downloadProgress.totalBytesExpectedToWrite > 0) {
-        const percent = Math.min(
+        const rawPct = Math.min(
           100,
           Math.round((downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite) * 100)
         );
+        const scaledPercent = url.startsWith('loader:')
+          ? Math.min(100, 45 + Math.round(rawPct * 0.55))
+          : rawPct;
+
         onProgress({
-          percent,
+          percent: scaledPercent,
           totalBytesWritten: downloadProgress.totalBytesWritten,
           totalBytesExpectedToWrite: downloadProgress.totalBytesExpectedToWrite,
+          statusText: isAudio ? 'Saving high-quality MP3 audio...' : 'Saving HD video...',
         });
       }
     }

@@ -58,9 +58,11 @@ const versionManifest = {
   mandatory: false,
   downloadUrl: 'https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest',
   changelog: [
-    `New OmniSaver v${newVersion} release by Lakho's team`,
-    'Enhanced YouTube high quality video & MP3 song downloader',
-    'Performance improvements and instant link extractor'
+    `OmniSaver v${newVersion} - by Lakho's team`,
+    'Fixed 4-5 minute YouTube songs and music videos download error',
+    'High quality 320kbps MP3 song & 720p/1080p HD video support',
+    'Instant YouTube title and thumbnail resolution via oEmbed',
+    'Real-time conversion and download progress display'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

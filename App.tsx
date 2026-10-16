@@ -222,6 +222,7 @@ export default function App() {
         url: option.url,
         filename,
         isAudio,
+        originalUrl: currentMedia.originalUrl || url,
         onProgress: (info) => {
           setDownloadProgress(info);
         },

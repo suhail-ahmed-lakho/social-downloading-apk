@@ -272,7 +272,10 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
           <View style={styles.progressContainer}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressLabel}>
-                {selectedOption.type === 'audio' ? 'Downloading Song (MP3)...' : 'Downloading Video to Device...'}
+                {downloadProgress.statusText ||
+                  (selectedOption.type === 'audio'
+                    ? 'Downloading Song (MP3)...'
+                    : 'Downloading Video to Device...')}
               </Text>
               <Text style={styles.progressPercent}>{downloadProgress.percent}%</Text>
             </View>
@@ -286,10 +289,16 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
               />
             </View>
 
-            <Text style={styles.progressBytes}>
-              {(downloadProgress.totalBytesWritten / 1024 / 1024).toFixed(1)} MB of{' '}
-              {(downloadProgress.totalBytesExpectedToWrite / 1024 / 1024).toFixed(1)} MB
-            </Text>
+            {downloadProgress.totalBytesExpectedToWrite > 0 ? (
+              <Text style={styles.progressBytes}>
+                {(downloadProgress.totalBytesWritten / 1024 / 1024).toFixed(1)} MB of{' '}
+                {(downloadProgress.totalBytesExpectedToWrite / 1024 / 1024).toFixed(1)} MB
+              </Text>
+            ) : (
+              <Text style={styles.progressBytes}>
+                {downloadProgress.statusText || 'Converting & preparing media...'}
+              </Text>
+            )}
           </View>
         )}
 

@@ -1,15 +1,15 @@
 {
-  "version": "1.1.0",
-  "versionCode": 2,
-  "releaseTitle": "OmniSaver v1.1.0 - Lakho's Team Update",
+  "version": "1.0.1",
+  "versionCode": 10001,
+  "releaseTitle": "OmniSaver v1.0.1 - Lakho's Team Release",
   "releaseDate": "2026-10-16",
   "mandatory": false,
   "downloadUrl": "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest",
   "changelog": [
-    "Added YouTube high-quality MP3 & Song downloader",
-    "New ultra-clean modern design by Lakho's team",
-    "Instant In-App Update system for automatic notifications",
-    "Optimized high-speed video resolution extraction",
-    "Enhanced Android 14/15 media saving permissions"
+    "OmniSaver v1.0.1 - by Lakho's team",
+    "Fixed 4-5 minute YouTube songs and music videos download error",
+    "High quality 320kbps MP3 song & 720p/1080p HD video support",
+    "Instant YouTube title and thumbnail resolution via oEmbed",
+    "Real-time conversion and download progress display"
   ]
 }

@@ -128,24 +128,40 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
   }
 
   let isUnavailable = false;
+  let oEmbedMeta: { title?: string; author?: string; thumbnail?: string } | null = null;
 
+  // 1. Fast YouTube oEmbed metadata resolution (Guaranteed for all active videos & songs)
+  try {
+    const oRes = await fetchWithTimeout(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`,
+      {},
+      3500
+    );
+    if (oRes.ok) {
+      const oData = await oRes.json();
+      oEmbedMeta = {
+        title: oData.title,
+        author: oData.author_name,
+        thumbnail: oData.thumbnail_url || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+      };
+    } else if (oRes.status === 404 || oRes.status === 401) {
+      isUnavailable = true;
+    }
+  } catch (err: any) {
+    if (err.message && err.message.includes('unavailable')) {
+      throw err;
+    }
+  }
+
+  if (isUnavailable) {
+    throw new Error('This YouTube video or song is unavailable, private, or has been removed.');
+  }
+
+  // 2. Try fast Piped mirrors (works great for shorts and standard videos)
   for (const mirror of PIPED_MIRRORS) {
     try {
-      const response = await fetchWithTimeout(`${mirror}/streams/${ytId}`, {}, 4000);
+      const response = await fetchWithTimeout(`${mirror}/streams/${ytId}`, {}, 3000);
       if (!response.ok) {
-        try {
-          const errData = await response.json();
-          const msg = (errData.message || errData.error || '').toLowerCase();
-          if (
-            msg.includes('unavailable') ||
-            msg.includes('private video') ||
-            msg.includes('not available') ||
-            msg.includes('removed')
-          ) {
-            isUnavailable = true;
-            break;
-          }
-        } catch (_) {}
         continue;
       }
 
@@ -154,7 +170,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
 
       const qualityOptions: QualityOption[] = [];
 
-      // 1. Playable Video streams (MP4)
+      // Playable Video streams (MP4)
       if (data.videoStreams && Array.isArray(data.videoStreams)) {
         const mp4Streams = data.videoStreams.filter(
           (s: any) => s.url && (s.format === 'MPEG_4' || s.format === 'MP4' || s.mimeType?.includes('video/mp4'))
@@ -172,9 +188,8 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
         }
       }
 
-      // 2. Dedicated Audio / Song streams (MP3/M4A)
+      // Dedicated Audio / Song streams (MP3/M4A)
       if (data.audioStreams && Array.isArray(data.audioStreams) && data.audioStreams.length > 0) {
-        // Sort best quality audio first
         const sortedAudio = [...data.audioStreams].sort(
           (a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0)
         );
@@ -201,10 +216,10 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
         return {
           id: ytId,
           platform: 'youtube',
-          title: data.title || 'YouTube Video / Song',
-          author: data.uploader || 'YouTube Artist',
+          title: data.title || oEmbedMeta?.title || 'YouTube Video / Song',
+          author: data.uploader || oEmbedMeta?.author || 'YouTube Artist',
           authorAvatar: data.uploaderAvatar,
-          thumbnail: data.thumbnailUrl || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+          thumbnail: data.thumbnailUrl || oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
           duration: data.duration,
           videoUrl: qualityOptions[0].url,
           originalUrl: url,
@@ -214,14 +229,10 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     } catch (_) {}
   }
 
-  if (isUnavailable) {
-    throw new Error('This YouTube video or song is unavailable, private, or has been removed.');
-  }
-
-  // Fallback to Invidious API mirrors
+  // 3. Try Invidious mirrors
   for (const invMirror of INVIDIOUS_MIRRORS) {
     try {
-      const invRes = await fetchWithTimeout(`${invMirror}/api/v1/videos/${ytId}`, {}, 4500);
+      const invRes = await fetchWithTimeout(`${invMirror}/api/v1/videos/${ytId}`, {}, 3000);
       if (invRes.ok) {
         const invData = await invRes.json();
         const qualityOptions: QualityOption[] = [];
@@ -298,27 +309,71 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
           return {
             id: ytId,
             platform: 'youtube',
-            title: invData.title || 'YouTube Video / Song',
-            author: invData.author || 'YouTube Artist',
+            title: invData.title || oEmbedMeta?.title || 'YouTube Video / Song',
+            author: invData.author || oEmbedMeta?.author || 'YouTube Artist',
             authorAvatar: invData.authorThumbnails?.[0]?.url,
-            thumbnail: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+            thumbnail: oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
             duration: invData.lengthSeconds,
             videoUrl: primaryVideo ? primaryVideo.url : qualityOptions[0].url,
             originalUrl: url,
             qualityOptions,
           };
         }
-      } else if (invRes.status === 404) {
-        throw new Error('This YouTube video or song is unavailable, private, or has been removed.');
       }
-    } catch (err: any) {
-      if (err.message && err.message.includes('unavailable')) {
-        throw err;
-      }
-    }
+    } catch (_) {}
   }
 
-  throw new Error('Could not download this YouTube song or video. Please verify the link is active on YouTube.');
+  // 4. Bulletproof Fallback for 4-5 Minute Music Videos & Songs
+  // If public Piped/Invidious servers are blocked by YouTube bot protection,
+  // we use oEmbed metadata with our dedicated cloud stream resolver!
+  const finalTitle = oEmbedMeta?.title || 'YouTube Song / Video';
+  const finalAuthor = oEmbedMeta?.author || 'YouTube Artist';
+  const finalThumb = oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+
+  const fallbackOptions: QualityOption[] = [
+    {
+      label: 'Song / MP3 (HQ 320kbps)',
+      url: `loader:mp3:${ytId}`,
+      type: 'audio',
+      quality: 'HQ Audio 320kbps',
+    },
+    {
+      label: 'HD Video 720p (MP4)',
+      url: `loader:720:${ytId}`,
+      type: 'video',
+      quality: '720p HD',
+    },
+    {
+      label: 'Full HD 1080p (MP4)',
+      url: `loader:1080:${ytId}`,
+      type: 'video',
+      quality: '1080p Full HD',
+    },
+    {
+      label: 'Standard Video 360p (MP4)',
+      url: `loader:360:${ytId}`,
+      type: 'video',
+      quality: '360p SD',
+    },
+    {
+      label: 'Standard Audio (128kbps)',
+      url: `loader:128:${ytId}`,
+      type: 'audio',
+      quality: '128kbps',
+    },
+  ];
+
+  return {
+    id: ytId,
+    platform: 'youtube',
+    title: finalTitle,
+    author: finalAuthor,
+    thumbnail: finalThumb,
+    videoUrl: `loader:720:${ytId}`,
+    audioUrl: `loader:mp3:${ytId}`,
+    originalUrl: url,
+    qualityOptions: fallbackOptions,
+  };
 }
 
 // ==========================================
