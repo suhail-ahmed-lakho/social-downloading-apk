@@ -47,25 +47,8 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
 
     let manifest: AppReleaseManifest | null = null;
 
-    // 1. Try to fetch from remote JSON manifest
-    try {
-      const response = await fetch(UPDATE_CONFIG.remoteManifestUrl, {
-        signal: controller.signal,
-        headers: {
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache',
-        },
-      });
-
-      if (response.ok) {
-        manifest = await response.json();
-      }
-    } catch (_) {
-      // Fallback to GitHub releases API if available
-    }
-
-    // 2. Fallback: check GitHub Releases API if manifest failed
-    if (!manifest && UPDATE_CONFIG.githubRepo) {
+    // 1. Check GitHub Releases API directly (100% automated from GitHub releases)
+    if (UPDATE_CONFIG.githubRepo) {
       try {
         const ghRes = await fetch(
           `https://api.github.com/repos/${UPDATE_CONFIG.githubRepo}/releases/latest`,
@@ -81,19 +64,37 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
         if (ghRes.ok) {
           const ghData = await ghRes.json();
           const tag = (ghData.tag_name || ghData.name || '').replace(/^[vV]/, '');
-          const apkAsset = ghData.assets?.find((a: any) => a.name?.endsWith('.apk'));
+          const apkAsset = ghData.assets?.find((a: any) => a.name?.toLowerCase().endsWith('.apk'));
 
           manifest = {
             version: tag || '1.0.0',
             versionCode: 1,
-            releaseTitle: ghData.name || `OmniSaver ${ghData.tag_name}`,
+            releaseTitle: ghData.name || `OmniSaver v${tag}`,
             releaseDate: ghData.published_at?.split('T')[0] || '',
             mandatory: false,
+            // If direct APK asset is uploaded to the release, download it directly, otherwise release page
             downloadUrl: apkAsset?.browser_download_url || ghData.html_url || UPDATE_CONFIG.defaultDownloadUrl,
             changelog: ghData.body
               ? ghData.body.split('\n').filter((l: string) => l.trim().length > 0)
-              : ['New improvements and bug fixes.'],
+              : ['New features and bug fixes by Lakho\'s team.'],
           };
+        }
+      } catch (_) {}
+    }
+
+    // 2. Fallback: Check remote version.json manifest if GitHub API didn't return
+    if (!manifest) {
+      try {
+        const response = await fetch(UPDATE_CONFIG.remoteManifestUrl, {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+        });
+
+        if (response.ok) {
+          manifest = await response.json();
         }
       } catch (_) {}
     }
