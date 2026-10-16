@@ -84,19 +84,28 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
 
     // 2. Fallback: Check remote version.json manifest if GitHub API didn't return
     if (!manifest) {
-      try {
-        const response = await fetch(UPDATE_CONFIG.remoteManifestUrl, {
-          signal: controller.signal,
-          headers: {
-            'Cache-Control': 'no-cache',
-            Pragma: 'no-cache',
-          },
-        });
+      const candidateUrls = [
+        UPDATE_CONFIG.remoteManifestUrl,
+        `https://raw.githubusercontent.com/${UPDATE_CONFIG.githubRepo}/master/version.json`,
+        `https://raw.githubusercontent.com/${UPDATE_CONFIG.githubRepo}/main/version.json`,
+      ];
 
-        if (response.ok) {
-          manifest = await response.json();
-        }
-      } catch (_) {}
+      for (const manifestUrl of candidateUrls) {
+        try {
+          const response = await fetch(manifestUrl, {
+            signal: controller.signal,
+            headers: {
+              'Cache-Control': 'no-cache',
+              Pragma: 'no-cache',
+            },
+          });
+
+          if (response.ok) {
+            manifest = await response.json();
+            if (manifest && manifest.version) break;
+          }
+        } catch (_) {}
+      }
     }
 
     clearTimeout(timer);
@@ -133,7 +142,14 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
           : ['Performance enhancements and latest updates.'],
       };
     }
+
+    if (forceCheck) {
+      throw new Error(
+        'Unable to check for updates. If your GitHub repository is Private, please set it to Public so users can download releases.'
+      );
+    }
   } catch (error) {
+    if (forceCheck) throw error;
     console.warn('Update check failed:', error);
   }
 

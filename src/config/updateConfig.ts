@@ -22,7 +22,7 @@ export const UPDATE_CONFIG = {
   // Remote version check URL
   // You can host 'version.json' on GitHub (e.g. raw.githubusercontent.com) or any web server / CDN.
   // When you release a new APK, update the version number and APK link in that JSON.
-  remoteManifestUrl: 'https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/main/version.json',
+  remoteManifestUrl: 'https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/version.json',
 
   // GitHub repository if using GitHub Releases API (e.g. 'username/repo')
   githubRepo: 'suhail-ahmed-lakho/social-downloading-apk',

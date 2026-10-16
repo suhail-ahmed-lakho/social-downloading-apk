@@ -281,9 +281,9 @@ export default function App() {
           `You are using the latest version (v${CURRENT_APP_VERSION}) by Lakho's team.`
         );
       }
-    } catch (_) {
+    } catch (err: any) {
       if (isManual) {
-        Alert.alert('Update Check', 'Could not connect to update service. Please verify your connection.');
+        Alert.alert('Update Check', err?.message || 'Could not connect to update service. Please verify your connection.');
       }
     }
   };
