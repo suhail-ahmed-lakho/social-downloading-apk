@@ -56,14 +56,14 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
     }
     switch (detected) {
       case 'tiktok':
-        return <FontAwesome5 name="tiktok" size={16} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="tiktok" size={15} color={COLORS.accentPrimary} />;
       case 'instagram':
-        return <FontAwesome5 name="instagram" size={16} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="instagram" size={15} color={COLORS.accentPrimary} />;
       case 'youtube':
       case 'youtube_music':
-        return <FontAwesome5 name="youtube" size={16} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="youtube" size={15} color={COLORS.accentPrimary} />;
       default:
-        return <Feather name="link-2" size={16} color={COLORS.textMuted} />;
+        return <Feather name="link-2" size={15} color={COLORS.textMuted} />;
     }
   };
 
@@ -115,7 +115,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
         )}
       </View>
 
-      {/* Solid Clean Action Button (No Gradient) */}
+      {/* Solid Action Button */}
       <TouchableOpacity
         style={[
           styles.fetchButton,
@@ -154,17 +154,17 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 12,
+    paddingHorizontal: 22,
+    marginBottom: 24,
+    gap: 14,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.cardBg,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 52,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 54,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.accentBorder,
   },
   iconContainer: {
-    marginRight: 10,
+    marginRight: 12,
     width: 22,
     alignItems: 'center',
   },
@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.accentSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
     gap: 5,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
@@ -206,8 +206,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   fetchButton: {
-    height: 48,
-    borderRadius: 12,
+    height: 50,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -223,13 +223,13 @@ const styles = StyleSheet.create({
   btnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
   },
   fetchText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   fetchTextDisabled: {
     color: COLORS.textMuted,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 import { PlatformType } from '../types';
@@ -53,10 +53,14 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.scrollRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollRow}
+      >
         {platforms.map((p) => {
           const isSelected = selectedPlatform === p.id;
-          const iconColor = isSelected ? COLORS.accentPrimary : COLORS.textSecondary;
+          const iconColor = isSelected ? COLORS.accentPrimary : COLORS.textMuted;
 
           return (
             <TouchableOpacity
@@ -72,7 +76,7 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
                 {p.isIonicons ? (
                   <Ionicons name={p.iconName as any} size={13} color={iconColor} />
                 ) : (
-                  <FontAwesome5 name={p.iconName} size={13} color={iconColor} />
+                  <FontAwesome5 name={p.iconName} size={12} color={iconColor} />
                 )}
               </View>
               <Text
@@ -101,31 +105,31 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingLeft: 22,
+    marginBottom: 20,
   },
   scrollRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    paddingRight: 22,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 11,
-    borderRadius: 18,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    borderRadius: 20,
     backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
-    gap: 6,
+    gap: 7,
   },
   pillSelected: {
     backgroundColor: COLORS.accentSoft,
@@ -136,7 +140,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontWeight: '500',
   },
   pillTextSelected: {
@@ -144,20 +148,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   badgeDefault: {
     backgroundColor: COLORS.cardBgLight,
   },
   badgeSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.22)',
+    backgroundColor: 'rgba(212, 160, 82, 0.18)',
   },
   badgeText: {
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   badgeTextDefault: {
     color: COLORS.textMuted,

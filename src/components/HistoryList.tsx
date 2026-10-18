@@ -39,13 +39,13 @@ export const HistoryList: React.FC<HistoryListProps> = ({
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'tiktok':
-        return <FontAwesome5 name="tiktok" size={11} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="tiktok" size={10} color={COLORS.accentPrimary} />;
       case 'instagram':
-        return <FontAwesome5 name="instagram" size={11} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="instagram" size={10} color={COLORS.accentPrimary} />;
       case 'youtube':
-        return <FontAwesome5 name="youtube" size={11} color={COLORS.accentPrimary} />;
+        return <FontAwesome5 name="youtube" size={10} color={COLORS.accentPrimary} />;
       default:
-        return <Feather name="video" size={11} color={COLORS.textMuted} />;
+        return <Feather name="video" size={10} color={COLORS.textMuted} />;
     }
   };
 
@@ -90,7 +90,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             onPress={() => onShare(item.localUri)}
             activeOpacity={0.7}
           >
-            <Ionicons name="share-social-outline" size={16} color={COLORS.accentPrimary} />
+            <Ionicons name="share-social-outline" size={15} color={COLORS.accentPrimary} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -98,7 +98,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             onPress={() => onDelete(item.id)}
             activeOpacity={0.7}
           >
-            <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+            <Ionicons name="trash-outline" size={15} color={COLORS.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -142,16 +142,16 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
   },
   listHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   headerTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -161,23 +161,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listContent: {
-    gap: 10,
-    paddingBottom: 30,
+    gap: 12,
+    paddingBottom: 36,
   },
   itemCard: {
     flexDirection: 'row',
     backgroundColor: COLORS.cardBg,
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
-    gap: 12,
+    gap: 14,
   },
   thumbWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: COLORS.cardBgLight,
@@ -192,11 +192,11 @@ const styles = StyleSheet.create({
   },
   platformBadge: {
     position: 'absolute',
-    bottom: 3,
-    right: 3,
-    backgroundColor: 'rgba(11, 14, 20, 0.85)',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(17, 16, 16, 0.82)',
     padding: 3,
-    borderRadius: 4,
+    borderRadius: 5,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
@@ -207,13 +207,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    lineHeight: 17,
-    marginBottom: 3,
+    lineHeight: 18,
+    marginBottom: 4,
   },
   itemMeta: {
     fontSize: 11,
     color: COLORS.textSecondary,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   itemDate: {
     fontSize: 10,
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
   },
   itemActions: {
     flexDirection: 'column',
-    gap: 6,
+    gap: 8,
   },
   actionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: COLORS.cardBgLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -237,30 +237,30 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 44,
     paddingTop: 60,
   },
   emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: COLORS.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
   emptyTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   emptyText: {
     fontSize: 13,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 20,
   },
 });

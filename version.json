@@ -1,15 +1,15 @@
 {
-  "version": "1.0.1",
-  "versionCode": 10001,
-  "releaseTitle": "OmniSaver v1.0.1 - Lakho's Team Release",
-  "releaseDate": "2026-10-16",
+  "version": "1.0.2",
+  "versionCode": 10002,
+  "releaseTitle": "OmniSaver v1.0.2 - Lakho's Team Release",
+  "releaseDate": "2026-10-18",
   "mandatory": false,
   "downloadUrl": "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest",
   "changelog": [
-    "OmniSaver v1.0.1 - by Lakho's team",
-    "Fixed 4-5 minute YouTube songs and music videos download error",
-    "High quality 320kbps MP3 song & 720p/1080p HD video support",
-    "Instant YouTube title and thumbnail resolution via oEmbed",
-    "Real-time conversion and download progress display"
+    "OmniSaver v1.0.2 - by Lakho's team",
+    "Complete boutique UI/UX overhaul: warm organic aesthetic with rich amber accents",
+    "Enhanced breathing room, rounder cards, larger touch targets & improved ergonomics",
+    "Smooth horizontally scrollable platform selector pills",
+    "Refined modal sheets, animated splash screen, and preview cards"
   ]
 }

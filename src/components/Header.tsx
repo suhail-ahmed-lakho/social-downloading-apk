@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Text style={styles.title}>OmniSaver</Text>
             </View>
             <View style={styles.identityBadgeRow}>
-              <Ionicons name="shield-checkmark" size={11} color={COLORS.accentPrimary} />
+              <Ionicons name="shield-checkmark" size={10} color={COLORS.accentPrimary} />
               <Text style={styles.identitySubtitle}>by Lakho's team</Text>
             </View>
           </View>
@@ -52,8 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Ionicons
                 name={hasUpdate ? 'cloud-download' : 'sync-outline'}
-                size={17}
-                color={hasUpdate ? COLORS.accentPrimary : COLORS.textSecondary}
+                size={16}
+                color={hasUpdate ? COLORS.accentPrimary : COLORS.textMuted}
               />
               {hasUpdate && <View style={styles.updateDot} />}
             </TouchableOpacity>
@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
             onPress={onOpenHowTo}
             activeOpacity={0.7}
           >
-            <Feather name="help-circle" size={17} color={COLORS.textSecondary} />
+            <Feather name="help-circle" size={16} color={COLORS.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Ionicons
             name="arrow-down-circle"
-            size={17}
+            size={16}
             color={activeTab === 'download' ? COLORS.accentPrimary : COLORS.textMuted}
           />
           <Text
@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Ionicons
             name="folder"
-            size={17}
+            size={16}
             color={activeTab === 'history' ? COLORS.accentPrimary : COLORS.textMuted}
           />
           <Text
@@ -118,26 +118,26 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 18,
     backgroundColor: COLORS.bg,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   logoBadgeImage: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: COLORS.accentBorder,
   },
@@ -146,32 +146,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 23,
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   identityBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
+    gap: 5,
+    marginTop: 3,
   },
   identitySubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.accentPrimary,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   rightActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   actionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
@@ -185,18 +185,18 @@ const styles = StyleSheet.create({
   },
   updateDot: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
+    top: 7,
+    right: 7,
+    width: 7,
+    height: 7,
     borderRadius: 4,
     backgroundColor: COLORS.accentPrimary,
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.cardBg,
-    borderRadius: 14,
-    padding: 4,
+    borderRadius: 16,
+    padding: 5,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
@@ -205,9 +205,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 7,
+    paddingVertical: 11,
+    borderRadius: 12,
+    gap: 8,
   },
   activeTab: {
     backgroundColor: COLORS.cardBgLight,
@@ -216,8 +216,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontWeight: '500',
+    color: COLORS.textMuted,
   },
   activeTabText: {
     color: COLORS.textPrimary,

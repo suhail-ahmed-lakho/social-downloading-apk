@@ -1,38 +1,37 @@
-// Clean 3-Color Design System
-// 1. Dark Base & Surfaces: #0B0E14 & #131926
-// 2. Monochrome Typography: #FFFFFF & #7E8B9F
-// 3. Single Electric Accent: #3B82F6
+// Warm & Organic Design System
+// Earthy dark surfaces with amber/gold accent — boutique studio feel
+// Hand-crafted warmth, generous breathing room, human-first design
 
 export const COLORS = {
-  // Base & Surfaces
-  bg: '#0B0E14',
-  cardBg: '#131926',
-  cardBgLight: '#1A2233',
-  cardBorder: '#202A3D',
-  cardBorderActive: '#3B82F6',
+  // Warm Dark Surfaces (brownish-blacks, not cold navy)
+  bg: '#111010',
+  cardBg: '#1A1816',
+  cardBgLight: '#221F1C',
+  cardBorder: '#2E2924',
+  cardBorderActive: '#D4A052',
 
-  // Typography
-  textPrimary: '#FFFFFF',
-  textSecondary: '#8B97A8',
-  textMuted: '#58657A',
+  // Typography — warm whites, not sterile
+  textPrimary: '#F5F0EA',
+  textSecondary: '#A09689',
+  textMuted: '#6B6058',
 
-  // Single Core Accent
-  accentPrimary: '#3B82F6',
-  accentDark: '#2563EB',
-  accentSoft: 'rgba(59, 130, 246, 0.12)',
-  accentBorder: 'rgba(59, 130, 246, 0.45)',
+  // Warm Amber / Gold Accent
+  accentPrimary: '#D4A052',
+  accentDark: '#B8863E',
+  accentSoft: 'rgba(212, 160, 82, 0.10)',
+  accentBorder: 'rgba(212, 160, 82, 0.28)',
 
-  // Clean Status Indicators
-  success: '#10B981',
-  successSoft: 'rgba(16, 185, 129, 0.12)',
-  danger: '#EF4444',
-  dangerSoft: 'rgba(239, 68, 68, 0.12)',
+  // Earthy Status Indicators
+  success: '#7CB368',
+  successSoft: 'rgba(124, 179, 104, 0.12)',
+  danger: '#D16B5E',
+  dangerSoft: 'rgba(209, 107, 94, 0.12)',
 
-  // Unified Platform Palette (all unified to clean accent or slate)
-  tiktok: '#3B82F6',
-  tiktokCyan: '#3B82F6',
-  instagram: '#3B82F6',
-  instagramPurple: '#3B82F6',
-  youtube: '#3B82F6',
-  youtubeDark: '#2563EB',
+  // Platform Colors — subtle earthy tints instead of uniform blue
+  tiktok: '#D4A052',
+  tiktokCyan: '#D4A052',
+  instagram: '#D4A052',
+  instagramPurple: '#D4A052',
+  youtube: '#D4A052',
+  youtubeDark: '#B8863E',
 };
