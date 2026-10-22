@@ -5,68 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniSaver - All Video Downloader</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="icon" href="assets/favicon.png" />
+    <link rel="icon" href="https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/favicon.png" />
   </head>
   <body>
     <header>
       <div class="container">
         <nav>
-          <div class="logo">OmniSaver</div>
+          <div class="logo">
+            <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+              <rect width="32" height="32" rx="8" fill="#D4A052"/>
+              <path d="M16 8v10m0 0l-4-4m4 4l4-4" stroke="#111010" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 20v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#111010" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            OmniSaver
+          </div>
           <ul class="nav-links">
             <li><a href="#features">Features</a></li>
-            <li><a href="#download">Download</a></li>
+            <li><a href="#platforms">Platforms</a></li>
+            <li><a href="#download" class="nav-cta">Download</a></li>
           </ul>
         </nav>
       </div>
     </header>
 
     <section class="hero">
+      <div class="hero-glow"></div>
       <div class="container">
-        <div class="hero-content">
-          <h1>All-in-One Video Downloader</h1>
-          <p>
-            Download videos from TikTok, YouTube, Instagram and more in high quality.
-            Save your favorite content directly to your gallery.
+        <div class="hero-text">
+          <div class="badge">Free &bull; No Ads &bull; Open Source</div>
+          <h1>Download Any<br /><span class="highlight">Video</span> Instantly</h1>
+          <p class="subtitle">
+            Save videos from TikTok, YouTube &amp; Instagram in full quality
+            directly to your phone gallery. Fast, simple, and reliable.
           </p>
-          <a href="#download" class="btn-primary">Get the App</a>
+          <div class="cta-group">
+            <a href="#download" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download APK
+            </a>
+            <a href="#features" class="btn btn-ghost">Learn More</a>
+          </div>
+          <div class="stats">
+            <div class="stat"><strong>3+</strong><span>Platforms</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>HD</strong><span>Quality</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>100%</strong><span>Free</span></div>
+          </div>
         </div>
-        <div class="hero-image">
-          <svg class="phone-svg" viewBox="0 0 400 800" width="300" height="600">
-            <rect x=50 y=50 width=300 height=500 rx=20 fill="#1A1816" />
-            <rect x=70 y=70 width=260 height=300 rx=10 fill="#111010" />
-            <rect x=90 y=100 width=220 height=80 rx=4 fill="#D4A052" />
-            <rect x=90 y=190 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=240 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=290 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=340 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=390 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=440 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=490 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=540 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=90 y=590 width=50 height=4 rx=2 fill="#FFFFFF" />
-            <rect x=150 y=100 width=160 height=80 rx=4 fill="#1A1816" />
-            <rect x=150 y=200 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=250 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=300 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=350 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=400 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=450 width=80 height=4 rx=2 fill="#D4A052" />
-            <rect x=150 y=500 width=80 height=4 rx=2 fill="#D4A052" />
-            <circle cx=170 cy=130 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=130 r=6 fill="#FFFFFF" />
-            <circle cx=170 cy=210 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=210 r=6 fill="#FFFFFF" />
-            <circle cx=170 cy=290 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=290 r=6 fill="#FFFFFF" />
-            <circle cx=170 cy=370 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=370 r=6 fill="#FFFFFF" />
-            <circle cx=170 cy=450 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=450 r=6 fill="#FFFFFF" />
-            <circle cx=170 cy=530 r=6 fill="#FFFFFF" />
-            <circle cx=230 cy=530 r=6 fill="#FFFFFF" />
-            <path d="M90 650 Q150 700 210 650 Q270 700 330 650" stroke="#D4A052" stroke-width="2" fill="none" />
-            <path d="M90 600 Q150 550 210 600" stroke="#D4A052" stroke-width="2" fill="none" />
-          </svg>
+
+        <div class="hero-visual">
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="app-header">
+                <div class="app-title">OmniSaver</div>
+                <div class="app-badge">v1.0.2</div>
+              </div>
+              <div class="app-input">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#A09689" stroke-width="2">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                </svg>
+                <span class="input-placeholder">Paste video link here...</span>
+              </div>
+              <div class="app-pills">
+                <span class="pill active">TikTok</span>
+                <span class="pill">YouTube</span>
+                <span class="pill">Instagram</span>
+              </div>
+              <div class="app-card">
+                <div class="app-card-thumb"></div>
+                <div class="app-card-info">
+                  <div class="app-card-title">Sample Video Title</div>
+                  <div class="app-card-meta">MP4 &bull; 1080p &bull; 12.4 MB</div>
+                </div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-thumb audio"></div>
+                <div class="app-card-info">
+                  <div class="app-card-title">Audio Extract</div>
+                  <div class="app-card-meta">MP3 &bull; 320kbps &bull; 4.2 MB</div>
+                </div>
+              </div>
+              <div class="app-download-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download
+              </div>
+            </div>
+          </div>
+          <div class="floating-element float-1">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="#D4A052">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span>Fast</span>
+          </div>
+          <div class="floating-element float-2">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="#7CB368">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Secure</span>
+          </div>
         </div>
       </div>
     </section>
@@ -74,27 +121,111 @@
     <main>
       <section id="features" class="features">
         <div class="container">
-          <h2>Features</h2>
+          <div class="section-header">
+            <span class="section-label">Features</span>
+            <h2>Everything you need</h2>
+            <p>Built for speed and simplicity</p>
+          </div>
           <div class="features-grid">
             <div class="feature-card">
-              <span class="icon">⚡</span>
-              <h3>Fast Downloads</h3>
-              <p>Quickly download videos from supported platforms with high speed.</p>
+              <div class="feature-icon lightning">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+              </div>
+              <h3>Blazing Fast</h3>
+              <p>Download videos at maximum speed with resumable transfers.</p>
             </div>
             <div class="feature-card">
-              <span class="icon">📱</span>
-              <h3>Multiple Platforms</h3>
-              <p>Support for TikTok, YouTube, Instagram and more.</p>
+              <div class="feature-icon hd">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+              </div>
+              <h3>HD Quality</h3>
+              <p>Save videos in original quality up to 4K resolution.</p>
             </div>
             <div class="feature-card">
-              <span class="icon">💾</span>
+              <div class="feature-icon gallery">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
               <h3>Gallery Save</h3>
-              <p>Automatically save downloaded videos to your phone gallery.</p>
+              <p>Automatically saves to your phone gallery in organized albums.</p>
             </div>
             <div class="feature-card">
-              <span class="icon">🎨</span>
-              <h3>Beautiful UI</h3>
-              <p>Warm dark theme with amber accents for a premium feel.</p>
+              <div class="feature-icon music">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
+              <h3>Audio Extract</h3>
+              <p>Extract high-quality MP3 audio from any video.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon history">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3>Download History</h3>
+              <p>Keep track of all your downloads with a clean history view.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon shield">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <h3>Privacy First</h3>
+              <p>No tracking, no data collection. Your downloads stay private.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="platforms" class="platforms">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-label">Platforms</span>
+            <h2>Supported Sources</h2>
+            <p>Download from your favorite platforms</p>
+          </div>
+          <div class="platform-grid">
+            <div class="platform-card">
+              <div class="platform-icon tiktok">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.86 4.43v-7.15a8.16 8.16 0 005.58 2.18V10.4a4.85 4.85 0 01-3.77-1.4v-.24a4.84 4.84 0 013.77-4.83h-.02z"/>
+                </svg>
+              </div>
+              <h3>TikTok</h3>
+              <p>No watermark downloads</p>
+            </div>
+            <div class="platform-card">
+              <div class="platform-icon youtube">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                  <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.55 15.57V8.43L15.82 12l-6.27 3.57z"/>
+                </svg>
+              </div>
+              <h3>YouTube</h3>
+              <p>Videos &amp; Shorts</p>
+            </div>
+            <div class="platform-card">
+              <div class="platform-icon instagram">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                </svg>
+              </div>
+              <h3>Instagram</h3>
+              <p>Reels &amp; Posts</p>
             </div>
           </div>
         </div>
@@ -102,27 +233,60 @@
 
       <section id="download" class="download">
         <div class="container">
-          <h2>Download</h2>
-          <p>
-            Get the latest version and start downloading videos today.
-          </p>
-          <div class="download-btns">
-            <a href="#" class="btn-primary btn-large">Download APK</a>
+          <div class="download-box">
+            <div class="download-icon">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <h2>Get OmniSaver</h2>
+            <p>Download the latest version and start saving videos today.</p>
+            <a href="https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest/download/OmniSaver.apk" class="btn btn-primary btn-xl">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download APK
+            </a>
+            <div class="download-meta">
+              <span>Version 1.0.2</span>
+              <span class="dot"></span>
+              <span>Android 7.0+</span>
+              <span class="dot"></span>
+              <span>15 MB</span>
+            </div>
           </div>
-          <p class="version-info">Version 1.0.2</p>
         </div>
       </section>
     </main>
 
     <footer>
       <div class="container">
-        <p>
-          OmniSaver &copy; 2026<br />
-          All rights reserved
-        </p>
+        <div class="footer-content">
+          <div class="footer-brand">
+            <div class="logo">
+              <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                <rect width="32" height="32" rx="8" fill="#D4A052"/>
+                <path d="M16 8v10m0 0l-4-4m4 4l4-4" stroke="#111010" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 20v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#111010" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              OmniSaver
+            </div>
+            <p>All-in-one video downloader for Android.</p>
+          </div>
+          <div class="footer-links">
+            <a href="#features">Features</a>
+            <a href="#platforms">Platforms</a>
+            <a href="#download">Download</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2026 OmniSaver. All rights reserved.</p>
+        </div>
       </div>
     </footer>
-
-    <script src="scripts.js"></script>
   </body>
 </html>
