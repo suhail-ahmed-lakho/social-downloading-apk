@@ -1,0 +1,1 @@
+// Minimal script for website functionality
