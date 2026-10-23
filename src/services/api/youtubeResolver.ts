@@ -1,6 +1,6 @@
 // Service to resolve YouTube media download streams via fast cloud conversion
 
-export type YouTubeTargetFormat = 'mp3' | '128' | '720' | '1080' | '360';
+export type YouTubeTargetFormat = '4k' | '2160' | '1440' | '1080' | '720' | '480' | '360' | 'mp3' | '128';
 
 interface LoaderInitResponse {
   success: boolean;
@@ -30,7 +30,9 @@ export async function resolveYouTubeDownloadUrl(
 
   // Map format to supported loader.to targets
   let targetFormat = 'mp3';
-  if (format === '720' || format === '1080' || format === '360' || format === '480') {
+  if (format === '4k' || format === '2160') {
+    targetFormat = '4k';
+  } else if (format === '1440' || format === '1080' || format === '720' || format === '480' || format === '360') {
     targetFormat = format;
   } else if (format === 'mp3' || format === '128' || format === 'audio') {
     targetFormat = 'mp3';

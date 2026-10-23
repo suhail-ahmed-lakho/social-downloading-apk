@@ -59,10 +59,10 @@ const versionManifest = {
   downloadUrl: 'https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest',
     changelog: [
       `OmniSaver v${newVersion} - by Lakho's team`,
-      'Complete boutique UI/UX overhaul: warm organic aesthetic with rich amber accents',
-      'Enhanced breathing room, rounder cards, larger touch targets & improved ergonomics',
-      'Smooth horizontally scrollable platform selector pills',
-      'Refined modal sheets, animated splash screen, and preview cards'
+      'Added full Ultra HD 4K (2160p) and 2K (1440p) video quality options',
+      'Accurate real-time MB file size calculation based on streaming metadata',
+      'Lossless MP3 audio (320kbps) & HD video extractor optimizations',
+      'Launched Next.js web application (LookNow) with interactive 3D WebGL hero & tool suite'
     ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

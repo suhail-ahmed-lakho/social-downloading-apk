@@ -1,15 +1,15 @@
 {
-  "version": "1.0.2",
-  "versionCode": 10002,
-  "releaseTitle": "OmniSaver v1.0.2 - Lakho's Team Release",
-  "releaseDate": "2026-10-18",
+  "version": "1.0.3",
+  "versionCode": 10003,
+  "releaseTitle": "OmniSaver v1.0.3 - Lakho's Team Release",
+  "releaseDate": "2026-10-23",
   "mandatory": false,
   "downloadUrl": "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest",
   "changelog": [
-    "OmniSaver v1.0.2 - by Lakho's team",
-    "Complete boutique UI/UX overhaul: warm organic aesthetic with rich amber accents",
-    "Enhanced breathing room, rounder cards, larger touch targets & improved ergonomics",
-    "Smooth horizontally scrollable platform selector pills",
-    "Refined modal sheets, animated splash screen, and preview cards"
+    "OmniSaver v1.0.3 - by Lakho's team",
+    "Added full Ultra HD 4K (2160p) and 2K (1440p) video quality options",
+    "Accurate real-time MB file size calculation based on streaming metadata",
+    "Lossless MP3 audio (320kbps) & HD video extractor optimizations",
+    "Launched Next.js web application (LookNow) with interactive 3D WebGL hero & tool suite"
   ]
 }

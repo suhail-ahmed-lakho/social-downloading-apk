@@ -43,3 +43,6 @@ yarn-error.*
 # local scratch scripts
 scratch/
 
+# website next.js build
+website/.next/
+website/out/

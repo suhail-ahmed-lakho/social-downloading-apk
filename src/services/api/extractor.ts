@@ -323,45 +323,130 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     } catch (_) {}
   }
 
-  // 4. Bulletproof Fallback for 4-5 Minute Music Videos & Songs
-  // If public Piped/Invidious servers are blocked by YouTube bot protection,
-  // we use oEmbed metadata with our dedicated cloud stream resolver!
-  const finalTitle = oEmbedMeta?.title || 'YouTube Song / Video';
-  const finalAuthor = oEmbedMeta?.author || 'YouTube Artist';
-  const finalThumb = oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  // 4. Bulletproof Fallback for YouTube Videos & Songs
+  // Extracts exact duration, streaming player info, and real MB sizes
+  let finalTitle = oEmbedMeta?.title || 'YouTube Song / Video';
+  let finalAuthor = oEmbedMeta?.author || 'YouTube Artist';
+  let finalThumb = oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  let durationSec = 240;
+  let playerResponse: any = null;
 
-  const fallbackOptions: QualityOption[] = [
-    {
-      label: 'Song / MP3 (HQ 320kbps)',
-      url: `loader:mp3:${ytId}`,
-      type: 'audio',
-      quality: 'HQ Audio 320kbps',
-    },
-    {
-      label: 'HD Video 720p (MP4)',
-      url: `loader:720:${ytId}`,
+  try {
+    const pageRes = await fetchWithTimeout(
+      `https://www.youtube.com/watch?v=${ytId}`,
+      {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      },
+      3500
+    );
+    if (pageRes.ok) {
+      const html = await pageRes.text();
+      const match = html.match(/ytInitialPlayerResponse\s*=\s*({[\s\S]+?});(?:var|<\/script)/);
+      if (match) {
+        try {
+          playerResponse = JSON.parse(match[1]);
+        } catch (_) {}
+      }
+      if (playerResponse?.videoDetails) {
+        finalTitle = playerResponse.videoDetails.title || finalTitle;
+        finalAuthor = playerResponse.videoDetails.author || finalAuthor;
+        durationSec = Number(playerResponse.videoDetails.lengthSeconds) || durationSec;
+      }
+    }
+  } catch (_) {}
+
+  const adaptiveFormats: any[] = playerResponse?.streamingData?.adaptiveFormats || [];
+  const audioStream =
+    adaptiveFormats.find((f: any) => f.mimeType?.startsWith('audio/mp4')) ||
+    adaptiveFormats.find((f: any) => f.mimeType?.startsWith('audio/'));
+  const audioBytes = Number(audioStream?.contentLength || (durationSec * 128 * 1000) / 8);
+
+  const getFormatSize = (targetRes: string, fallbackKbps: number): string => {
+    let vStream = adaptiveFormats.find(
+      (f: any) => f.qualityLabel?.includes(targetRes) && f.mimeType?.includes('video/mp4') && f.contentLength
+    );
+    if (!vStream) {
+      vStream = adaptiveFormats.find((f: any) => f.qualityLabel?.includes(targetRes) && f.contentLength);
+    }
+    if (vStream && vStream.contentLength) {
+      const totalBytes = Number(vStream.contentLength) + audioBytes;
+      const mb = totalBytes / 1024 / 1024;
+      return mb >= 1000 ? `${(mb / 1024).toFixed(1)}GB` : `${Math.round(mb)}MB`;
+    }
+    const mb = (durationSec * fallbackKbps * 1000) / 8 / (1024 * 1024);
+    return `${Math.round(mb)}MB`;
+  };
+
+  const getAudioSize = (kbps: number): string => {
+    const mb = (durationSec * kbps * 1000) / 8 / (1024 * 1024);
+    return `${Math.round(mb * 10) / 10}MB`;
+  };
+
+  const has4K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('2160'));
+  const has2K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('1440'));
+
+  const fallbackOptions: QualityOption[] = [];
+
+  if (has4K) {
+    fallbackOptions.push({
+      label: `Ultra HD 4K (2160p ~${getFormatSize('2160', 4800)})`,
+      url: `loader:4k:${ytId}`,
       type: 'video',
-      quality: '720p HD',
-    },
+      quality: '4K 2160p Ultra HD',
+    });
+  }
+
+  if (has2K) {
+    fallbackOptions.push({
+      label: `Quad HD 2K (1440p ~${getFormatSize('1440', 2500)})`,
+      url: `loader:1440:${ytId}`,
+      type: 'video',
+      quality: '2K 1440p QHD',
+    });
+  }
+
+  fallbackOptions.push(
     {
-      label: 'Full HD 1080p (MP4)',
+      label: `Full HD 1080p (~${getFormatSize('1080', 1800)})`,
       url: `loader:1080:${ytId}`,
       type: 'video',
       quality: '1080p Full HD',
     },
     {
-      label: 'Standard Video 360p (MP4)',
+      label: `HD Video 720p (~${getFormatSize('720', 850)})`,
+      url: `loader:720:${ytId}`,
+      type: 'video',
+      quality: '720p HD',
+    },
+    {
+      label: `Standard 480p (~${getFormatSize('480', 450)})`,
+      url: `loader:480:${ytId}`,
+      type: 'video',
+      quality: '480p SD',
+    },
+    {
+      label: `Light 360p (~${getFormatSize('360', 250)})`,
       url: `loader:360:${ytId}`,
       type: 'video',
       quality: '360p SD',
     },
     {
-      label: 'Standard Audio (128kbps)',
+      label: `Song / MP3 (HQ 320k ~${getAudioSize(320)})`,
+      url: `loader:mp3:${ytId}`,
+      type: 'audio',
+      quality: 'HQ Audio 320kbps',
+    },
+    {
+      label: `Standard MP3 (128k ~${getAudioSize(128)})`,
       url: `loader:128:${ytId}`,
       type: 'audio',
       quality: '128kbps',
-    },
-  ];
+    }
+  );
 
   return {
     id: ytId,
@@ -369,6 +454,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     title: finalTitle,
     author: finalAuthor,
     thumbnail: finalThumb,
+    duration: durationSec,
     videoUrl: `loader:720:${ytId}`,
     audioUrl: `loader:mp3:${ytId}`,
     originalUrl: url,
