@@ -2,13 +2,29 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('==============================================');
-console.log('🚀 LookNow Cloudflare Automated Build Starting...');
-console.log('==============================================\n');
-
 const websiteDir = __dirname;
 const workerPath = path.join(websiteDir, '.open-next', 'worker.js');
 const wranglerPath = path.join(websiteDir, 'wrangler.jsonc');
+
+// Guard: When OpenNext runs the build script to compile Next.js, run next build directly
+if (process.env.OPEN_NEXT_SUBPROCESS === '1') {
+  console.log('⚡ OpenNext sub-process: Compiling Next.js via "next build"...');
+  try {
+    execSync('npx next build', {
+      cwd: websiteDir,
+      stdio: 'inherit',
+      env: { ...process.env, NODE_ENV: 'production' }
+    });
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Next.js compilation failed:', err.message);
+    process.exit(1);
+  }
+}
+
+console.log('==============================================');
+console.log('🚀 LookNow Cloudflare Automated Build Starting...');
+console.log('==============================================\n');
 
 // 1. Ensure wrangler.jsonc has the exact correct matching worker name
 const wranglerConfig = {
@@ -38,7 +54,7 @@ console.log('✅ Synchronized wrangler.jsonc with worker name: social-downloadin
 const openNextConfigPath = path.join(websiteDir, 'open-next.config.ts');
 fs.writeFileSync(
   openNextConfigPath,
-  'import { defineCloudflareConfig } from "@opennextjs/cloudflare";\n\nexport default defineCloudflareConfig({});\n',
+  'import { defineCloudflareConfig } from "@opennextjs/cloudflare";\n\nexport default {\n  ...defineCloudflareConfig({}),\n  buildCommand: "npm run build:next",\n};\n',
   'utf8'
 );
 console.log('✅ Synchronized self-contained open-next.config.ts');
@@ -49,7 +65,7 @@ try {
   execSync('npx @opennextjs/cloudflare build', {
     cwd: websiteDir,
     stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'production' }
+    env: { ...process.env, OPEN_NEXT_SUBPROCESS: '1', NODE_ENV: 'production' }
   });
 } catch (err) {
   console.error('❌ OpenNext build failed:', err.message);

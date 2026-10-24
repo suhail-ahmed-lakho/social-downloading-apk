@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node build-cloudflare.js",
+    "build:next": "next build",
     "start": "next start",
     "lint": "eslint"
   },
