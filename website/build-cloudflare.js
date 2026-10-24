@@ -34,9 +34,13 @@ const wranglerConfig = {
 fs.writeFileSync(wranglerPath, JSON.stringify(wranglerConfig, null, 2), 'utf8');
 console.log('✅ Synchronized wrangler.jsonc with worker name: social-downloading-apk');
 
-// 2. Ensure open-next.config.ts exists with self-contained export
+// 2. Ensure open-next.config.ts exists with defineCloudflareConfig
 const openNextConfigPath = path.join(websiteDir, 'open-next.config.ts');
-fs.writeFileSync(openNextConfigPath, 'export default {};\n', 'utf8');
+fs.writeFileSync(
+  openNextConfigPath,
+  'import { defineCloudflareConfig } from "@opennextjs/cloudflare";\n\nexport default defineCloudflareConfig({});\n',
+  'utf8'
+);
 console.log('✅ Synchronized self-contained open-next.config.ts');
 
 // 3. Run OpenNext Cloudflare Build
