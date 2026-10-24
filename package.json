@@ -2,6 +2,9 @@
   "name": "media-downloader",
   "version": "1.0.3",
   "main": "index.ts",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
