@@ -34,12 +34,10 @@ const wranglerConfig = {
 fs.writeFileSync(wranglerPath, JSON.stringify(wranglerConfig, null, 2), 'utf8');
 console.log('✅ Synchronized wrangler.jsonc with worker name: social-downloading-apk');
 
-// 2. Remove open-next.config.ts if present to prevent missing module errors
+// 2. Ensure open-next.config.ts exists with self-contained export
 const openNextConfigPath = path.join(websiteDir, 'open-next.config.ts');
-if (fs.existsSync(openNextConfigPath)) {
-  fs.unlinkSync(openNextConfigPath);
-  console.log('🧹 Cleaned up optional open-next.config.ts for auto-configuration');
-}
+fs.writeFileSync(openNextConfigPath, 'export default {};\n', 'utf8');
+console.log('✅ Synchronized self-contained open-next.config.ts');
 
 // 3. Run OpenNext Cloudflare Build
 console.log('\n📦 Compiling Next.js & bundling Cloudflare Worker...');
