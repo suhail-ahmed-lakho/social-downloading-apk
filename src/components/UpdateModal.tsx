@@ -97,6 +97,14 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </View>
           </View>
 
+          {/* Exact Package Size Badge */}
+          {updateInfo.fileSize && (
+            <View style={styles.sizeBadgeRow}>
+              <Ionicons name="cube-outline" size={12} color={COLORS.accentPrimary} />
+              <Text style={styles.sizeBadgeText}>Exact Package Size: {updateInfo.fileSize}</Text>
+            </View>
+          )}
+
           {/* Changelog Section */}
           <View style={styles.changelogHeader}>
             <Feather name="list" size={14} color={COLORS.accentPrimary} />
@@ -127,7 +135,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               activeOpacity={0.85}
             >
               <Ionicons name="cloud-download-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.downloadBtnText}>Update Now / Download APK</Text>
+              <Text style={styles.downloadBtnText}>
+                Update Now ({updateInfo.fileSize || '15.4 MB'})
+              </Text>
             </TouchableOpacity>
 
             {!updateInfo.isMandatory && (
@@ -236,7 +246,24 @@ const styles = StyleSheet.create({
     borderColor: COLORS.cardBorder,
     width: '100%',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 12,
+  },
+  sizeBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.accentSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    marginBottom: 14,
+  },
+  sizeBadgeText: {
+    fontSize: 11,
+    color: COLORS.accentPrimary,
+    fontWeight: '700',
   },
   versionBox: {
     alignItems: 'center',

@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
     const { videoId, format = "mp3", action = "init", progressUrl } = await req.json();
 
     if (action === "init") {
-      if (!videoId) {
-        return NextResponse.json({ error: "Missing videoId" }, { status: 400 });
+      if (!videoId || typeof videoId !== "string" || !/^[\w-]{11}$/.test(videoId)) {
+        return NextResponse.json({ error: "Valid 11-character YouTube videoId is required" }, { status: 400 });
       }
 
       let targetFormat = "mp3";
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "poll") {
-      if (!progressUrl) {
-        return NextResponse.json({ error: "Missing progressUrl" }, { status: 400 });
+      if (!progressUrl || typeof progressUrl !== "string" || !progressUrl.startsWith("https://loader.to/")) {
+        return NextResponse.json({ error: "Invalid conversion progress destination" }, { status: 400 });
       }
 
       const pollRes = await fetch(progressUrl, {

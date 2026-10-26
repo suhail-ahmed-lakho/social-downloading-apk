@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "social-downloading-apk",
+  "name": "webiste-saas-social",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-19",
   "compatibility_flags": [
@@ -13,7 +13,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "social-downloading-apk"
+      "service": "webiste-saas-social"
     }
   ],
   "observability": {

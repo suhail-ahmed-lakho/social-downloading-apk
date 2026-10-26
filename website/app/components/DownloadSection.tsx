@@ -1,9 +1,27 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Download, Smartphone, ShieldCheck, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, Smartphone, ShieldCheck, Check, QrCode, Sparkles } from "lucide-react";
+import QRCode from "qrcode";
+import TiltCard3D from "./TiltCard3D";
 
 export default function DownloadSection() {
+  const [qrDataUrl, setQrDataUrl] = useState("");
+
+  useEffect(() => {
+    // Generate QR code pointing to the APK download endpoint
+    QRCode.toDataURL("https://looknow.cyou/api/download/apk", {
+      width: 220,
+      margin: 1,
+      color: {
+        dark: "#0F172A",
+        light: "#FFFFFF",
+      },
+    })
+      .then((url) => setQrDataUrl(url))
+      .catch((err) => console.error("QR Error:", err));
+  }, []);
+
   return (
     <section id="download" style={{ padding: "80px 0 100px 0" }}>
       <div className="container">
@@ -11,9 +29,10 @@ export default function DownloadSection() {
           className="glass-card"
           style={{
             background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
-            border: "1px solid rgba(255, 107, 0, 0.25)",
+            border: "1.5px solid rgba(255, 107, 0, 0.25)",
             padding: "48px 40px",
             boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08), 0 0 40px rgba(255, 107, 0, 0.08)",
+            borderRadius: 24,
           }}
         >
           <div
@@ -29,7 +48,7 @@ export default function DownloadSection() {
             <div>
               <div className="pill-badge" style={{ marginBottom: "20px" }}>
                 <Smartphone size={14} />
-                <span>Native Android Application</span>
+                <span>Native Android Application · v1.0.3</span>
               </div>
 
               <h2
@@ -83,6 +102,7 @@ export default function DownloadSection() {
                         justifyContent: "center",
                         color: "#FF6B00",
                         border: "1px solid rgba(255, 107, 0, 0.3)",
+                        flexShrink: 0,
                       }}
                     >
                       <Check size={12} strokeWidth={3} />
@@ -97,13 +117,14 @@ export default function DownloadSection() {
               {/* Action Buttons */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
                 <a
-                  href="/downloads/omnisaver-latest.apk"
-                  download
+                  href="/api/download/apk"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-primary"
                   style={{ padding: "14px 28px", fontSize: "15px" }}
                 >
                   <Download size={16} strokeWidth={2.5} />
-                  <span>Download APK (v1.0.2)</span>
+                  <span>Download APK (v1.0.3)</span>
                 </a>
 
                 <div
@@ -117,69 +138,108 @@ export default function DownloadSection() {
                   }}
                 >
                   <ShieldCheck size={16} style={{ color: "#16A34A" }} />
-                  <span>Google Play Protect Safe · 15.2 MB</span>
+                  <span>Google Play Protect Safe · 15.4 MB</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Card: Architecture Specs */}
-            <div
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid var(--border-hairline)",
-                borderRadius: "16px",
-                padding: "26px",
-                boxShadow: "0 6px 24px rgba(15, 23, 42, 0.05)",
-              }}
-            >
+            {/* Right Card: Architecture Specs & Mobile Scan QR (3D Card) */}
+            <TiltCard3D maxTilt={8} scale={1.02} glowColor="rgba(255, 107, 0, 0.25)">
               <div
+                className="preserve-3d"
                 style={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "var(--text-subtle)",
-                  marginBottom: "16px",
-                  fontFamily: "var(--font-heading)",
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-hairline)",
+                  borderRadius: "20px",
+                  padding: "26px",
+                  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06), 0 0 25px rgba(255, 107, 0, 0.08)",
                 }}
               >
-                Package Specifications
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {[
-                  { label: "Target Version", val: "v1.0.2 (Stable)" },
-                  { label: "Minimum SDK", val: "Android 8.0 (API 26)" },
-                  { label: "Architecture", val: "arm64-v8a / armeabi-v7a" },
-                  { label: "Signature", val: "SHA-256 Verified" },
-                  { label: "License", val: "Free / Community" },
-                ].map((spec, i) => (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div
-                    key={i}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "8px 0",
-                      borderBottom: i < 4 ? "1px solid var(--border-hairline)" : "none",
                       fontSize: "13px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "var(--text-subtle)",
+                      fontFamily: "var(--font-heading)",
                     }}
                   >
-                    <span style={{ color: "var(--text-muted)" }}>{spec.label}</span>
-                    <span
+                    Scan to Install on Phone
+                  </div>
+                  <span style={{ fontSize: 11, background: "#DCFCE7", color: "#16A34A", fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                    ● Direct APK
+                  </span>
+                </div>
+
+                {/* QR Code and Quick Scan Info */}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+                  <div
+                    style={{
+                      width: 100,
+                      height: 100,
+                      borderRadius: 14,
+                      background: "#FFFFFF",
+                      border: "1px solid var(--border-hairline)",
+                      padding: 6,
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {qrDataUrl ? (
+                      <img src={qrDataUrl} alt="Scan to download APK" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    ) : (
+                      <QrCode size={32} style={{ color: "var(--text-subtle)" }} />
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-title)", marginBottom: 4 }}>
+                      Point Camera to Scan
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-subtle)", lineHeight: 1.5 }}>
+                      Open your phone camera to instantly download the APK file without connecting cables.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px solid var(--border-hairline)", paddingTop: 14 }}>
+                  {[
+                    { label: "Target Version", val: "v1.0.3 (Stable)" },
+                    { label: "Exact Size", val: "15.4 MB (16,148,070 B)" },
+                    { label: "Minimum SDK", val: "Android 8.0+ (API 26)" },
+                    { label: "Architecture", val: "arm64-v8a / v7a" },
+                    { label: "Signature", val: "SHA-256 Verified" },
+                    { label: "License", val: "100% Free / Community" },
+                  ].map((spec, i) => (
+                    <div
+                      key={i}
                       style={{
-                        color: "var(--text-title)",
-                        fontWeight: 600,
-                        fontFamily: "var(--font-mono)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                         fontSize: "12px",
                       }}
                     >
-                      {spec.val}
-                    </span>
-                  </div>
-                ))}
+                      <span style={{ color: "var(--text-muted)" }}>{spec.label}</span>
+                      <span
+                        style={{
+                          color: "var(--text-title)",
+                          fontWeight: 700,
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {spec.val}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </TiltCard3D>
           </div>
         </div>
       </div>

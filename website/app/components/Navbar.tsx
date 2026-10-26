@@ -15,95 +15,135 @@ import {
   FileCode,
   QrCode,
   Smartphone,
-  ExternalLink,
+  User,
+  HelpCircle,
+  Globe,
+  Sliders,
 } from "lucide-react";
+import UserProfileModal from "./UserProfileModal";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUserName(localStorage.getItem("looknow_user_name") || "");
+    }
+  }, [profileModalOpen]);
+
+  useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 15);
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dropdown on outside click
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
+  // Close dropdown on outside click or escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const toolCategories = [
     {
-      title: "Video & Media",
+      title: "Video & Audio Suite",
       items: [
         {
-          name: "OmniSaver Downloader",
-          desc: "YouTube, TikTok & Instagram in 4K",
+          name: "OmniSaver 4K Downloader",
+          desc: "YouTube, TikTok, Reels & X in 4K",
           icon: Video,
           href: "/tools/media-downloader",
           badge: "Live",
-          badgeType: "live",
+          badgeColor: "#16A34A",
+          badgeBg: "#DCFCE7",
         },
         {
-          name: "Audio Extractor",
-          desc: "Lossless 320kbps MP3 extraction",
+          name: "Lossless Audio Extractor",
+          desc: "Studio 320kbps MP3 extraction",
           icon: Music,
-          href: "/tools/media-downloader",
-          badge: "Included",
-          badgeType: "subtle",
+          href: "/tools/media-downloader?mode=audio",
+          badge: "320k",
+          badgeColor: "#FF6B00",
+          badgeBg: "#FFF7ED",
         },
       ],
     },
     {
-      title: "Image & Graphics",
+      title: "Image & Creative",
       items: [
         {
-          name: "Image Studio",
-          desc: "WebP converter & compression",
-          icon: ImageIcon,
-          href: "/#tools",
-          badge: "Soon",
-          badgeType: "soon",
-        },
-        {
-          name: "Vector QR Engine",
-          desc: "Custom high-DPI SVG QR codes",
+          name: "Vector QR Code Studio",
+          desc: "High-DPI SVG & PNG custom QR codes",
           icon: QrCode,
-          href: "/#tools",
-          badge: "Soon",
-          badgeType: "soon",
+          href: "/tools/qr-generator",
+          badge: "Live",
+          badgeColor: "#16A34A",
+          badgeBg: "#DCFCE7",
+        },
+        {
+          name: "Image Studio & Optimizer",
+          desc: "WebP / AVIF compression & resize",
+          icon: ImageIcon,
+          href: "/tools/image-studio",
+          badge: "Live",
+          badgeColor: "#16A34A",
+          badgeBg: "#DCFCE7",
         },
       ],
     },
     {
-      title: "Developer & Utilities",
+      title: "Dev & Mobile",
       items: [
         {
-          name: "Text & JSON Engine",
-          desc: "Format, validate & regex tester",
+          name: "Text, JSON & Crypt Engine",
+          desc: "Format, validate, case & hash tools",
           icon: FileCode,
-          href: "/#tools",
-          badge: "Soon",
-          badgeType: "soon",
+          href: "/tools/text-studio",
+          badge: "Live",
+          badgeColor: "#16A34A",
+          badgeBg: "#DCFCE7",
         },
         {
           name: "OmniSaver Mobile APK",
-          desc: "Official native Android application",
+          desc: "Native Android background queue",
           icon: Smartphone,
           href: "/#download",
           badge: "v1.0.2",
-          badgeType: "accent",
+          badgeColor: "#0284C7",
+          badgeBg: "#E0F2FE",
         },
       ],
     },
@@ -114,14 +154,17 @@ export default function Navbar() {
       <nav
         className="navbar-pill"
         style={{
-          background: scrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.9)",
-          borderColor: scrolled ? "rgba(255, 107, 0, 0.22)" : "rgba(15, 23, 42, 0.08)",
+          background: scrolled
+            ? "rgba(255, 255, 255, 0.94)"
+            : "rgba(255, 255, 255, 0.86)",
+          borderColor: scrolled ? "rgba(255, 107, 0, 0.35)" : "rgba(15, 23, 42, 0.08)",
           boxShadow: scrolled
-            ? "0 14px 34px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.02)"
-            : "0 4px 20px rgba(15, 23, 42, 0.04)",
+            ? "0 20px 40px rgba(15, 23, 42, 0.08), 0 0 30px rgba(255, 107, 0, 0.12)"
+            : "0 10px 30px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04)",
+          transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        {/* Brand Logo */}
+        {/* Brand Logo with Glowing 3D Icon */}
         <Link
           href="/"
           style={{
@@ -129,90 +172,103 @@ export default function Navbar() {
             alignItems: "center",
             gap: 10,
             textDecoration: "none",
+            color: "var(--text-title)",
+            flexShrink: 0,
           }}
         >
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 9,
+              width: 36,
+              height: 36,
+              borderRadius: 11,
               background: "linear-gradient(135deg, #FF6B00 0%, #EA580C 100%)",
-              boxShadow: "0 2px 10px rgba(255, 107, 0, 0.35)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#FFFFFF",
+              boxShadow: "0 4px 14px rgba(255, 107, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)",
+              position: "relative",
+              flexShrink: 0,
             }}
           >
-            <Sparkles size={17} strokeWidth={2.4} />
+            <Sparkles size={18} strokeWidth={2.4} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 18,
+                  fontWeight: 800,
+                  letterSpacing: "-0.03em",
+                  color: "var(--text-title)",
+                  lineHeight: 1.2,
+                }}
+              >
+                Look<span className="gradient-orange-text">Now</span>
+              </span>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#FF6B00",
+                  boxShadow: "0 0 10px #FF6B00",
+                  animation: "pulse-dot 2s infinite ease-in-out",
+                }}
+              />
+            </div>
             <span
               style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800,
-                fontSize: 18,
-                letterSpacing: "-0.03em",
-                color: "var(--text-title)",
+                fontSize: 10,
+                color: "var(--text-subtle)",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
               }}
             >
-              LookNow
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#EA580C",
-                background: "#FFF7ED",
-                padding: "2px 7px",
-                borderRadius: 999,
-                border: "1px solid rgba(255, 107, 0, 0.2)",
-              }}
-            >
-              Free
+              OmniSaver Suite
             </span>
           </div>
         </Link>
 
-        {/* Desktop Nav Links */}
+        {/* Desktop Navigation Links (>= 920px) */}
         <div
+          className="desktop-nav-menu"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 28,
+            gap: 24,
           }}
-          className="desktop-nav"
         >
-          {/* Categories / Tools Dropdown */}
-          <div
-            ref={dropdownRef}
-            style={{ position: "relative" }}
-            onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
-          >
+          {/* Tools Mega-Dropdown */}
+          <div ref={dropdownRef} style={{ position: "relative" }}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
+              onMouseEnter={() => setDropdownOpen(true)}
               style={{
                 background: "transparent",
                 border: "none",
-                cursor: "pointer",
-                fontFamily: "var(--font-body)",
-                fontSize: 14,
-                fontWeight: 600,
-                color: dropdownOpen ? "#FF6B00" : "var(--text-muted)",
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                padding: "6px 0",
+                fontFamily: "var(--font-body)",
+                fontSize: 14,
+                fontWeight: 600,
+                color: dropdownOpen ? "#FF6B00" : "var(--text-main)",
+                cursor: "pointer",
+                padding: "8px 0",
                 transition: "color 0.2s ease",
               }}
             >
-              <span>Tool Categories</span>
+              <span>Explore Tools</span>
               <ChevronDown
                 size={14}
                 style={{
                   transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s ease",
+                  transition: "transform 0.25s ease",
+                  color: dropdownOpen ? "#FF6B00" : "var(--text-subtle)",
                 }}
               />
             </button>
@@ -221,52 +277,47 @@ export default function Navbar() {
             <AnimatePresence>
               {dropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  onMouseLeave={() => setDropdownOpen(false)}
                   style={{
                     position: "absolute",
-                    top: "100%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    paddingTop: 12,
+                    top: "calc(100% + 14px)",
+                    left: "-120px",
+                    width: "680px",
+                    background: "rgba(255, 255, 255, 0.98)",
+                    border: "1px solid rgba(255, 107, 0, 0.25)",
+                    borderRadius: 22,
+                    padding: 22,
+                    boxShadow: "0 24px 50px rgba(15, 23, 42, 0.12), 0 0 35px rgba(255, 107, 0, 0.12)",
+                    backdropFilter: "blur(24px)",
                     zIndex: 100,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 18,
                   }}
                 >
-                  <div
-                    style={{
-                      width: 580,
-                      background: "#FFFFFF",
-                      border: "1px solid var(--border-hairline)",
-                      borderRadius: 18,
-                      padding: 20,
-                      boxShadow: "0 20px 48px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04)",
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 20,
-                    }}
-                  >
-                    {toolCategories.map((cat, idx) => (
-                      <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.08em",
-                            color: "var(--text-subtle)",
-                            paddingBottom: 4,
-                            borderBottom: "1px solid var(--border-hairline)",
-                          }}
-                        >
-                          {cat.title}
-                        </div>
+                  {toolCategories.map((cat, idx) => (
+                    <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          color: "var(--text-subtle)",
+                          paddingBottom: 6,
+                          borderBottom: "1px solid var(--border-hairline)",
+                        }}
+                      >
+                        {cat.title}
+                      </div>
 
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {cat.items.map((item, i) => {
-                          const Icon = item.icon;
-                          const isLive = item.badgeType === "live";
-
+                          const ItemIcon = item.icon;
                           return (
                             <Link
                               key={i}
@@ -274,112 +325,54 @@ export default function Navbar() {
                               onClick={() => setDropdownOpen(false)}
                               style={{
                                 display: "flex",
-                                alignItems: "flex-start",
-                                gap: 10,
+                                flexDirection: "column",
+                                gap: 2,
                                 padding: "8px 10px",
-                                borderRadius: 10,
+                                borderRadius: 12,
                                 textDecoration: "none",
+                                transition: "all 0.2s ease",
                                 background: "transparent",
-                                transition: "background 0.15s ease",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#F8FAFC")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#FFF7ED";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                              }}
                             >
-                              <div
-                                style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 8,
-                                  background: isLive ? "#FFF7ED" : "#F1F5F9",
-                                  color: isLive ? "#FF6B00" : "var(--text-muted)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <Icon size={16} />
-                              </div>
-
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span
-                                    style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
-                                      color: "var(--text-title)",
-                                    }}
-                                  >
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <ItemIcon size={15} style={{ color: "#FF6B00" }} />
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-title)" }}>
                                     {item.name}
                                   </span>
-                                  {isLive && (
-                                    <span
-                                      style={{
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        color: "#16A34A",
-                                        background: "#DCFCE7",
-                                        padding: "1px 6px",
-                                        borderRadius: 999,
-                                      }}
-                                    >
-                                      ● Live
-                                    </span>
-                                  )}
-                                  {item.badgeType === "soon" && (
-                                    <span
-                                      style={{
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: "var(--text-subtle)",
-                                        background: "#F1F5F9",
-                                        padding: "1px 6px",
-                                        borderRadius: 999,
-                                      }}
-                                    >
-                                      Soon
-                                    </span>
-                                  )}
                                 </div>
-                                <div
+                                <span
                                   style={{
-                                    fontSize: 11,
-                                    color: "var(--text-subtle)",
-                                    marginTop: 2,
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: "1px 6px",
+                                    borderRadius: 999,
+                                    background: item.badgeBg,
+                                    color: item.badgeColor,
                                   }}
                                 >
-                                  {item.desc}
-                                </div>
+                                  {item.badge}
+                                </span>
                               </div>
+                              <span style={{ fontSize: 11, color: "var(--text-subtle)", paddingLeft: 23 }}>
+                                {item.desc}
+                              </span>
                             </Link>
                           );
                         })}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          <Link
-            href="/#download"
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-muted)",
-              textDecoration: "none",
-              transition: "color 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#FF6B00")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-          >
-            Android APK
-          </Link>
 
           <Link
             href="/#features"
@@ -412,127 +405,395 @@ export default function Navbar() {
           >
             Networks
           </Link>
+
+          <Link
+            href="/#faq"
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 14,
+              fontWeight: 600,
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              transition: "color 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#FF6B00")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+          >
+            FAQs
+          </Link>
+
+          <Link
+            href="/#download"
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 14,
+              fontWeight: 600,
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              transition: "color 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#FF6B00")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+          >
+            Android APK
+          </Link>
         </div>
 
-        {/* Right CTA with Liquid Smoke Wave */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Right Action Cluster */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {/* User Identity / Profile Button (Desktop) */}
+          <button
+            onClick={() => setProfileModalOpen(true)}
+            className="desktop-profile-btn"
+            title={currentUserName ? `Active Profile: ${currentUserName}` : "Set Visitor Profile"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 11,
+              background: currentUserName ? "rgba(255, 107, 0, 0.1)" : "rgba(0, 0, 0, 0.04)",
+              border: currentUserName ? "1px solid rgba(255, 107, 0, 0.3)" : "1px solid var(--border-hairline)",
+              color: currentUserName ? "#FF6B00" : "var(--text-title)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <User size={15} />
+            <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {currentUserName ? currentUserName.split(" ")[0] : "Profile"}
+            </span>
+          </button>
+
+          {/* User Identity Button (Mobile Compact Icon) */}
+          <button
+            onClick={() => setProfileModalOpen(true)}
+            className="mobile-profile-btn"
+            title={currentUserName ? `Profile: ${currentUserName}` : "Profile"}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: currentUserName ? "rgba(255, 107, 0, 0.12)" : "rgba(0, 0, 0, 0.04)",
+              border: currentUserName ? "1px solid rgba(255, 107, 0, 0.35)" : "1px solid var(--border-hairline)",
+              color: currentUserName ? "#FF6B00" : "var(--text-title)",
+              cursor: "pointer",
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              position: "relative",
+            }}
+          >
+            <User size={17} />
+            {currentUserName && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#16A34A",
+                }}
+              />
+            )}
+          </button>
+
+          {/* Desktop "Launch Web Tool" CTA */}
           <Link
             href="/tools/media-downloader"
-            className="btn-primary"
+            className="btn-primary desktop-cta-btn"
             style={{
               padding: "9px 18px",
               fontSize: 13,
-              borderRadius: 10,
+              borderRadius: 11,
+              boxShadow: "0 4px 14px rgba(255, 107, 0, 0.35)",
             }}
           >
             <span>Launch Web Tool</span>
             <ArrowRight size={14} strokeWidth={2.5} />
           </Link>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Hamburger Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="mobile-toggle-btn"
             style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--text-title)",
+              width: 36,
+              height: 36,
+              background: mobileMenuOpen ? "#FFF7ED" : "rgba(0, 0, 0, 0.04)",
+              border: mobileMenuOpen ? "1px solid rgba(255, 107, 0, 0.3)" : "1px solid var(--border-hairline)",
+              borderRadius: 10,
+              color: mobileMenuOpen ? "#FF6B00" : "var(--text-title)",
               cursor: "pointer",
               display: "none",
-              padding: 4,
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
             }}
-            className="mobile-toggle"
-            aria-label="Toggle Menu"
+            aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Pro Mobile Drawer & Backdrop */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            style={{
-              position: "absolute",
-              top: 76,
-              left: 24,
-              right: 24,
-              background: "#FFFFFF",
-              border: "1px solid var(--border-hairline)",
-              borderRadius: 18,
-              padding: 20,
-              boxShadow: "0 20px 40px rgba(15, 23, 42, 0.12)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              zIndex: 99,
-            }}
-          >
-            <Link
-              href="/tools/media-downloader"
+          <>
+            {/* Backdrop Dimmer */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setMobileMenuOpen(false)}
               style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#FF6B00",
-                textDecoration: "none",
+                position: "fixed",
+                inset: 0,
+                background: "rgba(15, 23, 42, 0.45)",
+                backdropFilter: "blur(6px)",
+                zIndex: 98,
+              }}
+            />
+
+            {/* Slide Down Sheet */}
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: "fixed",
+                top: 72,
+                left: 12,
+                right: 12,
+                maxHeight: "calc(100vh - 88px)",
+                overflowY: "auto",
+                background: "rgba(255, 255, 255, 0.98)",
+                border: "1px solid rgba(255, 107, 0, 0.25)",
+                borderRadius: 22,
+                padding: "20px 18px",
+                boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2), 0 0 35px rgba(255, 107, 0, 0.15)",
+                backdropFilter: "blur(24px)",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "8px 0",
-                borderBottom: "1px solid var(--border-hairline)",
+                flexDirection: "column",
+                gap: 16,
+                zIndex: 99,
               }}
             >
-              <span>🎬 OmniSaver Video Downloader</span>
-              <span style={{ fontSize: 11, background: "#DCFCE7", color: "#16A34A", padding: "2px 8px", borderRadius: 999 }}>● Live</span>
-            </Link>
+              {/* Featured Hero Tool Card */}
+              <Link
+                href="/tools/media-downloader"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  background: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+                  border: "1.5px solid rgba(255, 107, 0, 0.35)",
+                  borderRadius: 16,
+                  padding: 14,
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxShadow: "0 4px 16px rgba(255, 107, 0, 0.12)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: "#FF6B00",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(255, 107, 0, 0.3)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Video size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-title)" }}>
+                      OmniSaver Downloader
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      YouTube, TikTok, Reels & MP3 4K
+                    </div>
+                  </div>
+                </div>
+                <span style={{ fontSize: 10, background: "#DCFCE7", color: "#16A34A", fontWeight: 700, padding: "3px 8px", borderRadius: 999 }}>
+                  Live
+                </span>
+              </Link>
 
-            <Link
-              href="/#tools"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ fontSize: 14, fontWeight: 600, color: "var(--text-title)", textDecoration: "none", padding: "6px 0" }}
-            >
-              All Tool Categories
-            </Link>
+              {/* All Working Tools Grid */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--text-subtle)",
+                    marginBottom: 8,
+                    paddingLeft: 4,
+                  }}
+                >
+                  Active Tools Suite (100% Free)
+                </div>
 
-            <Link
-              href="/#download"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ fontSize: 14, fontWeight: 600, color: "var(--text-title)", textDecoration: "none", padding: "6px 0" }}
-            >
-              Android APK
-            </Link>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[
+                    { name: "Audio Extractor", icon: Music, href: "/tools/media-downloader?mode=audio", badge: "320k" },
+                    { name: "Vector QR Engine", icon: QrCode, href: "/tools/qr-generator", badge: "SVG" },
+                    { name: "Image Studio", icon: ImageIcon, href: "/tools/image-studio", badge: "WebP" },
+                    { name: "Text & JSON", icon: FileCode, href: "/tools/text-studio", badge: "Hash" },
+                  ].map((tool, idx) => {
+                    const TIcon = tool.icon;
+                    return (
+                      <Link
+                        key={idx}
+                        href={tool.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={{
+                          background: "#F8FAFC",
+                          border: "1px solid var(--border-hairline)",
+                          borderRadius: 12,
+                          padding: "10px 12px",
+                          textDecoration: "none",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <TIcon size={16} style={{ color: "#FF6B00" }} />
+                          <span style={{ fontSize: 9, fontWeight: 700, background: "#FFF7ED", color: "#FF6B00", padding: "1px 5px", borderRadius: 6 }}>
+                            {tool.badge}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-title)" }}>
+                          {tool.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
 
-            <Link
-              href="/#features"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ fontSize: 14, fontWeight: 600, color: "var(--text-title)", textDecoration: "none", padding: "6px 0" }}
-            >
-              Features & Standards
-            </Link>
+              {/* Fast Jump Section Links */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  { label: "Supported Networks", href: "/#platforms", icon: Globe },
+                  { label: "Performance & Features", href: "/#features", icon: Sliders },
+                  { label: "Frequently Asked Questions", href: "/#faq", icon: HelpCircle },
+                  { label: "Download Android APK (15.2 MB)", href: "/#download", icon: Smartphone },
+                ].map((item, idx) => {
+                  const LIcon = item.icon;
+                  return (
+                    <Link
+                      key={idx}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-main)",
+                        textDecoration: "none",
+                        padding: "9px 12px",
+                        borderRadius: 10,
+                        background: "rgba(15, 23, 42, 0.02)",
+                      }}
+                    >
+                      <LIcon size={15} style={{ color: "var(--text-subtle)" }} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
 
-            <Link
-              href="/tools/media-downloader"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary"
-              style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
-            >
-              <span>Launch Web Tool</span>
-              <ArrowRight size={15} />
-            </Link>
-          </motion.div>
+              {/* Mobile Profile Trigger */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setProfileModalOpen(true);
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "11px 16px",
+                  borderRadius: 12,
+                  background: currentUserName ? "rgba(255, 107, 0, 0.12)" : "rgba(15, 23, 42, 0.04)",
+                  border: currentUserName ? "1px solid rgba(255, 107, 0, 0.3)" : "1px solid var(--border-hairline)",
+                  color: currentUserName ? "#FF6B00" : "var(--text-title)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                <User size={16} />
+                <span>{currentUserName ? `Profile: ${currentUserName}` : "Set Visitor Profile & Name"}</span>
+              </button>
+
+              {/* Primary Mobile CTA Button */}
+              <Link
+                href="/tools/media-downloader"
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-primary"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  padding: "13px 20px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  boxShadow: "0 4px 16px rgba(255, 107, 0, 0.35)",
+                }}
+              >
+                <span>Launch Media Downloader</span>
+                <ArrowRight size={16} strokeWidth={2.5} />
+              </Link>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
+      {/* Visitor Profile Modal */}
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onSaved={(name) => setCurrentUserName(name)}
+      />
+
       <style jsx>{`
-        @media (max-width: 820px) {
-          :global(.desktop-nav) {
+        @media (max-width: 920px) {
+          :global(.desktop-nav-menu) {
             display: none !important;
           }
-          :global(.mobile-toggle) {
+          :global(.desktop-cta-btn) {
+            display: none !important;
+          }
+          :global(.desktop-profile-btn) {
+            display: none !important;
+          }
+          :global(.mobile-profile-btn) {
+            display: flex !important;
+          }
+          :global(.mobile-toggle-btn) {
             display: flex !important;
           }
         }

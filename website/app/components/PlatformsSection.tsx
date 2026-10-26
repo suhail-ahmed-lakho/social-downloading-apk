@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Globe } from "lucide-react";
+import TiltCard3D from "./TiltCard3D";
 
 const platforms = [
   { name: "YouTube", category: "Videos & Shorts" },
@@ -38,48 +39,42 @@ export default function PlatformsSection() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
             gap: "16px",
           }}
         >
           {platforms.map((platform, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -2 }}
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid var(--border-hairline)",
-                borderRadius: "14px",
-                padding: "18px 22px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
-                transition: "border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255, 107, 0, 0.4)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(255, 107, 0, 0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-hairline)";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(15, 23, 42, 0.04)";
-              }}
-            >
+            <TiltCard3D key={i} maxTilt={8} scale={1.03} glowColor="rgba(255, 107, 0, 0.25)">
               <div
+                className="preserve-3d"
                 style={{
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  color: "var(--text-title)",
-                  fontFamily: "var(--font-heading)",
+                  background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
+                  border: "1px solid var(--border-hairline)",
+                  borderRadius: "14px",
+                  padding: "18px 22px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                  boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)",
+                  height: "100%",
                 }}
               >
-                {platform.name}
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    color: "var(--text-title)",
+                    fontFamily: "var(--font-heading)",
+                    transform: "translateZ(16px)",
+                  }}
+                >
+                  {platform.name}
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--text-subtle)", transform: "translateZ(8px)" }}>
+                  {platform.category}
+                </div>
               </div>
-              <div style={{ fontSize: "12px", color: "var(--text-subtle)" }}>
-                {platform.category}
-              </div>
-            </motion.div>
+            </TiltCard3D>
           ))}
         </div>
       </div>

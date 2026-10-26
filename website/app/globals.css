@@ -317,11 +317,69 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
 }
 
-/* ─── Responsive Media Queries ─── */
+/* ─── 3D Depth & Spatial Utilities ─── */
+.perspective-container {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.translate-z-10 {
+  transform: translateZ(10px);
+}
+
+.translate-z-20 {
+  transform: translateZ(20px);
+}
+
+.translate-z-30 {
+  transform: translateZ(30px);
+}
+
+/* 3D Floating Animations */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotateX(2deg) rotateY(-2deg);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotateX(-2deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(255, 107, 0, 0.2), 0 0 60px rgba(255, 107, 0, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 107, 0, 0.35), 0 0 90px rgba(255, 107, 0, 0.15);
+  }
+}
+
+.float-3d-1 {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.float-3d-2 {
+  animation: float-reverse 7s ease-in-out infinite;
+}
+
+/* ─── Responsive Media Queries & Mobile Polish ─── */
 @media (max-width: 900px) {
   .hero-grid {
     grid-template-columns: 1fr !important;
-    gap: 40px !important;
+    gap: 28px !important;
     text-align: center;
   }
   .hero-cta {
@@ -330,4 +388,59 @@ h1, h2, h3, h4, h5, h6 {
   .hero-stats {
     justify-content: center !important;
   }
+  .hero-canvas-wrapper {
+    min-height: 380px !important;
+    max-height: 440px !important;
+  }
+  .floating-hero-badge {
+    position: static !important;
+    margin: 8px auto !important;
+    max-width: 260px !important;
+  }
+  .floating-badges-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+  }
 }
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px !important;
+  }
+  .navbar-wrapper {
+    top: 10px !important;
+    padding: 0 12px !important;
+  }
+  .navbar-pill {
+    padding: 8px 12px !important;
+    border-radius: 16px !important;
+  }
+  .btn-full-mobile {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .glass-card {
+    padding: 18px !important;
+    border-radius: 16px !important;
+  }
+  .hero-canvas-wrapper {
+    min-height: 280px !important;
+    max-height: 340px !important;
+  }
+}
+
+/* ─── Touch and Accessibility ─── */
+button, a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Smooth Pulse Animation ─── */
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.85; }
+}
+

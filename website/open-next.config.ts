@@ -4,4 +4,3 @@ export default {
   ...defineCloudflareConfig({}),
   buildCommand: "npm run build:next",
 };
-

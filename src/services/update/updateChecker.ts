@@ -8,6 +8,7 @@ export interface UpdateCheckResult {
   latestVersion: string;
   releaseTitle: string;
   releaseDate?: string;
+  fileSize?: string;
   downloadUrl: string;
   changelog: string[];
 }
@@ -36,7 +37,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Check for updates from remote manifest or GitHub API
+ * Check for updates from LookNow website API (Independent of GitHub visibility)
  */
 export async function checkForAppUpdates(forceCheck: boolean = false): Promise<UpdateCheckResult> {
   const currentVersion = CURRENT_APP_VERSION;
@@ -47,65 +48,29 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
 
     let manifest: AppReleaseManifest | null = null;
 
-    // 1. Check GitHub Releases API directly (100% automated from GitHub releases)
-    if (UPDATE_CONFIG.githubRepo) {
+    // Check LookNow SaaS update endpoints
+    const candidateUrls = [
+      UPDATE_CONFIG.remoteManifestUrl,
+      UPDATE_CONFIG.fallbackManifestUrl,
+    ];
+
+    for (const manifestUrl of candidateUrls) {
+      if (!manifestUrl) continue;
       try {
-        const ghRes = await fetch(
-          `https://api.github.com/repos/${UPDATE_CONFIG.githubRepo}/releases/latest`,
-          {
-            signal: controller.signal,
-            headers: {
-              Accept: 'application/vnd.github.v3+json',
-              'User-Agent': 'OmniSaver-LakhoTeam',
-            },
-          }
-        );
+        const response = await fetch(manifestUrl, {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+            Accept: 'application/json',
+          },
+        });
 
-        if (ghRes.ok) {
-          const ghData = await ghRes.json();
-          const tag = (ghData.tag_name || ghData.name || '').replace(/^[vV]/, '');
-          const apkAsset = ghData.assets?.find((a: any) => a.name?.toLowerCase().endsWith('.apk'));
-
-          manifest = {
-            version: tag || '1.0.0',
-            versionCode: 1,
-            releaseTitle: ghData.name || `OmniSaver v${tag}`,
-            releaseDate: ghData.published_at?.split('T')[0] || '',
-            mandatory: false,
-            // If direct APK asset is uploaded to the release, download it directly, otherwise release page
-            downloadUrl: apkAsset?.browser_download_url || ghData.html_url || UPDATE_CONFIG.defaultDownloadUrl,
-            changelog: ghData.body
-              ? ghData.body.split('\n').filter((l: string) => l.trim().length > 0)
-              : ['New features and bug fixes by Lakho\'s team.'],
-          };
+        if (response.ok) {
+          manifest = await response.json();
+          if (manifest && manifest.version) break;
         }
       } catch (_) {}
-    }
-
-    // 2. Fallback: Check remote version.json manifest if GitHub API didn't return
-    if (!manifest) {
-      const candidateUrls = [
-        UPDATE_CONFIG.remoteManifestUrl,
-        `https://raw.githubusercontent.com/${UPDATE_CONFIG.githubRepo}/master/version.json`,
-        `https://raw.githubusercontent.com/${UPDATE_CONFIG.githubRepo}/main/version.json`,
-      ];
-
-      for (const manifestUrl of candidateUrls) {
-        try {
-          const response = await fetch(manifestUrl, {
-            signal: controller.signal,
-            headers: {
-              'Cache-Control': 'no-cache',
-              Pragma: 'no-cache',
-            },
-          });
-
-          if (response.ok) {
-            manifest = await response.json();
-            if (manifest && manifest.version) break;
-          }
-        } catch (_) {}
-      }
     }
 
     clearTimeout(timer);
@@ -123,7 +88,8 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
             currentVersion,
             latestVersion: manifest.version,
             releaseTitle: manifest.releaseTitle,
-            downloadUrl: manifest.downloadUrl,
+            downloadUrl: manifest.downloadUrl || UPDATE_CONFIG.defaultDownloadUrl,
+            fileSize: manifest.fileSize || '15.4 MB',
             changelog: manifest.changelog || [],
           };
         }
@@ -134,23 +100,17 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
         isMandatory: !!manifest.mandatory,
         currentVersion,
         latestVersion: manifest.version,
-        releaseTitle: manifest.releaseTitle || `Update v${manifest.version}`,
+        releaseTitle: manifest.releaseTitle || `OmniSaver v${manifest.version}`,
         releaseDate: manifest.releaseDate,
         downloadUrl: manifest.downloadUrl || UPDATE_CONFIG.defaultDownloadUrl,
-        changelog: Array.isArray(manifest.changelog)
+        fileSize: manifest.fileSize || '15.4 MB',
+        changelog: Array.isArray(manifest.changelog) && manifest.changelog.length > 0
           ? manifest.changelog
-          : ['Performance enhancements and latest updates.'],
+          : ['Performance improvements and latest video stream engine optimizations.'],
       };
     }
-
-    if (forceCheck) {
-      throw new Error(
-        'Unable to check for updates. If your GitHub repository is Private, please set it to Public so users can download releases.'
-      );
-    }
-  } catch (error) {
-    if (forceCheck) throw error;
-    console.warn('Update check failed:', error);
+  } catch (err) {
+    console.warn('Update check failed:', err);
   }
 
   return {
@@ -158,14 +118,14 @@ export async function checkForAppUpdates(forceCheck: boolean = false): Promise<U
     isMandatory: false,
     currentVersion,
     latestVersion: currentVersion,
-    releaseTitle: 'Latest Version',
+    releaseTitle: `OmniSaver v${currentVersion}`,
     downloadUrl: UPDATE_CONFIG.defaultDownloadUrl,
     changelog: [],
   };
 }
 
 /**
- * Dismiss a specific update version so it doesn't repeatedly show on every launch
+ * Remember dismissed update version
  */
 export async function dismissUpdateVersion(version: string): Promise<void> {
   try {

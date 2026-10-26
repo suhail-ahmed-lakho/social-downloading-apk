@@ -15,9 +15,9 @@ export default function ThreeCanvas() {
     const width = container.clientWidth || 550;
     const height = container.clientHeight || 550;
 
-    // Generous FOV and camera distance so geometry never clips or feels trapped
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.z = 6.5;
+    const isMobile = window.innerWidth < 768;
+    const camera = new THREE.PerspectiveCamera(isMobile ? 44 : 38, width / height, 0.1, 1000);
+    camera.position.z = isMobile ? 7.2 : 6.2;
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -27,67 +27,78 @@ export default function ThreeCanvas() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
+    renderer.toneMappingExposure = 1.35;
     container.appendChild(renderer.domElement);
 
-    // Group for mouse interaction
+    // Main 3D Pivot Group
     const group = new THREE.Group();
     scene.add(group);
 
     // 1. Central Core: Vibrant Orange Wireframe Polyhedron
-    const icosahedronGeometry = new THREE.IcosahedronGeometry(1.3, 2);
+    const icosahedronGeometry = new THREE.IcosahedronGeometry(isMobile ? 1.15 : 1.3, 2);
     
     // Wireframe Mesh in Radiant Orange
     const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff6b00, // Vibrant Orange
+      color: 0xff6b00,
       wireframe: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.7,
     });
     const wireframeMesh = new THREE.Mesh(icosahedronGeometry, wireframeMaterial);
     group.add(wireframeMesh);
 
-    // Inner Warm Glowing Core
-    const innerGeometry = new THREE.IcosahedronGeometry(0.95, 3);
+    // 2. Inner Luminescent Holographic Core
+    const innerGeometry = new THREE.IcosahedronGeometry(isMobile ? 0.82 : 0.95, 3);
     const innerMaterial = new THREE.MeshStandardMaterial({
       color: 0xffedd5,
-      roughness: 0.1,
-      metalness: 0.9,
+      roughness: 0.12,
+      metalness: 0.88,
       emissive: 0xff6b00,
-      emissiveIntensity: 0.45,
+      emissiveIntensity: 0.5,
       flatShading: true,
     });
     const innerMesh = new THREE.Mesh(innerGeometry, innerMaterial);
     group.add(innerMesh);
 
-    // 2. Orbital Rings (Properly scaled to never touch sides)
-    const ringGeo1 = new THREE.TorusGeometry(1.75, 0.015, 16, 120);
+    // 3. Orbital Kinetic Rings
+    const ringGeo1 = new THREE.TorusGeometry(isMobile ? 1.55 : 1.78, 0.016, 16, 120);
     const ringMat1 = new THREE.MeshBasicMaterial({
       color: 0xfb923c, // Warm Amber
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.65,
     });
     const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
     ring1.rotation.x = Math.PI / 3;
     group.add(ring1);
 
-    const ringGeo2 = new THREE.TorusGeometry(1.95, 0.012, 16, 120);
+    const ringGeo2 = new THREE.TorusGeometry(isMobile ? 1.75 : 1.98, 0.012, 16, 120);
     const ringMat2 = new THREE.MeshBasicMaterial({
       color: 0xff6b00, // Orange
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.5,
     });
     const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
     ring2.rotation.y = Math.PI / 4;
     group.add(ring2);
 
-    // 3. Floating Amber/Orange Constellation Particles
-    const particleCount = 180;
+    // 3rd outer gyro ring for deep 3D perspective
+    const ringGeo3 = new THREE.TorusGeometry(isMobile ? 1.95 : 2.18, 0.009, 16, 100);
+    const ringMat3 = new THREE.MeshBasicMaterial({
+      color: 0xfdba74,
+      transparent: true,
+      opacity: 0.35,
+    });
+    const ring3 = new THREE.Mesh(ringGeo3, ringMat3);
+    ring3.rotation.z = Math.PI / 2.5;
+    group.add(ring3);
+
+    // 4. Floating Constellation Nodes
+    const particleCount = isMobile ? 120 : 200;
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
 
     for (let i = 0; i < particleCount * 3; i += 3) {
-      const radius = 1.6 + Math.random() * 1.5;
+      const radius = (isMobile ? 1.4 : 1.6) + Math.random() * (isMobile ? 1.2 : 1.6);
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
 
@@ -100,46 +111,75 @@ export default function ThreeCanvas() {
 
     const particleMaterial = new THREE.PointsMaterial({
       color: 0xf97316,
-      size: 0.038,
+      size: isMobile ? 0.045 : 0.038,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       blending: THREE.NormalBlending,
     });
 
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     group.add(particles);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+    // 5. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.9);
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0xff6b00, 5, 12);
-    pointLight1.position.set(3, 3, 3);
+    const pointLight1 = new THREE.PointLight(0xff6b00, 5.5, 14);
+    pointLight1.position.set(3.5, 3.5, 3.5);
     scene.add(pointLight1);
 
-    const pointLight2 = new THREE.PointLight(0xf59e0b, 3, 10);
-    pointLight2.position.set(-3, -2, 2);
+    const pointLight2 = new THREE.PointLight(0xf59e0b, 3.5, 10);
+    pointLight2.position.set(-3, -2.5, 2.5);
     scene.add(pointLight2);
 
-    // Mouse tracking with smooth damping
+    // Interactive Mouse & Touch Dragging with Momentum
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
     let targetY = 0;
+    let isDragging = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      targetX = (x / rect.width) * 0.6;
-      targetY = -(y / rect.height) * 0.6;
+      targetX = (x / rect.width) * 0.7;
+      targetY = -(y / rect.height) * 0.7;
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        isDragging = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging && e.touches.length > 0) {
+        const deltaX = e.touches[0].clientX - touchStartX;
+        const deltaY = e.touches[0].clientY - touchStartY;
+        targetX += deltaX * 0.005;
+        targetY += -deltaY * 0.005;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isDragging = false;
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     // Handle Resize
     const handleResize = () => {
-      if (!container) return;
+      if (!container || !renderer || !camera) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
       camera.aspect = w / h;
@@ -157,19 +197,20 @@ export default function ThreeCanvas() {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth mouse follow
-      mouseX += (targetX - mouseX) * 0.04;
-      mouseY += (targetY - mouseY) * 0.04;
+      // Smooth inertia follow
+      mouseX += (targetX - mouseX) * 0.05;
+      mouseY += (targetY - mouseY) * 0.05;
 
-      group.rotation.y = elapsedTime * 0.18 + mouseX;
-      group.rotation.x = elapsedTime * 0.1 + mouseY;
+      group.rotation.y = elapsedTime * 0.2 + mouseX;
+      group.rotation.x = elapsedTime * 0.12 + mouseY;
 
-      ring1.rotation.z = elapsedTime * 0.22;
-      ring2.rotation.z = -elapsedTime * 0.16;
-      particles.rotation.y = -elapsedTime * 0.06;
+      ring1.rotation.z = elapsedTime * 0.24;
+      ring2.rotation.z = -elapsedTime * 0.18;
+      ring3.rotation.y = elapsedTime * 0.15;
+      particles.rotation.y = -elapsedTime * 0.07;
 
       // Pulse inner glow
-      innerMaterial.emissiveIntensity = 0.45 + Math.sin(elapsedTime * 2.5) * 0.15;
+      innerMaterial.emissiveIntensity = 0.5 + Math.sin(elapsedTime * 2.8) * 0.18;
 
       renderer.render(scene, camera);
     };
@@ -179,6 +220,9 @@ export default function ThreeCanvas() {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("mousemove", handleMouseMove);
+      container.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener("resize", handleResize);
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
@@ -194,12 +238,15 @@ export default function ThreeCanvas() {
       style={{
         width: "100%",
         height: "100%",
-        minHeight: "480px",
+        minHeight: "360px",
+        maxHeight: "560px",
         position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         overflow: "visible",
+        touchAction: "pan-y",
+        cursor: "grab",
       }}
     />
   );

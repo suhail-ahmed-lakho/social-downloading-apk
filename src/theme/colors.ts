@@ -1,37 +1,38 @@
-// Warm & Organic Design System
-// Earthy dark surfaces with amber/gold accent — boutique studio feel
-// Hand-crafted warmth, generous breathing room, human-first design
+// LookNow OmniSaver Unified Design System
+// Matches the LookNow web application theme:
+// Signature Warm Orange (#FF6B00), Obsidian Glass surfaces, and precision hairline borders
 
 export const COLORS = {
-  // Warm Dark Surfaces (brownish-blacks, not cold navy)
-  bg: '#111010',
-  cardBg: '#1A1816',
-  cardBgLight: '#221F1C',
-  cardBorder: '#2E2924',
-  cardBorderActive: '#D4A052',
+  // Ultra-modern Dark Obsidian Surfaces
+  bg: '#0A0E17',
+  cardBg: '#111726',
+  cardBgLight: '#182033',
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  cardBorderActive: 'rgba(255, 107, 0, 0.5)',
 
-  // Typography — warm whites, not sterile
-  textPrimary: '#F5F0EA',
-  textSecondary: '#A09689',
-  textMuted: '#6B6058',
+  // Typography Scale (Crisp high-contrast white & slate)
+  textPrimary: '#FFFFFF',
+  textSecondary: '#94A3B8',
+  textMuted: '#64748B',
 
-  // Warm Amber / Gold Accent
-  accentPrimary: '#D4A052',
-  accentDark: '#B8863E',
-  accentSoft: 'rgba(212, 160, 82, 0.10)',
-  accentBorder: 'rgba(212, 160, 82, 0.28)',
+  // Signature Warm LookNow Orange Accents
+  accentPrimary: '#FF6B00',
+  accentDark: '#EA580C',
+  accentLight: '#FB923C',
+  accentSoft: 'rgba(255, 107, 0, 0.12)',
+  accentBorder: 'rgba(255, 107, 0, 0.35)',
 
-  // Earthy Status Indicators
-  success: '#7CB368',
-  successSoft: 'rgba(124, 179, 104, 0.12)',
-  danger: '#D16B5E',
-  dangerSoft: 'rgba(209, 107, 94, 0.12)',
+  // Precision Status Indicators
+  success: '#16A34A',
+  successSoft: 'rgba(22, 163, 74, 0.14)',
+  danger: '#EF4444',
+  dangerSoft: 'rgba(239, 68, 68, 0.14)',
 
-  // Platform Colors — subtle earthy tints instead of uniform blue
-  tiktok: '#D4A052',
-  tiktokCyan: '#D4A052',
-  instagram: '#D4A052',
-  instagramPurple: '#D4A052',
-  youtube: '#D4A052',
-  youtubeDark: '#B8863E',
+  // Brand Platform Colors
+  tiktok: '#FF6B00',
+  tiktokCyan: '#00F2FE',
+  instagram: '#E1306C',
+  instagramPurple: '#C13584',
+  youtube: '#FF0000',
+  youtubeDark: '#CC0000',
 };

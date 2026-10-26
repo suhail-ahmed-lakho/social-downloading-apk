@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Zap, ShieldCheck, Sparkles, Smartphone, Layers, Infinity as InfinityIcon } from "lucide-react";
+import TiltCard3D from "./TiltCard3D";
 
 const features = [
   {
@@ -53,11 +54,11 @@ export default function FeaturesSection() {
           </p>
         </div>
 
-        {/* Features Bento Grid */}
+        {/* Features Bento Grid with 3D Tilt */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))",
             gap: "24px",
           }}
         >
@@ -65,42 +66,45 @@ export default function FeaturesSection() {
             const Icon = feature.icon;
 
             return (
-              <motion.div
-                key={i}
-                whileHover={{ y: -3 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className="glass-card"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                  background: "#FFFFFF",
-                }}
-              >
+              <TiltCard3D key={i} glowColor="rgba(255, 107, 0, 0.2)">
                 <div
+                  className="glass-card preserve-3d"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    background: "#FFF7ED",
-                    border: "1px solid rgba(255, 107, 0, 0.25)",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#FF6B00",
+                    flexDirection: "column",
+                    gap: "16px",
+                    background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
+                    height: "100%",
+                    boxShadow: "0 6px 22px rgba(15, 23, 42, 0.04)",
                   }}
                 >
-                  <Icon size={22} strokeWidth={2.2} />
+                  <div
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 14,
+                      background: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+                      border: "1px solid rgba(255, 107, 0, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#FF6B00",
+                      transform: "translateZ(24px)",
+                      boxShadow: "0 4px 12px rgba(255, 107, 0, 0.2)",
+                    }}
+                  >
+                    <Icon size={23} strokeWidth={2.2} />
+                  </div>
+
+                  <h3 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text-title)", transform: "translateZ(18px)" }}>
+                    {feature.title}
+                  </h3>
+
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: 1.6, transform: "translateZ(10px)" }}>
+                    {feature.desc}
+                  </p>
                 </div>
-
-                <h3 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text-title)" }}>
-                  {feature.title}
-                </h3>
-
-                <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                  {feature.desc}
-                </p>
-              </motion.div>
+              </TiltCard3D>
             );
           })}
         </div>

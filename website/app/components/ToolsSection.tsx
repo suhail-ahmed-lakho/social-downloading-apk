@@ -8,19 +8,19 @@ import {
   Image as ImageIcon,
   FileText,
   QrCode,
-  Lock,
-  Cpu,
+  Music,
   ArrowUpRight,
   Sparkles,
-  Layers,
   Smartphone,
+  CheckCircle2,
 } from "lucide-react";
+import TiltCard3D from "./TiltCard3D";
 
 const CATEGORIES = [
-  { id: "all", label: "All Tools" },
-  { id: "media", label: "Video & Media" },
-  { id: "image", label: "Image & Graphics" },
-  { id: "dev", label: "Dev Utilities" },
+  { id: "all", label: "All Active Tools" },
+  { id: "media", label: "Video & Audio" },
+  { id: "image", label: "Image & Vector" },
+  { id: "dev", label: "Dev & Hashes" },
   { id: "mobile", label: "Mobile APK" },
 ];
 
@@ -29,67 +29,73 @@ const tools = [
     id: "omnisaver",
     category: "media",
     icon: Download,
-    name: "OmniSaver — Video & Audio Suite",
-    desc: "Download 4K videos, Reels, and lossless MP3 audio from YouTube, TikTok, and Instagram without compression or watermarks.",
-    tags: ["Web Tool", "Android APK", "Lossless Audio", "4K Video"],
+    name: "OmniSaver — Universal 4K Downloader",
+    desc: "Download pristine 4K videos, watermark-free TikToks, Instagram Reels, and Twitter/X clips with direct stream extraction.",
+    tags: ["4K 60fps", "Zero Watermark", "YouTube", "TikTok", "Reels"],
     status: "live",
     href: "/tools/media-downloader",
     categoryLabel: "Video & Media",
+    badge: "Most Popular",
   },
   {
-    id: "omnisaver-apk",
-    category: "mobile",
-    icon: Smartphone,
-    name: "OmniSaver Native Android APK",
-    desc: "Install the high-speed native Android build with automatic gallery sync, multithreaded downloads, and background processing.",
-    tags: ["Android 8.0+", "ARM64", "Background Queue", "Gallery Sync"],
+    id: "audio-extractor",
+    category: "media",
+    icon: Music,
+    name: "Lossless Audio & MP3 Extractor",
+    desc: "Extract crystal clear 320kbps audio directly from video streams with preserved metadata tags and zero transcode loss.",
+    tags: ["320kbps MP3", "Lossless Stream", "ID3 Tags", "Instant"],
     status: "live",
-    href: "/#download",
-    categoryLabel: "Mobile APK",
+    href: "/tools/media-downloader?mode=audio",
+    categoryLabel: "Video & Media",
+    badge: "High Fidelity",
+  },
+  {
+    id: "qr-studio",
+    category: "image",
+    icon: QrCode,
+    name: "Vector QR Code Engine",
+    desc: "Generate custom high-DPI PNG and scalable vector SVG QR codes for URLs, Wi-Fi networks, vCards, and emails client-side.",
+    tags: ["Vector SVG", "WiFi Auto-Connect", "High DPI Print", "Client-Side"],
+    status: "live",
+    href: "/tools/qr-generator",
+    categoryLabel: "Image & Vector",
+    badge: "Vector SVG",
   },
   {
     id: "image-studio",
     category: "image",
     icon: ImageIcon,
     name: "Image Studio & Optimizer",
-    desc: "Client-side image optimizer, WebP/AVIF converter, background remover, and smart resizer running with zero cloud latency.",
-    tags: ["WebP / AVIF", "Browser Processing", "Zero Upload"],
-    status: "coming",
-    href: "#",
-    categoryLabel: "Image & Graphics",
-  },
-  {
-    id: "qr-studio",
-    category: "image",
-    icon: QrCode,
-    name: "Vector QR Engine",
-    desc: "High-density custom QR generator supporting Wi-Fi configurations, vCards, dynamic logos, and vector SVG outputs.",
-    tags: ["Vector SVG", "WiFi / vCard", "High DPI Print"],
-    status: "coming",
-    href: "#",
-    categoryLabel: "Image & Graphics",
+    desc: "Convert PNG and JPEG to next-gen WebP, compress file sizes by up to 90%, and resize dimensions with zero server uploads.",
+    tags: ["WebP Converter", "Canvas Engine", "Zero Upload", "Resize"],
+    status: "live",
+    href: "/tools/image-studio",
+    categoryLabel: "Image & Vector",
+    badge: "Up to 90% Saved",
   },
   {
     id: "text-engine",
     category: "dev",
     icon: FileText,
-    name: "Developer Text & JSON Engine",
-    desc: "Syntax highlighting formatter, JSON validator, regex playground, and case transform utilities for fast developer workflows.",
-    tags: ["JSON / YAML", "Regex Tester", "Diff Viewer"],
-    status: "coming",
-    href: "#",
-    categoryLabel: "Dev Utilities",
+    name: "Text, JSON & Crypt Engine",
+    desc: "Format and validate JSON with syntax checks, convert string casing, compute SHA-256/512 checksums, and decode Base64.",
+    tags: ["JSON Beautifier", "SHA-256 Hashes", "Case Convert", "Base64"],
+    status: "live",
+    href: "/tools/text-studio",
+    categoryLabel: "Dev & Hashes",
+    badge: "Web Crypto",
   },
   {
-    id: "crypto-vault",
-    category: "dev",
-    icon: Lock,
-    name: "Client Crypt & Hash Vault",
-    desc: "Client-side SHA-256/512 checksums, AES-GCM local file encryption, and password generation with modern Web Crypto APIs.",
-    tags: ["SHA-256", "AES-GCM", "Zero Cloud Storage"],
-    status: "coming",
-    href: "#",
-    categoryLabel: "Dev Utilities",
+    id: "omnisaver-apk",
+    category: "mobile",
+    icon: Smartphone,
+    name: "OmniSaver Native Android APK",
+    desc: "Install the standalone Android application for automatic gallery indexing, multithreaded downloads, and background queues.",
+    tags: ["Android 8.0+", "ARM64", "Background Queue", "Gallery Sync"],
+    status: "live",
+    href: "/#download",
+    categoryLabel: "Mobile APK",
+    badge: "v1.0.2 Standalone",
   },
 ];
 
@@ -106,7 +112,7 @@ export default function ToolsSection() {
         <div style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 40px auto" }}>
           <div className="pill-badge" style={{ marginBottom: "16px" }}>
             <Sparkles size={14} />
-            <span>Categorized Tool Ecosystem</span>
+            <span>Complete Productivity Ecosystem</span>
           </div>
           <h2
             style={{
@@ -119,7 +125,7 @@ export default function ToolsSection() {
             Curated Tools for <span className="gradient-orange-text">creators & developers</span>
           </h2>
           <p style={{ color: "var(--text-muted)", fontSize: "16px", lineHeight: 1.6 }}>
-            Browse by category to find web utilities and native mobile applications. Zero paywalls, zero telemetry.
+            Every tool runs with maximum throughput and zero cloud tracking. Completely free, open, and unlimited.
           </p>
         </div>
 
@@ -160,91 +166,89 @@ export default function ToolsSection() {
           })}
         </div>
 
-        {/* Filtered Tools Grid */}
+        {/* 3D Bento Grid with Tilt Cards */}
         <motion.div
           layout
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 350px), 1fr))",
             gap: "24px",
           }}
         >
           <AnimatePresence>
             {filteredTools.map((tool) => {
               const Icon = tool.icon;
-              const isLive = tool.status === "live";
 
               return (
                 <motion.div
                   key={tool.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.96 }}
+                  initial={{ opacity: 0, scale: 0.94 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.25 }}
-                  whileHover={{ y: -3 }}
+                  exit={{ opacity: 0, scale: 0.94 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <Link
-                    href={tool.href}
-                    className="glass-card"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      height: "100%",
-                      textDecoration: "none",
-                      borderColor: isLive ? "rgba(255, 107, 0, 0.35)" : "var(--border-hairline)",
-                      background: isLive
-                        ? "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)"
-                        : "#FFFFFF",
-                    }}
-                  >
-                    {/* Card Header */}
-                    <div
+                  <TiltCard3D glowColor="rgba(255, 107, 0, 0.25)">
+                    <Link
+                      href={tool.href}
+                      className="glass-card preserve-3d"
                       style={{
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: "18px",
+                        flexDirection: "column",
+                        height: "100%",
+                        textDecoration: "none",
+                        color: "inherit",
+                        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
+                        boxShadow: "0 6px 24px rgba(15, 23, 42, 0.05), 0 0 20px rgba(255, 107, 0, 0.04)",
                       }}
                     >
+                      {/* Card Header (3D Elevated) */}
                       <div
+                        className="translate-z-20"
                         style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 12,
-                          background: isLive
-                            ? "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
-                            : "#F8FAFC",
-                          border: isLive ? "1px solid rgba(255, 107, 0, 0.3)" : "1px solid var(--border-hairline)",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          color: isLive ? "#FF6B00" : "var(--text-muted)",
+                          justifyContent: "space-between",
+                          marginBottom: "18px",
+                          transform: "translateZ(24px)",
                         }}
                       >
-                        <Icon size={22} strokeWidth={2.2} />
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span
+                        <div
                           style={{
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            color: "var(--text-subtle)",
-                            background: "#F1F5F9",
-                            padding: "3px 8px",
-                            borderRadius: "6px",
+                            width: 46,
+                            height: 46,
+                            borderRadius: 14,
+                            background: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+                            border: "1px solid rgba(255, 107, 0, 0.35)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#FF6B00",
+                            boxShadow: "0 4px 14px rgba(255, 107, 0, 0.25)",
                           }}
                         >
-                          {tool.categoryLabel}
-                        </span>
+                          <Icon size={23} strokeWidth={2.2} />
+                        </div>
 
-                        {isLive ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "var(--text-subtle)",
+                              background: "#F1F5F9",
+                              padding: "4px 9px",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            {tool.categoryLabel}
+                          </span>
+
                           <span
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "6px",
+                              gap: "5px",
                               padding: "4px 10px",
                               borderRadius: "999px",
                               background: "#DCFCE7",
@@ -264,84 +268,80 @@ export default function ToolsSection() {
                             />
                             Live
                           </span>
-                        ) : (
-                          <span
+
+                          <div
                             style={{
-                              padding: "4px 10px",
-                              borderRadius: "999px",
-                              background: "#F1F5F9",
-                              border: "1px solid var(--border-hairline)",
-                              color: "var(--text-subtle)",
-                              fontSize: "12px",
-                              fontWeight: 600,
+                              width: 30,
+                              height: 30,
+                              borderRadius: 8,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#FF6B00",
+                              background: "#FFF7ED",
+                              border: "1px solid rgba(255, 107, 0, 0.25)",
                             }}
                           >
-                            Soon
-                          </span>
-                        )}
-
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "var(--text-subtle)",
-                            background: "#F8FAFC",
-                            border: "1px solid var(--border-hairline)",
-                          }}
-                        >
-                          <ArrowUpRight size={14} />
+                            <ArrowUpRight size={15} />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Title & Description */}
-                    <h3
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: 700,
-                        marginBottom: "8px",
-                        color: "var(--text-title)",
-                      }}
-                    >
-                      {tool.name}
-                    </h3>
+                      {/* Title & Description (3D Lift) */}
+                      <div style={{ transform: "translateZ(18px)", flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                          <h3
+                            style={{
+                              fontSize: "18px",
+                              fontWeight: 700,
+                              color: "var(--text-title)",
+                            }}
+                          >
+                            {tool.name}
+                          </h3>
+                        </div>
 
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "var(--text-muted)",
-                        lineHeight: 1.6,
-                        marginBottom: "20px",
-                        flexGrow: 1,
-                      }}
-                    >
-                      {tool.desc}
-                    </p>
-
-                    {/* Pill Tags */}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      {tool.tags.map((tag, i) => (
-                        <span
-                          key={i}
+                        <p
                           style={{
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            background: "#F8FAFC",
-                            border: "1px solid var(--border-hairline)",
-                            fontSize: "12px",
-                            color: "var(--text-subtle)",
-                            fontWeight: 500,
+                            fontSize: "14px",
+                            color: "var(--text-muted)",
+                            lineHeight: 1.6,
+                            marginBottom: "20px",
+                            flexGrow: 1,
                           }}
                         >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </Link>
+                          {tool.desc}
+                        </p>
+                      </div>
+
+                      {/* Pill Tags (3D Layered) */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          transform: "translateZ(12px)",
+                        }}
+                      >
+                        {tool.tags.map((tag, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: "8px",
+                              background: "#F8FAFC",
+                              border: "1px solid var(--border-hairline)",
+                              fontSize: "12px",
+                              color: "var(--text-subtle)",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </Link>
+                  </TiltCard3D>
                 </motion.div>
               );
             })}
