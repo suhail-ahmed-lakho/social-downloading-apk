@@ -49,6 +49,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/downloads/:path*",
+        destination: "/api/download/apk",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

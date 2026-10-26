@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return NextResponse.json({
-        status: "fallback",
-        downloadUrl: `https://en.savefrom.net/#url=https://www.youtube.com/watch?v=${videoId}`,
-      });
+      return NextResponse.json(
+        { error: "Conversion server is momentarily busy. Please try again in a few seconds." },
+        { status: 503 }
+      );
     }
 
     if (action === "poll") {
@@ -156,7 +156,8 @@ export async function GET(req: NextRequest) {
             if (pollRes.ok) {
               const pollData = await pollRes.json();
               if (pollData.download_url && pollData.download_url.startsWith("http")) {
-                return NextResponse.redirect(pollData.download_url);
+                const proxyStreamUrl = `/api/video/stream?url=${encodeURIComponent(pollData.download_url)}&title=${encodeURIComponent(videoId)}&format=${targetFormat}`;
+                return NextResponse.redirect(new URL(proxyStreamUrl, req.url));
               }
             }
           } catch (_) {}
@@ -165,5 +166,5 @@ export async function GET(req: NextRequest) {
     }
   } catch (_) {}
 
-  return NextResponse.redirect(`https://en.savefrom.net/#url=https://www.youtube.com/watch?v=${videoId}`);
+  return NextResponse.json({ error: "Conversion busy, please retry in a few moments" }, { status: 504 });
 }

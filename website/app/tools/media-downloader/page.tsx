@@ -157,24 +157,27 @@ export default function VideoDownloaderTool() {
       const a = document.createElement("a");
       a.href = downloadUrl;
       a.download = filename;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } catch {
-      window.open(downloadUrl, "_blank");
+      window.location.assign(downloadUrl);
     }
   };
 
   const handleDownload = async (opt: QualityOption, index: number) => {
-    // 1. Direct URLs (TikTok, Instagram, Twitter, Facebook)
+    const rawTitle = videoInfo?.title || "OmniSaver_Video";
+    const fileExt = opt.type === "audio" ? "mp3" : "mp4";
+    const filename = `${rawTitle}.${fileExt}`;
+
+    // 1. Direct URLs (TikTok, Instagram, Twitter, Facebook) -> Stream through local proxy
     if (opt.directUrl) {
+      const proxyUrl = `/api/video/stream?url=${encodeURIComponent(opt.directUrl)}&title=${encodeURIComponent(rawTitle)}&format=${fileExt}`;
       setDownloadStates((prev) => ({
         ...prev,
-        [index]: { index, status: "ready", progressText: "Download Ready", downloadUrl: opt.directUrl },
+        [index]: { index, status: "ready", progressText: "Downloading...", downloadUrl: proxyUrl },
       }));
-      triggerBrowserDownload(opt.directUrl, `${videoInfo?.title || "video"}.${opt.type === "audio" ? "mp3" : "mp4"}`);
+      triggerBrowserDownload(proxyUrl, filename);
       return;
     }
 
@@ -186,8 +189,8 @@ export default function VideoDownloaderTool() {
         [index]: {
           index,
           status: "converting",
-          progressText: opt.type === "audio" ? "Converting to MP3 (10%)..." : "Processing HD Video (10%)...",
-          progressPercent: 10,
+          progressText: opt.type === "audio" ? "Converting to MP3 (15%)..." : "Processing HD Video (15%)...",
+          progressPercent: 15,
         },
       }));
 
@@ -205,19 +208,17 @@ export default function VideoDownloaderTool() {
         const initData = await initRes.json();
 
         if (initData.status === "done" && initData.downloadUrl) {
+          const proxyUrl = `/api/video/stream?url=${encodeURIComponent(initData.downloadUrl)}&title=${encodeURIComponent(rawTitle)}&format=${fileExt}`;
           setDownloadStates((prev) => ({
             ...prev,
             [index]: {
               index,
               status: "ready",
               progressText: "Download Ready!",
-              downloadUrl: initData.downloadUrl,
+              downloadUrl: proxyUrl,
             },
           }));
-          triggerBrowserDownload(
-            initData.downloadUrl,
-            `${videoInfo.title}.${opt.type === "audio" ? "mp3" : "mp4"}`
-          );
+          triggerBrowserDownload(proxyUrl, filename);
           return;
         }
 
@@ -245,7 +246,7 @@ export default function VideoDownloaderTool() {
                 break;
               }
 
-              const currentPct = pollData.progress || Math.min(90, 15 + poll * 5);
+              const currentPct = pollData.progress || Math.min(92, 20 + poll * 5);
               setDownloadStates((prev) => ({
                 ...prev,
                 [index]: {
@@ -259,46 +260,42 @@ export default function VideoDownloaderTool() {
           }
 
           if (downloadReadyUrl) {
+            const proxyUrl = `/api/video/stream?url=${encodeURIComponent(downloadReadyUrl)}&title=${encodeURIComponent(rawTitle)}&format=${fileExt}`;
             setDownloadStates((prev) => ({
               ...prev,
               [index]: {
                 index,
                 status: "ready",
                 progressText: "Download Ready!",
-                downloadUrl: downloadReadyUrl,
+                downloadUrl: proxyUrl,
               },
             }));
-            triggerBrowserDownload(
-              downloadReadyUrl,
-              `${videoInfo.title}.${opt.type === "audio" ? "mp3" : "mp4"}`
-            );
+            triggerBrowserDownload(proxyUrl, filename);
             return;
           }
         }
 
-        const fallback = `https://en.savefrom.net/#url=https://www.youtube.com/watch?v=${videoInfo.videoId}`;
+        // Clean error state instead of redirecting to third-party website
         setDownloadStates((prev) => ({
           ...prev,
           [index]: {
             index,
-            status: "ready",
-            progressText: "Click to Download",
-            downloadUrl: fallback,
+            status: "error",
+            progressText: "Stream Busy · Retry",
           },
         }));
-        triggerBrowserDownload(fallback, "video");
+        setError("Converter server is busy right now. Please click Download again.");
       } catch (err: unknown) {
         console.error(err);
-        const fallback = `https://en.savefrom.net/#url=https://www.youtube.com/watch?v=${videoInfo.videoId}`;
         setDownloadStates((prev) => ({
           ...prev,
           [index]: {
             index,
-            status: "ready",
-            progressText: "Click to Download",
-            downloadUrl: fallback,
+            status: "error",
+            progressText: "Failed · Retry",
           },
         }));
+        setError("Download connection timed out. Please try again.");
       }
     }
   };
