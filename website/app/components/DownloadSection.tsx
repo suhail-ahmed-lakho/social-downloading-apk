@@ -7,6 +7,10 @@ import TiltCard3D from "./TiltCard3D";
 
 export default function DownloadSection() {
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [apkDetails, setApkDetails] = useState<{ size: string; bytes: number }>({
+    size: "70.8 MB",
+    bytes: 74262740,
+  });
 
   useEffect(() => {
     // Generate QR code pointing to the APK download endpoint
@@ -20,6 +24,19 @@ export default function DownloadSection() {
     })
       .then((url) => setQrDataUrl(url))
       .catch((err) => console.error("QR Error:", err));
+
+    // Fetch dynamic APK file details directly from server
+    fetch("/api/version")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.fileSize) {
+          setApkDetails({
+            size: data.fileSize,
+            bytes: data.fileSizeBytes || 74262740,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -138,7 +155,7 @@ export default function DownloadSection() {
                   }}
                 >
                   <ShieldCheck size={16} style={{ color: "#16A34A" }} />
-                  <span>Google Play Protect Safe · 15.4 MB</span>
+                  <span>Google Play Protect Safe · {apkDetails.size}</span>
                 </div>
               </div>
             </div>
@@ -210,7 +227,7 @@ export default function DownloadSection() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px solid var(--border-hairline)", paddingTop: 14 }}>
                   {[
                     { label: "Target Version", val: "v1.0.3 (Stable)" },
-                    { label: "Exact Size", val: "15.4 MB (16,148,070 B)" },
+                    { label: "Exact Size", val: `${apkDetails.size} (${apkDetails.bytes.toLocaleString()} B)` },
                     { label: "Minimum SDK", val: "Android 8.0+ (API 26)" },
                     { label: "Architecture", val: "arm64-v8a / v7a" },
                     { label: "Signature", val: "SHA-256 Verified" },

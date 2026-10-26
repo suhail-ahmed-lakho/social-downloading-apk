@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
@@ -41,6 +41,16 @@ const itemVariants: Variants = {
 export default function HeroSection() {
   const router = useRouter();
   const [heroUrl, setHeroUrl] = useState("");
+  const [apkSize, setApkSize] = useState("70.8 MB");
+
+  useEffect(() => {
+    fetch("/api/version")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.fileSize) setApkSize(data.fileSize);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,7 +281,7 @@ export default function HeroSection() {
 
               <a href="#download" className="btn-secondary" style={{ padding: "13px 22px", fontSize: "14px" }}>
                 <Download size={16} strokeWidth={2.2} />
-                <span>Download Android APK (15.4 MB)</span>
+                <span>Download Android APK ({apkSize})</span>
               </a>
             </motion.div>
 

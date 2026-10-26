@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/icon.png",
+        url: "https://looknow.cyou/icon.png",
         width: 1200,
         height: 630,
         alt: "OmniSaver Pro 4K Media Downloader",
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     description:
       "Save TikTok videos without watermark, YouTube 4K, Instagram Reels, Twitter/X videos, and MP3 audio free.",
     images: [
-      "https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/icon.png",
+      "https://looknow.cyou/icon.png",
     ],
     creator: "@OmniSaver",
   },
@@ -84,9 +84,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/favicon.png",
-    shortcut: "https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/favicon.png",
-    apple: "https://raw.githubusercontent.com/suhail-ahmed-lakho/social-downloading-apk/master/assets/icon.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/icon.png",
   },
   category: "technology",
 };

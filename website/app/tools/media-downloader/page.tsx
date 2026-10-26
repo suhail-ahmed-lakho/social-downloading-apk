@@ -88,7 +88,16 @@ export default function VideoDownloaderTool() {
 
   const detected = detectPlatformClient(url);
 
+  const [apkSize, setApkSize] = useState("70.8 MB");
+
   useEffect(() => {
+    fetch("/api/version")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.fileSize) setApkSize(data.fileSize);
+      })
+      .catch(() => {});
+
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const qUrl = params.get("url");
@@ -874,7 +883,7 @@ export default function VideoDownloaderTool() {
               }}
             >
               <Download size={16} />
-              <span>Download APK (15.4 MB)</span>
+              <span>Download APK ({apkSize})</span>
             </a>
           </div>
         </TiltCard3D>

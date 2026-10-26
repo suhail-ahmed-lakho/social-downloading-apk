@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large APK binaries (keep directory via .gitkeep)
+public/downloads/*.apk
+!public/downloads/.gitkeep

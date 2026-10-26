@@ -136,7 +136,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             >
               <Ionicons name="cloud-download-outline" size={18} color="#FFFFFF" />
               <Text style={styles.downloadBtnText}>
-                Update Now ({updateInfo.fileSize || '15.4 MB'})
+                Update Now ({updateInfo.fileSize || '70.8 MB'})
               </Text>
             </TouchableOpacity>
 
