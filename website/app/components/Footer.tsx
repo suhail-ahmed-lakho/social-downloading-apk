@@ -123,7 +123,7 @@ export default function Footer() {
                 Text, JSON & Crypt Engine
               </Link>
               <Link href="/#download" style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
-                Android APK Installer (v1.0.3)
+                Android APK Installer (Latest)
               </Link>
             </div>
           </div>

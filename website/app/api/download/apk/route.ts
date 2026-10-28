@@ -15,7 +15,7 @@ export async function GET() {
         return new NextResponse(fileBuffer, {
           headers: {
             "Content-Type": "application/vnd.android.package-archive",
-            "Content-Disposition": 'attachment; filename="OmniSaver-v1.0.3.apk"',
+            "Content-Disposition": 'attachment; filename="OmniSaver-latest.apk"',
             "Content-Length": fileBuffer.length.toString(),
             "Cache-Control": "public, max-age=86400, s-maxage=86400",
           },
@@ -26,12 +26,47 @@ export async function GET() {
     }
   }
 
-  // 2. If running on serverless (Cloudflare / Vercel) where 70MB file is not in git:
-  // Fetch stream from official release asset and pipe directly to user as an attachment
-  const upstreamUrl =
-    process.env.APK_DOWNLOAD_MIRROR ||
-    "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/download/v1.0.2/OmniSaver-v1.0.2.apk";
+  // 2. Dynamically resolve upstream URL from latest GitHub Release
+  let upstreamUrl = process.env.APK_DOWNLOAD_MIRROR;
+  let filename = "OmniSaver-latest.apk";
 
+  if (!upstreamUrl) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+
+      const ghRes = await fetch(
+        "https://api.github.com/repos/suhail-ahmed-lakho/social-downloading-apk/releases/latest",
+        {
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "LookNow-Downloader",
+            Accept: "application/vnd.github.v3+json",
+            ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+          },
+        }
+      );
+      clearTimeout(timer);
+
+      if (ghRes.ok) {
+        const ghData = await ghRes.json();
+        const apkAsset = ghData.assets?.find((a: any) => typeof a.name === "string" && a.name.endsWith(".apk"));
+        if (apkAsset?.browser_download_url) {
+          upstreamUrl = apkAsset.browser_download_url;
+          filename = apkAsset.name;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not query GitHub releases API for APK URL, using direct latest download fallback:", err);
+    }
+  }
+
+  // Fallback to GitHub's perpetual latest release asset URL
+  if (!upstreamUrl) {
+    upstreamUrl = "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest/download/OmniSaver-latest.apk";
+  }
+
+  // 3. Stream upstream APK to client as direct download
   try {
     const upstreamRes = await fetch(upstreamUrl, {
       headers: {
@@ -43,20 +78,21 @@ export async function GET() {
     });
 
     if (upstreamRes.ok && upstreamRes.body) {
-      const contentLength = upstreamRes.headers.get("content-length") || "74262740";
-      return new Response(upstreamRes.body as any, {
-        headers: {
-          "Content-Type": "application/vnd.android.package-archive",
-          "Content-Disposition": 'attachment; filename="OmniSaver-v1.0.3.apk"',
-          "Content-Length": contentLength,
-          "Cache-Control": "public, max-age=86400, s-maxage=86400",
-        },
-      });
+      const contentLength = upstreamRes.headers.get("content-length");
+      const headers: Record<string, string> = {
+        "Content-Type": "application/vnd.android.package-archive",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      };
+      if (contentLength) {
+        headers["Content-Length"] = contentLength;
+      }
+      return new Response(upstreamRes.body as any, { headers });
     }
   } catch (err) {
-    console.error("Error streaming APK from upstream:", err);
+    console.error("Error streaming APK from upstream, falling back to redirect:", err);
   }
 
-  // 3. Fallback redirect if streaming fails
+  // 4. Redirect fallback if streaming encountered issues
   return NextResponse.redirect(upstreamUrl, 302);
 }

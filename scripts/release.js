@@ -53,20 +53,31 @@ const vCode = (parts[0] * 10000) + (parts[1] * 100) + parts[2];
 const versionManifest = {
   version: newVersion,
   versionCode: vCode,
-  releaseTitle: `OmniSaver v${newVersion} - Lakho's Team Release`,
+  releaseTitle: `OmniSaver v${newVersion} - Lakho's Team Official Release`,
   releaseDate: today,
+  fileSize: '70.8 MB',
+  fileSizeBytes: 74262740,
   mandatory: false,
-  downloadUrl: 'https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest',
-    changelog: [
-      `OmniSaver v${newVersion} - by Lakho's team`,
-      'Added full Ultra HD 4K (2160p) and 2K (1440p) video quality options',
-      'Accurate real-time MB file size calculation based on streaming metadata',
-      'Lossless MP3 audio (320kbps) & HD video extractor optimizations',
-      'Launched Next.js web application (LookNow) with interactive 3D WebGL hero & tool suite'
-    ]
+  downloadUrl: 'https://looknow.cyou/api/download/apk',
+  changelog: [
+    `OmniSaver v${newVersion} - by Lakho's team`,
+    'Streaming downloads directly via local proxy (no 404s or broken redirects)',
+    'Synchronized exact 70.8 MB release APK size across app & website',
+    'Full Ultra HD 4K (2160p) and 2K (1440p) video quality extraction',
+    'Lossless MP3 audio (320kbps) & HD video extractor optimizations',
+    'Vibrant LookNow theme and modern holographic launch animation',
+    'Autonomous self-hosted update delivery channel'
+  ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');
 console.log(`✅ Updated version.json: v${newVersion}`);
+
+// 5b. Update website/public/version.json
+const websiteVersionPath = path.join(__dirname, '..', 'website', 'public', 'version.json');
+if (fs.existsSync(path.dirname(websiteVersionPath))) {
+  fs.writeFileSync(websiteVersionPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');
+  console.log(`✅ Updated website/public/version.json: v${newVersion}`);
+}
 
 // 6. Update src/config/updateConfig.ts
 const configPath = path.join(__dirname, '..', 'src', 'config', 'updateConfig.ts');

@@ -7,7 +7,8 @@ import TiltCard3D from "./TiltCard3D";
 
 export default function DownloadSection() {
   const [qrDataUrl, setQrDataUrl] = useState("");
-  const [apkDetails, setApkDetails] = useState<{ size: string; bytes: number }>({
+  const [apkDetails, setApkDetails] = useState<{ version: string; size: string; bytes: number }>({
+    version: "1.0.4",
     size: "70.8 MB",
     bytes: 74262740,
   });
@@ -29,9 +30,10 @@ export default function DownloadSection() {
     fetch("/api/version")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.fileSize) {
+        if (data?.fileSize || data?.version) {
           setApkDetails({
-            size: data.fileSize,
+            version: data.version || "1.0.4",
+            size: data.fileSize || "70.8 MB",
             bytes: data.fileSizeBytes || 74262740,
           });
         }
@@ -65,7 +67,7 @@ export default function DownloadSection() {
             <div>
               <div className="pill-badge" style={{ marginBottom: "20px" }}>
                 <Smartphone size={14} />
-                <span>Native Android Application · v1.0.3</span>
+                <span>Native Android Application · v{apkDetails.version}</span>
               </div>
 
               <h2
@@ -141,7 +143,7 @@ export default function DownloadSection() {
                   style={{ padding: "14px 28px", fontSize: "15px" }}
                 >
                   <Download size={16} strokeWidth={2.5} />
-                  <span>Download APK (v1.0.3)</span>
+                  <span>Download APK (v{apkDetails.version})</span>
                 </a>
 
                 <div
@@ -226,7 +228,7 @@ export default function DownloadSection() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px solid var(--border-hairline)", paddingTop: 14 }}>
                   {[
-                    { label: "Target Version", val: "v1.0.3 (Stable)" },
+                    { label: "Target Version", val: `v${apkDetails.version} (Stable)` },
                     { label: "Exact Size", val: `${apkDetails.size} (${apkDetails.bytes.toLocaleString()} B)` },
                     { label: "Minimum SDK", val: "Android 8.0+ (API 26)" },
                     { label: "Architecture", val: "arm64-v8a / v7a" },

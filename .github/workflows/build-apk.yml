@@ -45,6 +45,7 @@ jobs:
         run: |
           mkdir -p build-output
           cp android/app/build/outputs/apk/release/app-release.apk build-output/OmniSaver-${{ github.ref_name }}.apk
+          cp android/app/build/outputs/apk/release/app-release.apk build-output/OmniSaver-latest.apk
 
       - name: 📤 Publish Release and Attach APK
         uses: softprops/action-gh-release@v2
