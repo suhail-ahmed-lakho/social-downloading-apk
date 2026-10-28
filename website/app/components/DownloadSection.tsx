@@ -42,14 +42,14 @@ export default function DownloadSection() {
   }, []);
 
   return (
-    <section id="download" style={{ padding: "80px 0 100px 0" }}>
+    <section id="download" style={{ padding: "80px 0" }}>
       <div className="container">
         <div
           className="glass-card"
           style={{
             background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
-            border: "1.5px solid rgba(255, 107, 0, 0.25)",
-            padding: "48px 40px",
+            border: "1px solid rgba(255, 107, 0, 0.3)",
+            padding: "40px",
             boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08), 0 0 40px rgba(255, 107, 0, 0.08)",
             borderRadius: 24,
           }}
@@ -65,16 +65,16 @@ export default function DownloadSection() {
           >
             {/* Left Content */}
             <div>
-              <div className="pill-badge" style={{ marginBottom: "20px" }}>
+              <div className="pill-badge" style={{ marginBottom: "14px" }}>
                 <Smartphone size={14} />
                 <span>Native Android Application · v{apkDetails.version}</span>
               </div>
 
               <h2
                 style={{
-                  fontSize: "clamp(28px, 3.5vw, 44px)",
+                  fontSize: "clamp(28px, 3.4vw, 42px)",
                   fontWeight: 800,
-                  marginBottom: "16px",
+                  marginBottom: "14px",
                   lineHeight: 1.15,
                   color: "var(--text-title)",
                 }}

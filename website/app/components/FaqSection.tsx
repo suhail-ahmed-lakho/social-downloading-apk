@@ -53,22 +53,15 @@ export default function FaqSection() {
     <section id="faq" style={{ padding: "80px 0" }}>
       <div className="container" style={{ maxWidth: 840 }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 44 }}>
-          <div className="pill-badge" style={{ marginBottom: 14 }}>
+        <div className="section-header">
+          <div className="pill-badge">
             <HelpCircle size={14} />
             <span>Got Questions?</span>
           </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 42px)",
-              fontWeight: 800,
-              marginBottom: 14,
-              color: "var(--text-title)",
-            }}
-          >
+          <h2>
             Frequently Asked <span className="gradient-orange-text">Questions</span>
           </h2>
-          <p style={{ color: "var(--text-muted)", fontSize: 16, lineHeight: 1.6 }}>
+          <p>
             Everything you need to know about LookNow tools, stream extraction, and the native Android APK.
           </p>
         </div>
@@ -82,8 +75,8 @@ export default function FaqSection() {
               <div
                 key={idx}
                 style={{
-                  background: isOpen ? "#FFFFFF" : "rgba(255, 255, 255, 0.7)",
-                  border: isOpen ? "1.5px solid rgba(255, 107, 0, 0.35)" : "1px solid var(--border-hairline)",
+                  background: isOpen ? "#FFFFFF" : "rgba(255, 255, 255, 0.8)",
+                  border: isOpen ? "1px solid rgba(255, 107, 0, 0.4)" : "1px solid var(--border-hairline)",
                   borderRadius: 16,
                   overflow: "hidden",
                   boxShadow: isOpen ? "0 8px 24px rgba(255, 107, 0, 0.08)" : "0 2px 6px rgba(15, 23, 42, 0.02)",

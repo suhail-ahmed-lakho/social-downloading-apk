@@ -286,9 +286,36 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Dividers ─── */
 .section-divider {
   width: 100%;
+  max-width: 1200px;
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(15, 23, 42, 0.08) 50%, transparent 100%);
-  margin: 64px 0;
+  margin: 0 auto;
+}
+
+/* ─── Standardized Section Header System ─── */
+.section-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 48px auto;
+}
+
+.section-header .pill-badge {
+  margin-bottom: 14px;
+}
+
+.section-header h2 {
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  color: var(--text-title);
+}
+
+.section-header p {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
 /* ─── Navigation ─── */

@@ -22,15 +22,15 @@ export default function PlatformsSection() {
     <section id="platforms" style={{ padding: "80px 0" }}>
       <div className="container">
         {/* Header */}
-        <div style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto 48px auto" }}>
-          <div className="pill-badge" style={{ marginBottom: "16px" }}>
+        <div className="section-header">
+          <div className="pill-badge">
             <Globe size={13} />
             <span>Universal Compatibility</span>
           </div>
-          <h2 style={{ fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 800, marginBottom: "14px", color: "var(--text-title)" }}>
-            Supported Networks
+          <h2>
+            Supported <span className="gradient-orange-text">Networks & CDNs</span>
           </h2>
-          <p style={{ color: "var(--text-muted)", fontSize: "15px", lineHeight: 1.6 }}>
+          <p>
             Direct URL resolution supported across major video and audio distribution networks.
           </p>
         </div>

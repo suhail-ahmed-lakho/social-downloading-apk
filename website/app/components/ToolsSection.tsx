@@ -109,22 +109,15 @@ export default function ToolsSection() {
     <section id="tools" style={{ padding: "80px 0" }}>
       <div className="container">
         {/* Section Header */}
-        <div style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 40px auto" }}>
-          <div className="pill-badge" style={{ marginBottom: "16px" }}>
+        <div className="section-header">
+          <div className="pill-badge">
             <Sparkles size={14} />
-            <span>Complete Productivity Ecosystem</span>
+            <span>Productivity Ecosystem</span>
           </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 42px)",
-              fontWeight: 800,
-              marginBottom: "16px",
-              color: "var(--text-title)",
-            }}
-          >
+          <h2>
             Curated Tools for <span className="gradient-orange-text">creators & developers</span>
           </h2>
-          <p style={{ color: "var(--text-muted)", fontSize: "16px", lineHeight: 1.6 }}>
+          <p>
             Every tool runs with maximum throughput and zero cloud tracking. Completely free, open, and unlimited.
           </p>
         </div>

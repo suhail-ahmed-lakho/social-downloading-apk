@@ -21,6 +21,7 @@ import {
   Sliders,
 } from "lucide-react";
 import UserProfileModal from "./UserProfileModal";
+import BrandLogo from "./BrandLogo";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -176,23 +177,7 @@ export default function Navbar() {
             flexShrink: 0,
           }}
         >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 11,
-              background: "linear-gradient(135deg, #FF6B00 0%, #EA580C 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#FFFFFF",
-              boxShadow: "0 4px 14px rgba(255, 107, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)",
-              position: "relative",
-              flexShrink: 0,
-            }}
-          >
-            <Sparkles size={18} strokeWidth={2.4} />
-          </div>
+          <BrandLogo size={36} />
 
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>

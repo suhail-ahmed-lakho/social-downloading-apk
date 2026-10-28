@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Sparkles, ArrowUpRight, Shield, Heart } from "lucide-react";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
   return (
@@ -34,21 +35,7 @@ export default function Footer() {
                 color: "var(--text-title)",
               }}
             >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg, #FF6B00 0%, #EA580C 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFFFFF",
-                  boxShadow: "0 2px 8px rgba(255, 107, 0, 0.3)",
-                }}
-              >
-                <Sparkles size={16} />
-              </div>
+              <BrandLogo size={32} />
               <span
                 style={{
                   fontFamily: "var(--font-heading)",

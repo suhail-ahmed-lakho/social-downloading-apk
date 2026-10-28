@@ -42,14 +42,15 @@ export default function FeaturesSection() {
     <section id="features" style={{ padding: "80px 0" }}>
       <div className="container">
         {/* Header */}
-        <div style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto 56px auto" }}>
-          <div className="pill-badge" style={{ marginBottom: "16px" }}>
+        <div className="section-header">
+          <div className="pill-badge">
+            <Sparkles size={14} />
             <span>Architectural Standards</span>
           </div>
-          <h2 style={{ fontSize: "clamp(28px, 3.5vw, 42px)", fontWeight: 800, marginBottom: "16px", color: "var(--text-title)" }}>
+          <h2>
             Built with <span className="gradient-orange-text">obsessive precision</span>
           </h2>
-          <p style={{ color: "var(--text-muted)", fontSize: "16px", lineHeight: 1.6 }}>
+          <p>
             Every interaction has been refined to eliminate friction and maximize download throughput.
           </p>
         </div>
