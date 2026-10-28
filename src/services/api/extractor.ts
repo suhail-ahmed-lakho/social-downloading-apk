@@ -39,88 +39,123 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 }
 
 // ==========================================
-// 1. TIKTOK EXTRACTOR (TikWM - No Watermark)
+// 1. TIKTOK EXTRACTOR (TikWM + TikMate Fallback)
 // ==========================================
 async function extractTikTok(url: string): Promise<MediaMetadata> {
-  const endpoint = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
-  const response = await fetchWithTimeout(endpoint, {
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept': 'application/json',
-    },
-  }, 7000);
+  // Tier 1: TikWM (No Watermark HD)
+  try {
+    const endpoint = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
+    const response = await fetchWithTimeout(endpoint, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+    }, 7000);
 
-  const resJson = await response.json();
+    const resJson = await response.json();
 
-  if (resJson && resJson.code === 0 && resJson.data) {
-    const data = resJson.data;
-    const playUrl = data.hdplay || data.play;
-    const sdUrl = data.play;
+    if (resJson && resJson.code === 0 && resJson.data) {
+      const data = resJson.data;
+      const playUrl = data.hdplay || data.play;
+      const sdUrl = data.play;
 
-    const qualityOptions: QualityOption[] = [];
+      const qualityOptions: QualityOption[] = [];
 
-    if (data.hdplay) {
-      qualityOptions.push({
-        label: 'HD (No Watermark)',
-        url: data.hdplay.startsWith('http') ? data.hdplay : `https://www.tikwm.com${data.hdplay}`,
-        type: 'video',
-        quality: '1080p HD',
-      });
+      if (data.hdplay) {
+        qualityOptions.push({
+          label: 'HD (No Watermark)',
+          url: data.hdplay.startsWith('http') ? data.hdplay : `https://www.tikwm.com${data.hdplay}`,
+          type: 'video',
+          quality: '1080p HD',
+        });
+      }
+
+      if (sdUrl) {
+        qualityOptions.push({
+          label: 'Standard (No Watermark)',
+          url: sdUrl.startsWith('http') ? sdUrl : `https://www.tikwm.com${sdUrl}`,
+          type: 'video',
+          quality: '720p SD',
+        });
+      }
+
+      if (data.music) {
+        qualityOptions.push({
+          label: 'Audio Song (MP3)',
+          url: data.music.startsWith('http') ? data.music : `https://www.tikwm.com${data.music}`,
+          type: 'audio',
+          quality: '128kbps',
+        });
+      }
+
+      if (qualityOptions.length > 0) {
+        return {
+          id: data.id || String(Date.now()),
+          platform: 'tiktok',
+          title: data.title || 'TikTok Video (No Watermark)',
+          author: data.author?.nickname || data.author?.unique_id || 'TikTok Creator',
+          authorAvatar: data.author?.avatar,
+          thumbnail: data.cover || data.origin_cover || '',
+          duration: data.duration,
+          videoUrl: qualityOptions[0]?.url || playUrl,
+          hdVideoUrl: data.hdplay ? (data.hdplay.startsWith('http') ? data.hdplay : `https://www.tikwm.com${data.hdplay}`) : undefined,
+          audioUrl: data.music,
+          originalUrl: url,
+          qualityOptions,
+        };
+      }
     }
+  } catch (_) {}
 
-    if (sdUrl) {
-      qualityOptions.push({
-        label: 'Standard (No Watermark)',
-        url: sdUrl.startsWith('http') ? sdUrl : `https://www.tikwm.com${sdUrl}`,
-        type: 'video',
-        quality: '720p SD',
-      });
+  // Tier 2: TikMate Fallback
+  try {
+    const tmRes = await fetchWithTimeout('https://api.tikmate.app/api/lookup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      },
+      body: `url=${encodeURIComponent(url)}`,
+    }, 7000);
+
+    if (tmRes.ok) {
+      const tmData = await tmRes.json();
+      if (tmData && tmData.token && tmData.id) {
+        return {
+          id: tmData.id,
+          platform: 'tiktok',
+          title: tmData.desc || 'TikTok Video (No Watermark)',
+          author: tmData.author_name || 'TikTok Creator',
+          thumbnail: tmData.cover || '',
+          duration: 0,
+          videoUrl: `https://tikmate.app/download/${tmData.token}/${tmData.id}.mp4?hd=1`,
+          originalUrl: url,
+          qualityOptions: [
+            {
+              label: 'HD Video (No Watermark)',
+              url: `https://tikmate.app/download/${tmData.token}/${tmData.id}.mp4?hd=1`,
+              type: 'video',
+              quality: '1080p HD',
+            },
+            {
+              label: 'Standard Video (No Watermark)',
+              url: `https://tikmate.app/download/${tmData.token}/${tmData.id}.mp4`,
+              type: 'video',
+              quality: '720p SD',
+            },
+          ],
+        };
+      }
     }
-
-    if (data.music) {
-      qualityOptions.push({
-        label: 'Audio Song (MP3)',
-        url: data.music.startsWith('http') ? data.music : `https://www.tikwm.com${data.music}`,
-        type: 'audio',
-        quality: '128kbps',
-      });
-    }
-
-    return {
-      id: data.id || String(Date.now()),
-      platform: 'tiktok',
-      title: data.title || 'TikTok Video (No Watermark)',
-      author: data.author?.nickname || data.author?.unique_id || 'TikTok Creator',
-      authorAvatar: data.author?.avatar,
-      thumbnail: data.cover || data.origin_cover || '',
-      duration: data.duration,
-      videoUrl: qualityOptions[0]?.url || playUrl,
-      hdVideoUrl: data.hdplay ? (data.hdplay.startsWith('http') ? data.hdplay : `https://www.tikwm.com${data.hdplay}`) : undefined,
-      audioUrl: data.music,
-      originalUrl: url,
-      qualityOptions,
-    };
-  }
+  } catch (_) {}
 
   throw new Error('Could not download TikTok video. Please ensure the link is active.');
 }
 
 // ==========================================
-// 2. YOUTUBE EXTRACTOR (Fast Verified Mirrors + Fallbacks + HQ Song MP3)
+// 2. YOUTUBE EXTRACTOR (Direct Server-Side Cloud Conversion & Streams)
 // ==========================================
-const PIPED_MIRRORS = [
-  'https://api.piped.private.coffee',
-  'https://pipedapi.ducks.party',
-  'https://pipedapi.kavin.rocks',
-];
-
-const INVIDIOUS_MIRRORS = [
-  'https://invidious.f5.si',
-  'https://inv.tux.pizza',
-  'https://vid.puffyan.us',
-];
-
 async function extractYouTube(url: string): Promise<MediaMetadata> {
   const ytId = extractYouTubeId(url);
   if (!ytId) {
@@ -130,7 +165,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
   let isUnavailable = false;
   let oEmbedMeta: { title?: string; author?: string; thumbnail?: string } | null = null;
 
-  // 1. Fast YouTube oEmbed metadata resolution (Guaranteed for all active videos & songs)
+  // 1. Fast YouTube oEmbed metadata resolution
   try {
     const oRes = await fetchWithTimeout(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`,
@@ -157,174 +192,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     throw new Error('This YouTube video or song is unavailable, private, or has been removed.');
   }
 
-  // 2. Try fast Piped mirrors (works great for shorts and standard videos)
-  for (const mirror of PIPED_MIRRORS) {
-    try {
-      const response = await fetchWithTimeout(`${mirror}/streams/${ytId}`, {}, 3000);
-      if (!response.ok) {
-        continue;
-      }
-
-      const data = await response.json();
-      if (!data) continue;
-
-      const qualityOptions: QualityOption[] = [];
-
-      // Playable Video streams (MP4)
-      if (data.videoStreams && Array.isArray(data.videoStreams)) {
-        const mp4Streams = data.videoStreams.filter(
-          (s: any) => s.url && (s.format === 'MPEG_4' || s.format === 'MP4' || s.mimeType?.includes('video/mp4'))
-        );
-
-        const listToUse = mp4Streams.length > 0 ? mp4Streams : data.videoStreams;
-
-        for (const s of listToUse.slice(0, 4)) {
-          qualityOptions.push({
-            label: `${s.quality || 'Video'} (${s.format || 'MP4'})`,
-            url: s.url,
-            type: 'video',
-            quality: s.quality || 'HD',
-          });
-        }
-      }
-
-      // Dedicated Audio / Song streams (MP3/M4A)
-      if (data.audioStreams && Array.isArray(data.audioStreams) && data.audioStreams.length > 0) {
-        const sortedAudio = [...data.audioStreams].sort(
-          (a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0)
-        );
-
-        const bestAudio = sortedAudio[0];
-        qualityOptions.push({
-          label: `Song / MP3 (${bestAudio.quality || 'HQ Audio 320kbps'})`,
-          url: bestAudio.url,
-          type: 'audio',
-          quality: 'HQ Audio',
-        });
-
-        if (sortedAudio.length > 1 && sortedAudio[1].url !== bestAudio.url) {
-          qualityOptions.push({
-            label: `Audio Stream (${sortedAudio[1].quality || '128kbps'})`,
-            url: sortedAudio[1].url,
-            type: 'audio',
-            quality: 'Standard Audio',
-          });
-        }
-      }
-
-      if (qualityOptions.length > 0) {
-        return {
-          id: ytId,
-          platform: 'youtube',
-          title: data.title || oEmbedMeta?.title || 'YouTube Video / Song',
-          author: data.uploader || oEmbedMeta?.author || 'YouTube Artist',
-          authorAvatar: data.uploaderAvatar,
-          thumbnail: data.thumbnailUrl || oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-          duration: data.duration,
-          videoUrl: qualityOptions[0].url,
-          originalUrl: url,
-          qualityOptions,
-        };
-      }
-    } catch (_) {}
-  }
-
-  // 3. Try Invidious mirrors
-  for (const invMirror of INVIDIOUS_MIRRORS) {
-    try {
-      const invRes = await fetchWithTimeout(`${invMirror}/api/v1/videos/${ytId}`, {}, 3000);
-      if (invRes.ok) {
-        const invData = await invRes.json();
-        const qualityOptions: QualityOption[] = [];
-
-        // Combined streams
-        if (invData.formatStreams && Array.isArray(invData.formatStreams)) {
-          for (const s of invData.formatStreams) {
-            if (s.url) {
-              qualityOptions.push({
-                label: `${s.quality || 'Video'} (${s.container?.toUpperCase() || 'MP4'})`,
-                url: s.url,
-                type: 'video',
-                quality: s.quality || 'HD',
-              });
-            }
-          }
-        }
-
-        // Adaptive formats (Shorts & Audio)
-        if (invData.adaptiveFormats && Array.isArray(invData.adaptiveFormats)) {
-          const videoFormats = invData.adaptiveFormats.filter(
-            (f: any) =>
-              f.url &&
-              f.type &&
-              f.type.startsWith('video/') &&
-              (f.container === 'mp4' || f.type.includes('video/mp4'))
-          );
-
-          videoFormats.sort((a: any, b: any) => {
-            const resA = parseInt(a.resolution || a.qualityLabel || '0', 10);
-            const resB = parseInt(b.resolution || b.qualityLabel || '0', 10);
-            return resB - resA;
-          });
-
-          const seenRes = new Set<string>();
-          for (const v of videoFormats) {
-            const resStr = v.qualityLabel || v.resolution || 'Video';
-            if (!seenRes.has(resStr)) {
-              seenRes.add(resStr);
-              qualityOptions.push({
-                label: `${resStr} HD Video (MP4)`,
-                url: v.url,
-                type: 'video',
-                quality: resStr,
-              });
-            }
-            if (seenRes.size >= 3) break;
-          }
-
-          // Audio Song Stream
-          const audios = invData.adaptiveFormats.filter(
-            (f: any) => f.url && f.type && (f.type.startsWith('audio/') || f.container === 'm4a')
-          );
-          if (audios.length > 0) {
-            qualityOptions.push({
-              label: 'Song / MP3 (HQ Audio)',
-              url: audios[0].url,
-              type: 'audio',
-              quality: 'HQ Audio',
-            });
-            if (audios.length > 1) {
-              qualityOptions.push({
-                label: 'Audio Stream (Standard)',
-                url: audios[1].url,
-                type: 'audio',
-                quality: 'Standard Audio',
-              });
-            }
-          }
-        }
-
-        if (qualityOptions.length > 0) {
-          const primaryVideo = qualityOptions.find((o) => o.type === 'video');
-          return {
-            id: ytId,
-            platform: 'youtube',
-            title: invData.title || oEmbedMeta?.title || 'YouTube Video / Song',
-            author: invData.author || oEmbedMeta?.author || 'YouTube Artist',
-            authorAvatar: invData.authorThumbnails?.[0]?.url,
-            thumbnail: oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-            duration: invData.lengthSeconds,
-            videoUrl: primaryVideo ? primaryVideo.url : qualityOptions[0].url,
-            originalUrl: url,
-            qualityOptions,
-          };
-        }
-      }
-    } catch (_) {}
-  }
-
-  // 4. Bulletproof Fallback for YouTube Videos & Songs
-  // Extracts exact duration, streaming player info, and real MB sizes
+  // 2. Fetch YouTube watch page for exact player stream data and real sizes
   let finalTitle = oEmbedMeta?.title || 'YouTube Song / Video';
   let finalAuthor = oEmbedMeta?.author || 'YouTube Artist';
   let finalThumb = oEmbedMeta?.thumbnail || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
@@ -389,10 +257,10 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
   const has4K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('2160'));
   const has2K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('1440'));
 
-  const fallbackOptions: QualityOption[] = [];
+  const qualityOptions: QualityOption[] = [];
 
   if (has4K) {
-    fallbackOptions.push({
+    qualityOptions.push({
       label: `Ultra HD 4K (2160p ~${getFormatSize('2160', 4800)})`,
       url: `loader:4k:${ytId}`,
       type: 'video',
@@ -401,7 +269,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
   }
 
   if (has2K) {
-    fallbackOptions.push({
+    qualityOptions.push({
       label: `Quad HD 2K (1440p ~${getFormatSize('1440', 2500)})`,
       url: `loader:1440:${ytId}`,
       type: 'video',
@@ -409,7 +277,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     });
   }
 
-  fallbackOptions.push(
+  qualityOptions.push(
     {
       label: `Full HD 1080p (~${getFormatSize('1080', 1800)})`,
       url: `loader:1080:${ytId}`,
@@ -458,7 +326,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     videoUrl: `loader:720:${ytId}`,
     audioUrl: `loader:mp3:${ytId}`,
     originalUrl: url,
-    qualityOptions: fallbackOptions,
+    qualityOptions,
   };
 }
 

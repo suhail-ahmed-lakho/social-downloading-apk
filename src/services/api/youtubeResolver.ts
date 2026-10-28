@@ -72,8 +72,8 @@ export async function resolveYouTubeDownloadUrl(
     );
   }
 
-  if (!initData || !initData.progress_url) {
-    throw new Error('Unable to start YouTube conversion. Please verify the link is active.');
+  if (!initData || initData.success === false || !initData.progress_url) {
+    throw new Error(initData?.message || 'Unable to start YouTube conversion. Please verify the link is active.');
   }
 
   const progressUrl = initData.progress_url;
@@ -103,6 +103,10 @@ export async function resolveYouTubeDownloadUrl(
             onProgress(1, 'Conversion complete! Downloading file...');
           }
           return pollData.download_url;
+        }
+
+        if (pollData.text && (pollData.text.toLowerCase().includes('error') || pollData.text.toLowerCase().includes('failed'))) {
+          throw new Error(`Conversion error: ${pollData.text}`);
         }
 
         // Calculate progress percentage
