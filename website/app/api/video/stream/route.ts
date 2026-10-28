@@ -54,9 +54,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(mediaUrl);
     }
 
-    const contentType =
-      upstreamRes.headers.get("content-type") ||
-      (ext === "mp3" ? "audio/mpeg" : "video/mp4");
+    // Strict mobile-compatible MIME types so Android MediaStore scans files directly into Gallery
+    let contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : "video/mp4";
+    const rawContentType = upstreamRes.headers.get("content-type");
+    if (rawContentType && (rawContentType.startsWith("video/") || rawContentType.startsWith("audio/"))) {
+      contentType = rawContentType;
+    }
+
     const contentLength = upstreamRes.headers.get("content-length");
     const contentRange = upstreamRes.headers.get("content-range");
 
@@ -65,6 +69,8 @@ export async function GET(req: NextRequest) {
       "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
       "Cache-Control": "public, max-age=86400, s-maxage=86400",
       "Access-Control-Allow-Origin": "*",
+      "Accept-Ranges": "bytes",
+      "X-Content-Type-Options": "nosniff",
     };
 
     if (contentLength) responseHeaders["Content-Length"] = contentLength;

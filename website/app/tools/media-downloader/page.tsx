@@ -17,7 +17,15 @@ import {
   Link2,
   Check,
   Play,
+  Pause,
   Zap,
+  Share2,
+  Trash2,
+  Folder,
+  HelpCircle,
+  CheckCircle2,
+  Eye,
+  Volume2,
 } from "lucide-react";
 import {
   YouTubeIcon,
@@ -59,6 +67,18 @@ interface DownloadState {
   downloadUrl?: string;
 }
 
+export interface DownloadedItem {
+  id: string;
+  title: string;
+  platform: string;
+  thumbnail: string;
+  downloadUrl: string;
+  filename: string;
+  format: "mp4" | "mp3";
+  quality: string;
+  timestamp: number;
+}
+
 function detectPlatformClient(url: string): string {
   if (/tiktok\.com|vm\.tiktok\.com/i.test(url)) return "tiktok";
   if (/youtube\.com|youtu\.be/i.test(url)) return "youtube";
@@ -84,6 +104,10 @@ export default function VideoDownloaderTool() {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadStates, setDownloadStates] = useState<Record<number, DownloadState>>({});
+  const [downloadsHistory, setDownloadsHistory] = useState<DownloadedItem[]>([]);
+  const [activePlayingId, setActivePlayingId] = useState<string | null>(null);
+  const [showGalleryGuide, setShowGalleryGuide] = useState(false);
+  const [lastDownloadedItem, setLastDownloadedItem] = useState<DownloadedItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const detected = detectPlatformClient(url);
@@ -91,6 +115,16 @@ export default function VideoDownloaderTool() {
   const [apkSize, setApkSize] = useState("70.8 MB");
 
   useEffect(() => {
+    // Load local downloads history
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("looknow_downloaded_media");
+        if (stored) {
+          setDownloadsHistory(JSON.parse(stored));
+        }
+      } catch (_) {}
+    }
+
     fetch("/api/version")
       .then((res) => res.json())
       .then((data) => {
@@ -152,7 +186,7 @@ export default function VideoDownloaderTool() {
     await executeExtraction(url);
   };
 
-  const triggerBrowserDownload = (downloadUrl: string, filename: string) => {
+  const triggerBrowserDownload = (downloadUrl: string, filename: string, opt?: QualityOption) => {
     try {
       const a = document.createElement("a");
       a.href = downloadUrl;
@@ -162,6 +196,70 @@ export default function VideoDownloaderTool() {
       document.body.removeChild(a);
     } catch {
       window.location.assign(downloadUrl);
+    }
+
+    const isAudio = opt?.type === "audio" || filename.endsWith(".mp3");
+    const newItem: DownloadedItem = {
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      title: videoInfo?.title || filename.replace(/\.[^/.]+$/, ""),
+      platform: videoInfo?.platform || detectPlatformClient(url),
+      thumbnail: videoInfo?.thumbnail || "",
+      downloadUrl,
+      filename,
+      format: isAudio ? "mp3" : "mp4",
+      quality: opt?.quality || opt?.label || (isAudio ? "320kbps MP3" : "HD Video"),
+      timestamp: Date.now(),
+    };
+
+    setLastDownloadedItem(newItem);
+    setDownloadsHistory((prev) => {
+      const filtered = prev.filter((p) => p.filename !== newItem.filename);
+      const updated = [newItem, ...filtered].slice(0, 15);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("looknow_downloaded_media", JSON.stringify(updated));
+        } catch (_) {}
+      }
+      return updated;
+    });
+  };
+
+  const handleDeleteHistoryItem = (id: string) => {
+    setDownloadsHistory((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("looknow_downloaded_media", JSON.stringify(updated));
+        } catch (_) {}
+      }
+      return updated;
+    });
+    if (activePlayingId === id) setActivePlayingId(null);
+  };
+
+  const handleClearHistory = () => {
+    setDownloadsHistory([]);
+    setActivePlayingId(null);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("looknow_downloaded_media");
+      } catch (_) {}
+    }
+  };
+
+  const handleShareOrSaveToGallery = async (item: DownloadedItem) => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: item.title,
+          text: `Downloaded with OmniSaver: ${item.title}`,
+          url: item.downloadUrl.startsWith("http") ? item.downloadUrl : `${window.location.origin}${item.downloadUrl}`,
+        });
+      } catch (_) {
+        setShowGalleryGuide(true);
+      }
+    } else {
+      setShowGalleryGuide(true);
     }
   };
 
@@ -177,7 +275,7 @@ export default function VideoDownloaderTool() {
         ...prev,
         [index]: { index, status: "ready", progressText: "Downloading...", downloadUrl: proxyUrl },
       }));
-      triggerBrowserDownload(proxyUrl, filename);
+      triggerBrowserDownload(proxyUrl, filename, opt);
       return;
     }
 
@@ -218,7 +316,7 @@ export default function VideoDownloaderTool() {
               downloadUrl: proxyUrl,
             },
           }));
-          triggerBrowserDownload(proxyUrl, filename);
+          triggerBrowserDownload(proxyUrl, filename, opt);
           return;
         }
 
@@ -270,7 +368,7 @@ export default function VideoDownloaderTool() {
                 downloadUrl: proxyUrl,
               },
             }));
-            triggerBrowserDownload(proxyUrl, filename);
+            triggerBrowserDownload(proxyUrl, filename, opt);
             return;
           }
         }
@@ -815,10 +913,404 @@ export default function VideoDownloaderTool() {
                     );
                   })}
                 </div>
+
+                {/* Live Download Success & Player Banner */}
+                {lastDownloadedItem && (
+                  <div
+                    style={{
+                      marginTop: 20,
+                      padding: 18,
+                      background: "#F0FDF4",
+                      border: "1.5px solid #86EFAC",
+                      borderRadius: 14,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", color: "#16A34A" }}>
+                          <CheckCircle2 size={20} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#166534" }}>
+                            Download Launched Successfully!
+                          </div>
+                          <div style={{ fontSize: 12, color: "#15803D" }}>
+                            File saved to your browser&apos;s Downloads folder ({lastDownloadedItem.filename})
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          onClick={() => setActivePlayingId(activePlayingId === lastDownloadedItem.id ? null : lastDownloadedItem.id)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: 10,
+                            background: "#FFFFFF",
+                            border: "1px solid #86EFAC",
+                            color: "#166534",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <Play size={14} />
+                          <span>{activePlayingId === lastDownloadedItem.id ? "Close Player" : "Play in Browser"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleShareOrSaveToGallery(lastDownloadedItem)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: 10,
+                            background: "#16A34A",
+                            border: "none",
+                            color: "#FFFFFF",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)",
+                          }}
+                        >
+                          <Share2 size={14} />
+                          <span>Save / Share</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowGalleryGuide(true)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: 10,
+                            background: "#DCFCE7",
+                            border: "1px solid #86EFAC",
+                            color: "#166534",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <HelpCircle size={14} />
+                          <span>Phone Gallery Guide</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* In-Browser Player Expandable */}
+                    {activePlayingId === lastDownloadedItem.id && (
+                      <div style={{ marginTop: 8, paddingTop: 12, borderTop: "1px solid #BBF7D0" }}>
+                        {lastDownloadedItem.format === "mp3" ? (
+                          <audio src={lastDownloadedItem.downloadUrl} controls autoPlay style={{ width: "100%" }} />
+                        ) : (
+                          <video
+                            src={lastDownloadedItem.downloadUrl}
+                            controls
+                            autoPlay
+                            playsInline
+                            style={{ width: "100%", maxHeight: 380, borderRadius: 10, background: "#000000" }}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Downloaded Media History Section */}
+        {downloadsHistory.length > 0 && (
+          <div
+            className="glass-card"
+            style={{
+              padding: 28,
+              marginBottom: 40,
+              border: "1px solid var(--border-hairline)",
+              borderRadius: 20,
+              background: "linear-gradient(180deg, #FFFFFF 0%, #FFFBF7 100%)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#FFF7ED", border: "1px solid rgba(255, 107, 0, 0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FF6B00" }}>
+                  <Folder size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-title)", margin: 0 }}>
+                    Downloaded Media ({downloadsHistory.length})
+                  </h3>
+                  <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 2 }}>
+                    Saved files from your recent downloads in this browser
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowGalleryGuide(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    borderRadius: 9,
+                    background: "#F8FAFC",
+                    border: "1px solid var(--border-hairline)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "var(--text-main)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Smartphone size={14} style={{ color: "#FF6B00" }} />
+                  <span>Where is my file in Gallery?</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearHistory}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "7px 12px",
+                    borderRadius: 9,
+                    background: "transparent",
+                    border: "none",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#EF4444",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Trash2 size={13} />
+                  <span>Clear History</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Gallery Location Banner */}
+            <div
+              style={{
+                background: "#F0FDF4",
+                border: "1px solid #BBF7D0",
+                borderRadius: 12,
+                padding: "14px 18px",
+                marginBottom: 20,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "#166534",
+              }}
+            >
+              <Smartphone size={18} style={{ color: "#16A34A", flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Where to find your downloaded videos on mobile:</strong>
+                <div style={{ marginTop: 4 }}>
+                  • <strong>Android:</strong> Open your phone&apos;s <strong>Files</strong> or <strong>Gallery</strong> app ➔ Look in the <strong>&quot;Download&quot;</strong> album.
+                  <br />
+                  • <strong>iPhone / iPad:</strong> Open <strong>Files</strong> app ➔ <strong>Downloads</strong> ➔ Tap Share ➔ Select <strong>&quot;Save Video&quot;</strong> to copy it directly into your Photos album!
+                </div>
+              </div>
+            </div>
+
+            {/* Items List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {downloadsHistory.map((item) => {
+                const isPlaying = activePlayingId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: isPlaying ? "#FFFDF9" : "#FFFFFF",
+                      border: isPlaying ? "1px solid rgba(255, 107, 0, 0.4)" : "1px solid var(--border-hairline)",
+                      borderRadius: 14,
+                      padding: 16,
+                      boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 240, flex: 1 }}>
+                        {item.thumbnail ? (
+                          <div
+                            style={{
+                              width: 64,
+                              height: 48,
+                              borderRadius: 8,
+                              overflow: "hidden",
+                              background: "#000",
+                              flexShrink: 0,
+                              position: "relative",
+                            }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                              background: "#FFF7ED",
+                              color: "#FF6B00",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {item.format === "mp3" ? <Music size={20} /> : <Video size={20} />}
+                          </div>
+                        )}
+
+                        <div style={{ overflow: "hidden" }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-title)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 360 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, background: item.format === "mp3" ? "#FFF7ED" : "#EFF6FF", color: item.format === "mp3" ? "#EA580C" : "#2563EB", padding: "2px 6px", borderRadius: 6 }}>
+                              {item.format.toUpperCase()} · {item.quality}
+                            </span>
+                            <span style={{ fontSize: 11, color: "var(--text-subtle)" }}>
+                              {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Item Actions */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          onClick={() => setActivePlayingId(isPlaying ? null : item.id)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: 9,
+                            background: isPlaying ? "linear-gradient(135deg, #FF6B00 0%, #EA580C 100%)" : "#F8FAFC",
+                            border: isPlaying ? "none" : "1px solid var(--border-hairline)",
+                            color: isPlaying ? "#FFFFFF" : "var(--text-main)",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                          <span>{isPlaying ? "Pause" : "Play Media"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleShareOrSaveToGallery(item)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "8px 12px",
+                            borderRadius: 9,
+                            background: "#DCFCE7",
+                            border: "1px solid #86EFAC",
+                            color: "#166534",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                          title="Save to Gallery / Share file"
+                        >
+                          <Share2 size={13} />
+                          <span>Save / Share</span>
+                        </button>
+
+                        <a
+                          href={item.downloadUrl}
+                          download={item.filename}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "8px 12px",
+                            borderRadius: 9,
+                            background: "#F8FAFC",
+                            border: "1px solid var(--border-hairline)",
+                            color: "var(--text-main)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            textDecoration: "none",
+                            cursor: "pointer",
+                          }}
+                          title="Redownload this file"
+                        >
+                          <Download size={13} />
+                          <span>Redownload</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHistoryItem(item.id)}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            background: "transparent",
+                            border: "none",
+                            color: "var(--text-subtle)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                          }}
+                          title="Remove from history"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expandable In-Browser Player for this item */}
+                    {isPlaying && (
+                      <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-hairline)" }}>
+                        {item.format === "mp3" ? (
+                          <audio src={item.downloadUrl} controls autoPlay style={{ width: "100%" }} />
+                        ) : (
+                          <video
+                            src={item.downloadUrl}
+                            controls
+                            autoPlay
+                            playsInline
+                            style={{ width: "100%", maxHeight: 380, borderRadius: 10, background: "#000000" }}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 3D Native APK Mobile Card */}
         <TiltCard3D maxTilt={6}>
@@ -1080,6 +1572,137 @@ export default function VideoDownloaderTool() {
           }
         }
       `}</style>
-    </div>
+
+      {/* Phone Gallery Guide Modal */}
+      <AnimatePresence>
+          {showGalleryGuide && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(15, 23, 42, 0.65)",
+                backdropFilter: "blur(8px)",
+                zIndex: 9999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 20,
+              }}
+              onClick={() => setShowGalleryGuide(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.94, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.94, y: 15 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-hairline)",
+                  borderRadius: 24,
+                  maxWidth: 580,
+                  width: "100%",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  padding: 32,
+                  boxShadow: "0 25px 60px rgba(15, 23, 42, 0.25)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "#FFF7ED", display: "flex", alignItems: "center", justifyContent: "center", color: "#FF6B00" }}>
+                      <Smartphone size={22} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-title)", margin: 0 }}>
+                        Where are my downloaded files?
+                      </h3>
+                      <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 2 }}>
+                        Phone Gallery & Photos Guide
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowGalleryGuide(false)}
+                    style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-subtle)" }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Steps Container */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Android Guide */}
+                  <div style={{ background: "#F8FAFC", border: "1px solid var(--border-hairline)", borderRadius: 14, padding: 18 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, background: "#DCFCE7", color: "#166534", padding: "3px 8px", borderRadius: 6 }}>
+                        ANDROID PHONES
+                      </span>
+                      <strong style={{ fontSize: 14, color: "var(--text-title)" }}>Gallery &amp; Files App</strong>
+                    </div>
+                    <ol style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, paddingLeft: 18, margin: 0 }}>
+                      <li>Browsers (Chrome / Samsung Internet) save files into your phone&apos;s <strong>Downloads</strong> folder.</li>
+                      <li>Open your phone&apos;s <strong>Files</strong> (or <em>Files by Google</em>) app ➔ Tap <strong>Downloads</strong>. Your video is right there!</li>
+                      <li>In your phone Gallery app: Tap <strong>&quot;Albums&quot;</strong> or <strong>&quot;Collections&quot;</strong> ➔ Scroll to the <strong>&quot;Download&quot;</strong> album to watch it.</li>
+                    </ol>
+                  </div>
+
+                  {/* iPhone Guide */}
+                  <div style={{ background: "#F8FAFC", border: "1px solid var(--border-hairline)", borderRadius: 14, padding: 18 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, background: "#EFF6FF", color: "#1E40AF", padding: "3px 8px", borderRadius: 6 }}>
+                        IPHONE &amp; IPAD
+                      </span>
+                      <strong style={{ fontSize: 14, color: "var(--text-title)" }}>Move from Files to Photos</strong>
+                    </div>
+                    <ol style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, paddingLeft: 18, margin: 0 }}>
+                      <li>Apple Safari downloads files to the <strong>Files</strong> app (in the <em>Downloads</em> folder).</li>
+                      <li>Open your <strong>Files</strong> app ➔ Tap the downloaded video.</li>
+                      <li>Tap the <strong>Share</strong> button (bottom-left arrow icon) ➔ Tap <strong>&quot;Save Video&quot;</strong>.</li>
+                      <li>It will instantly appear in your iPhone <strong>Photos / Camera Roll</strong>!</li>
+                    </ol>
+                  </div>
+
+                  {/* Native App Highlight */}
+                  <div style={{ background: "#FFF7ED", border: "1px solid rgba(255, 107, 0, 0.3)", borderRadius: 14, padding: 18 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <Sparkles size={16} style={{ color: "#FF6B00" }} />
+                      <strong style={{ fontSize: 14, color: "#C2410C" }}>
+                        Want 100% Automatic Gallery Sync?
+                      </strong>
+                    </div>
+                    <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 12px 0" }}>
+                      Our native Android APK automatically indexes every video directly into your phone&apos;s main Photos gallery &amp; creates a dedicated OmniSaver album without any manual steps!
+                    </p>
+                    <a
+                      href="/api/download/apk"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary"
+                      style={{ padding: "10px 18px", fontSize: 13, display: "inline-flex" }}
+                    >
+                      <Download size={14} />
+                      <span>Download Android APK (v1.0.4)</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 24, textAlign: "right" }}>
+                  <button
+                    onClick={() => setShowGalleryGuide(false)}
+                    className="btn-secondary"
+                    style={{ padding: "10px 22px", fontSize: 13 }}
+                  >
+                    Got It
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
   );
 }
