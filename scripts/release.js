@@ -61,12 +61,11 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - by Lakho's team`,
-    'Streaming downloads directly via local proxy (no 404s or broken redirects)',
-    'Synchronized exact 70.8 MB release APK size across app & website',
-    'Full Ultra HD 4K (2160p) and 2K (1440p) video quality extraction',
-    'Lossless MP3 audio (320kbps) & HD video extractor optimizations',
-    'Vibrant LookNow theme and modern holographic launch animation',
-    'Autonomous self-hosted update delivery channel'
+    'Fixed 0.0 MB download issue and format not supported error on sharing',
+    'Direct high-speed YouTube 1080p, 720p & lossless 320kbps MP3 conversion',
+    'Resilient multi-tier TikTok (TikWM + TikMate) and Instagram extractors',
+    'Enhanced CDN request headers and strict download integrity verification',
+    'Optimized in-app media gallery and instant WhatsApp/social sharing'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

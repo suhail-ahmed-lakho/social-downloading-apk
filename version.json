@@ -1,19 +1,18 @@
 {
-  "version": "1.0.4",
-  "versionCode": 10004,
-  "releaseTitle": "OmniSaver v1.0.4 - Lakho's Team Official Release",
+  "version": "1.0.5",
+  "versionCode": 10005,
+  "releaseTitle": "OmniSaver v1.0.5 - Lakho's Team Official Release",
   "releaseDate": "2026-10-28",
   "fileSize": "70.8 MB",
   "fileSizeBytes": 74262740,
   "mandatory": false,
   "downloadUrl": "https://looknow.cyou/api/download/apk",
   "changelog": [
-    "OmniSaver v1.0.4 - Official Release by Lakho's Team",
-    "Direct stream download routing via local proxy (resolving 404s and redirect issues)",
-    "Synchronized exact 70.8 MB release APK size across app & website",
-    "Full Ultra HD 4K (2160p) and 2K (1440p) direct video stream extraction",
-    "Studio Lossless MP3 audio (320kbps) & HD video extractor optimizations",
-    "Unified LookNow vibrant theme and modern holographic launch animation",
-    "Autonomous self-hosted update delivery channel"
+    "OmniSaver v1.0.5 - by Lakho's team",
+    "Fixed 0.0 MB download issue and format not supported error on sharing",
+    "Direct high-speed YouTube 1080p, 720p & lossless 320kbps MP3 conversion",
+    "Resilient multi-tier TikTok (TikWM + TikMate) and Instagram extractors",
+    "Enhanced CDN request headers and strict download integrity verification",
+    "Optimized in-app media gallery and instant WhatsApp/social sharing"
   ]
 }
