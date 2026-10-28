@@ -55,6 +55,8 @@ export async function resolveYouTubeDownloadUrl(
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         Accept: 'application/json, text/plain, */*',
+        Referer: 'https://loader.to/en108/1080p-video-downloader.html',
+        Origin: 'https://loader.to',
       },
     });
     clearTimeout(initTimeout);
@@ -87,6 +89,8 @@ export async function resolveYouTubeDownloadUrl(
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           Accept: 'application/json',
+          Referer: 'https://loader.to/',
+          Origin: 'https://loader.to',
         },
       });
 

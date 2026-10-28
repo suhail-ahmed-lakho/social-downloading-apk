@@ -26,10 +26,14 @@ export async function POST(req: NextRequest) {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           Accept: "application/json",
+          Referer: "https://loader.to/en108/1080p-video-downloader.html",
+          Origin: "https://loader.to",
         },
       });
 
       if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        console.error("[Download Init Error]", res.status, errText);
         return NextResponse.json(
           { error: "Converter service temporarily busy. Please try again." },
           { status: 502 }
@@ -62,8 +66,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "poll") {
-      if (!progressUrl || typeof progressUrl !== "string" || !progressUrl.startsWith("https://loader.to/")) {
+      if (!progressUrl || typeof progressUrl !== "string") {
         return NextResponse.json({ error: "Invalid conversion progress destination" }, { status: 400 });
+      }
+
+      try {
+        const parsed = new URL(progressUrl);
+        const allowedHosts = ["loader.to", "affadaffa.com", "savenow.to"];
+        const isAllowed = allowedHosts.some(
+          (h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`)
+        );
+        if (parsed.protocol !== "https:" || !isAllowed) {
+          return NextResponse.json({ error: "Invalid conversion progress destination host" }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Malformed conversion progress URL" }, { status: 400 });
       }
 
       const pollRes = await fetch(progressUrl, {
@@ -71,6 +88,8 @@ export async function POST(req: NextRequest) {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           Accept: "application/json",
+          Referer: "https://loader.to/",
+          Origin: "https://loader.to",
         },
       });
 
@@ -132,6 +151,8 @@ export async function GET(req: NextRequest) {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Accept: "application/json",
+        Referer: "https://loader.to/en108/1080p-video-downloader.html",
+        Origin: "https://loader.to",
       },
     });
 
@@ -151,6 +172,8 @@ export async function GET(req: NextRequest) {
                 "User-Agent":
                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
                 Accept: "application/json",
+                Referer: "https://loader.to/",
+                Origin: "https://loader.to",
               },
             });
             if (pollRes.ok) {
@@ -160,11 +183,11 @@ export async function GET(req: NextRequest) {
                 return NextResponse.redirect(new URL(proxyStreamUrl, req.url));
               }
             }
-          } catch (_) {}
+          } catch {}
         }
       }
     }
-  } catch (_) {}
+  } catch {}
 
   return NextResponse.json({ error: "Conversion busy, please retry in a few moments" }, { status: 504 });
 }
