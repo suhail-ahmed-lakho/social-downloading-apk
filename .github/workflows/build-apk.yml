@@ -63,6 +63,49 @@ jobs:
           cd android
           ./gradlew assembleRelease --no-daemon --stacktrace
 
+      - name: ✍️ Sign and Verify APK with Release Keystore
+        run: |
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "❌ APK not found at $APK_PATH"
+            exit 1
+          fi
+
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
+          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -V | tail -n 1)
+          echo "Using apksigner: $APKSIGNER"
+          echo "Using zipalign: $ZIPALIGN"
+
+          # If custom keystore base64 is in GitHub secrets, decode it, otherwise use persistent release.keystore
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Using keystore from GitHub Secrets..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+          fi
+
+          # Ensure APK is properly aligned
+          if ! $ZIPALIGN -c 4 "$APK_PATH"; then
+            echo "Re-aligning APK..."
+            mv "$APK_PATH" "${APK_PATH}.unaligned"
+            $ZIPALIGN -f -p 4 "${APK_PATH}.unaligned" "$APK_PATH"
+            rm -f "${APK_PATH}.unaligned"
+          fi
+
+          # Sign with both v1 (JAR) and v2/v3 (Full APK) schemes using permanent release keystore
+          echo "Signing APK with release keystore..."
+          $APKSIGNER sign \
+            --ks release.keystore \
+            --ks-pass pass:omnisaver123 \
+            --ks-key-alias omnisaver \
+            --key-pass pass:omnisaver123 \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            "$APK_PATH"
+
+          # Verify signature and print certificate fingerprints
+          echo "Verifying APK signatures..."
+          $APKSIGNER verify --verbose --print-certs "$APK_PATH"
+
       - name: 🏷️ Rename APK for Release
         run: |
           mkdir -p build-output

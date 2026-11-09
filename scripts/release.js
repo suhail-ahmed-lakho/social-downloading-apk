@@ -67,7 +67,8 @@ const versionManifest = {
     'Dynamic Island clipboard link detection with 1-tap Paste & Fetch',
     'Horizontal Recent Downloads carousel with instant sharing',
     'Enhanced high-speed YouTube 4K/1080p & 320kbps MP3 lossless audio extractor',
-    'Direct watermark-free TikTok & in-app Instagram private reels capture'
+    'Direct watermark-free TikTok & in-app Instagram private reels capture',
+    'Fixed APK digital signatures with persistent Release Keystore & v1/v2/v3 schemes for seamless installs and updates'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');
