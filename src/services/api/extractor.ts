@@ -4,9 +4,9 @@ import { MediaMetadata, PlatformType, QualityOption } from '../../types';
 export function cleanInputUrl(input: string): string {
   if (!input) return '';
   const trimmed = input.trim();
-  // If user pasted surrounding text from WhatsApp / Instagram share sheet:
+  // If user pasted surrounding text or concatenated links from WhatsApp / Instagram share sheet:
   // e.g. "Watch this reel https://www.instagram.com/reel/XYZ/?igsh=... on Instagram"
-  const urlMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+  const urlMatch = trimmed.match(/https?:\/\/(?:(?!https?:\/\/)[^\s"'<>])+/i);
   if (urlMatch) {
     return urlMatch[0];
   }

@@ -5,7 +5,7 @@ const assert = require('assert');
 function cleanInputUrl(input) {
   if (!input) return '';
   const trimmed = input.trim();
-  const urlMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+  const urlMatch = trimmed.match(/https?:\/\/(?:(?!https?:\/\/)[^\s"'<>])+/i);
   if (urlMatch) {
     return urlMatch[0];
   }
@@ -56,7 +56,10 @@ function runDetectionTests() {
     { url: 'https://www.instagram.com/cristiano/reel/C32sVwrrf5z/', expectedId: 'C32sVwrrf5z', label: 'Reel with Username' },
     { url: 'https://instagr.am/p/C7z19hXMo6k/', expectedId: 'C7z19hXMo6k', label: 'instagr.am short URL' },
     { url: 'https://ddinstagram.com/reel/C32sVwrrf5z/', expectedId: 'C32sVwrrf5z', label: 'ddinstagram embed' },
-    { url: 'Look at this funny reel https://www.instagram.com/reel/C32sVwrrf5z/?igsh=123 on IG!', expectedId: 'C32sVwrrf5z', label: 'Text with Embedded URL' }
+    { url: 'Look at this funny reel https://www.instagram.com/reel/C32sVwrrf5z/?igsh=123 on IG!', expectedId: 'C32sVwrrf5z', label: 'Text with Embedded URL' },
+    { url: 'https://www.instagram.com/reel/DehZrPKNt5t/?mdxt=MTB0a2lhZjNocTRxaQ==', expectedId: 'DehZrPKNt5t', label: 'User Reel 1 with Query params' },
+    { url: 'https://www.instagram.com/reel/Dfb4jR_Bkx5/?psln=MW8yZXQ1Mndlb3h1Yw==', expectedId: 'Dfb4jR_Bkx5', label: 'User Reel 3 with Query params' },
+    { url: 'https://www.instagram.com/reel/DehZrPKNt5t/?mdxt=MTB0a2lhZjNocTRxaQ==https://www.instagram.com/reel/DfgbJK3M6gH/?obrf=ems4MGh2b2hqengx', expectedId: 'DehZrPKNt5t', label: 'Concatenated URLs' }
   ];
 
   for (const sample of instagramSamples) {
