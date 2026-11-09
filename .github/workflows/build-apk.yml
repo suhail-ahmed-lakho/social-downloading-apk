@@ -35,11 +35,33 @@ jobs:
       - name: 🏗️ Prebuild Android Project
         run: npx expo prebuild --platform android --clean
 
-      - name: 🚀 Build Release APK with Gradle
+      - name: 🐘 Configure Fast Gradle Mirror
+        run: |
+          # Replace services.gradle.org with direct GitHub distributions mirror to prevent Cloudflare 504 timeouts
+          sed -i -E 's|https\\://services\.gradle\.org/distributions/gradle-(.+)-bin\.zip|https\\://github.com/gradle/gradle-distributions/releases/download/v\1/gradle-\1-bin.zip|' android/gradle/wrapper/gradle-wrapper.properties
+          echo "Verified android/gradle/wrapper/gradle-wrapper.properties:"
+          cat android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 📥 Pre-fetch Gradle Wrapper with Retry
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          for attempt in 1 2 3 4 5; do
+            echo "Attempt $attempt: Initializing Gradle wrapper..."
+            ./gradlew --version && break || {
+              echo "Attempt $attempt encountered network blip. Cleaning partial files and retrying in 10s..."
+              rm -rf ~/.gradle/wrapper/dists/*/*/*.part ~/.gradle/wrapper/dists/*/*/*.lck 2>/dev/null || true
+              sleep 10
+            }
+          done
+
+      - name: 🚀 Build Release APK with Gradle
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: 🏷️ Rename APK for Release
         run: |
