@@ -107,3 +107,4 @@ module.exports = { runDetectionTests };
 if (require.main === module) {
   runDetectionTests();
 }
+
