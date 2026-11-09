@@ -58,16 +58,15 @@ jobs:
             }
           done
 
-      - name: 📱 Target Mobile-Only ARM Architectures (Drop PC Emulators)
+      - name: 📱 Verify Mobile-Only ARM Architectures (Drop PC Emulators)
         run: |
-          echo "reactNativeArchitectures=arm64-v8a,armeabi-v7a" >> android/gradle.properties
-          echo "Configured mobile-only architectures in android/gradle.properties:"
-          grep "reactNativeArchitectures" android/gradle.properties
+          echo "Architectures configured by expo-build-properties in android/gradle.properties:"
+          grep "reactNativeArchitectures" android/gradle.properties || true
 
       - name: 🚀 Build Release APK with Gradle
         run: |
           cd android
-          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: ✍️ Sign and Verify APK with Release Keystore
         run: |
