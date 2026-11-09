@@ -13,7 +13,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { PlatformType } from '../types';
-import { detectPlatform } from '../services/api/extractor';
+import { detectPlatform, cleanInputUrl } from '../services/api/extractor';
 
 interface UrlInputBarProps {
   url: string;
@@ -40,7 +40,8 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const text = await Clipboard.getStringAsync();
       if (text) {
-        onChangeUrl(text.trim());
+        const cleaned = cleanInputUrl(text);
+        onChangeUrl(cleaned);
       }
     } catch (e) {
       console.warn('Paste failed', e);
@@ -88,7 +89,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
     }
   };
 
-  const isSubmitActive = !!url.trim() && !isLoading;
+  const hasUrl = !!url.trim();
 
   return (
     <View style={styles.container}>
@@ -136,19 +137,20 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
         )}
       </View>
 
-      {/* Primary Action Button (Gradient on Active) */}
+      {/* Primary Action Button (Gradient on Active / Loading) */}
       <TouchableOpacity
         onPress={async () => {
+          if (isLoading || !hasUrl) return;
           try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           } catch (_) {}
           onSubmit();
         }}
-        disabled={!isSubmitActive}
+        disabled={!hasUrl || isLoading}
         activeOpacity={0.85}
         style={styles.touchableBtn}
       >
-        {isSubmitActive ? (
+        {hasUrl || isLoading ? (
           <LinearGradient
             colors={COLORS.gradientPrimary}
             start={{ x: 0, y: 0 }}

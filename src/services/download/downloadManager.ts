@@ -3,6 +3,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { resolveYouTubeDownloadUrl } from '../api/youtubeResolver';
+import { cleanInstagramMediaUrl } from '../api/extractor';
 
 export interface DownloadProgressInfo {
   percent: number; // 0 to 100
@@ -41,7 +42,7 @@ export async function requestGalleryPermissions(): Promise<boolean> {
 export async function downloadAndSaveMedia(options: DownloadOptions): Promise<DownloadResult> {
   const { url, filename, isAudio = false, originalUrl, onProgress } = options;
 
-  let finalDirectUrl = url;
+  let finalDirectUrl = cleanInstagramMediaUrl(url);
 
   // Resolve cloud conversion stream if option requires loader resolution
   if (url.startsWith('loader:')) {
@@ -97,13 +98,22 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
   // Build browser-compatible headers to prevent CDN 403 Forbidden blocks
   const downloadHeaders: Record<string, string> = {
     'User-Agent':
-      'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+      'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
     'Accept': '*/*',
     'Accept-Encoding': 'identity',
   };
 
-  if (finalDirectUrl.includes('instagram.com') || finalDirectUrl.includes('cdninstagram.com') || finalDirectUrl.includes('fbcdn.net')) {
+  const isMetaCdn =
+    finalDirectUrl.includes('instagram.com') ||
+    finalDirectUrl.includes('cdninstagram.com') ||
+    finalDirectUrl.includes('fbcdn.net');
+
+  if (isMetaCdn) {
     downloadHeaders['Referer'] = 'https://www.instagram.com/';
+    downloadHeaders['Origin'] = 'https://www.instagram.com';
+    downloadHeaders['Sec-Fetch-Dest'] = 'video';
+    downloadHeaders['Sec-Fetch-Mode'] = 'cors';
+    downloadHeaders['Sec-Fetch-Site'] = 'cross-site';
   } else if (finalDirectUrl.includes('tiktok.com') || finalDirectUrl.includes('tiktokcdn.com') || finalDirectUrl.includes('tikwm.com')) {
     downloadHeaders['Referer'] = 'https://www.tiktok.com/';
   } else if (finalDirectUrl.includes('twimg.com') || finalDirectUrl.includes('twitter.com') || finalDirectUrl.includes('x.com')) {
@@ -137,13 +147,41 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     }
   );
 
-  const downloadResult = await downloadResumable.downloadAsync();
+  let downloadResult = await downloadResumable.downloadAsync();
+  if (!downloadResult || !downloadResult.uri) {
+    throw new Error('Download failed: No file URI received.');
+  }
+
+  // If 403 Forbidden on Instagram/Meta CDN, retry without Referer (some edge CDNs block Referer from third party IPs)
+  if (downloadResult.status === 403 && isMetaCdn) {
+    try {
+      await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+    } catch {}
+
+    const retryHeaders: Record<string, string> = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+      'Accept-Encoding': 'identity',
+    };
+
+    const retryResumable = FileSystem.createDownloadResumable(
+      finalDirectUrl,
+      localUri,
+      { headers: retryHeaders }
+    );
+    const retryResult = await retryResumable.downloadAsync();
+    if (retryResult && retryResult.uri) {
+      downloadResult = retryResult;
+    }
+  }
+
   if (!downloadResult || !downloadResult.uri) {
     throw new Error('Download failed: No file URI received.');
   }
 
   // Verify HTTP status code (detect 401, 403, 404, 500 error pages)
-  if (downloadResult.status && (downloadResult.status < 200 || downloadResult.status >= 300)) {
+  if (downloadResult && downloadResult.status && (downloadResult.status < 200 || downloadResult.status >= 300)) {
     try {
       await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
     } catch {}

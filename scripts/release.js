@@ -68,7 +68,11 @@ const versionManifest = {
     'Horizontal Recent Downloads carousel with instant sharing',
     'Enhanced high-speed YouTube 4K/1080p & 320kbps MP3 lossless audio extractor',
     'Direct watermark-free TikTok & in-app Instagram private reels capture',
-    'Fixed APK digital signatures with persistent Release Keystore & v1/v2/v3 schemes for seamless installs and updates'
+    'Fixed APK digital signatures with persistent Release Keystore & v1/v2/v3 schemes for seamless installs and updates',
+    'Fixed Instagram 403 Forbidden download error with unescaped CDN tokens and dual-mode headers',
+    'Upgraded link detector to support Instagram share links, plural reels, username URLs & embedded text',
+    'Added real-time Loading spinner & Analyzing card on Get Download Link',
+    'Added automated URL detection & sanitizer test suites'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

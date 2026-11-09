@@ -1,6 +1,8 @@
 // tests/run-all-tests.js
 const { runExtractorTests } = require('./extractor.test');
 const { runDownloadTests } = require('./download.test');
+const { runDetectionTests } = require('./url-detection-and-shortcodes.test');
+const { runSanitizerTests } = require('./instagram-url-sanitizer.test');
 
 async function main() {
   console.log('==================================================');
@@ -14,6 +16,20 @@ async function main() {
     await runExtractorTests();
   } catch (err) {
     console.error('❌ Extractor tests failed:', err);
+    errors++;
+  }
+
+  try {
+    runDetectionTests();
+  } catch (err) {
+    console.error('❌ URL Detection tests failed:', err);
+    errors++;
+  }
+
+  try {
+    runSanitizerTests();
+  } catch (err) {
+    console.error('❌ Instagram Sanitizer tests failed:', err);
     errors++;
   }
 

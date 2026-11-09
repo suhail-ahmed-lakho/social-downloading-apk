@@ -2,10 +2,23 @@
 const assert = require('assert');
 
 // 1. URL Pattern Detection Tests
+function cleanInputUrl(input) {
+  if (!input) return '';
+  const trimmed = input.trim();
+  const urlMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+  return urlMatch ? urlMatch[0] : trimmed;
+}
+
 function detectPlatform(url) {
-  const cleanUrl = url.trim().toLowerCase();
+  const cleanUrl = cleanInputUrl(url).toLowerCase();
   if (cleanUrl.includes('tiktok.com')) return 'tiktok';
-  if (cleanUrl.includes('instagram.com') || cleanUrl.includes('instagr.am')) return 'instagram';
+  if (
+    cleanUrl.includes('instagram.com') ||
+    cleanUrl.includes('instagr.am') ||
+    cleanUrl.includes('ddinstagram.com')
+  ) {
+    return 'instagram';
+  }
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) return 'youtube';
   return 'unknown';
 }

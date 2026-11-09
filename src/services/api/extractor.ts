@@ -1,23 +1,61 @@
 import { MediaMetadata, PlatformType, QualityOption } from '../../types';
 
+// Helper to isolate URL from shared text / clipboard
+export function cleanInputUrl(input: string): string {
+  if (!input) return '';
+  const trimmed = input.trim();
+  // If user pasted surrounding text from WhatsApp / Instagram share sheet:
+  // e.g. "Watch this reel https://www.instagram.com/reel/XYZ/?igsh=... on Instagram"
+  const urlMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+  if (urlMatch) {
+    return urlMatch[0];
+  }
+  return trimmed;
+}
+
+// Unescape and clean captured Instagram video CDN URLs (fixing 403 Forbidden caused by chopped tokens or escaped slashes/ampersands)
+export function cleanInstagramMediaUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  let url = rawUrl.trim();
+  // Unescape JSON escaped slashes (\/ -> /)
+  url = url.replace(/\\\/+/g, '/');
+  // Unescape unicode ampersands (\u0026 -> &)
+  url = url.replace(/\\u0026/g, '&');
+  // Unescape HTML entities (&amp; -> &)
+  url = url.replace(/&amp;/g, '&');
+  // Remove trailing quotes, backslashes, or brackets
+  url = url.replace(/["'\\\s]+$/, '');
+  return url;
+}
+
 // Helper to identify platform
 export function detectPlatform(url: string): PlatformType {
-  const cleanUrl = url.trim().toLowerCase();
+  const cleanUrl = cleanInputUrl(url).toLowerCase();
   if (cleanUrl.includes('tiktok.com')) return 'tiktok';
-  if (cleanUrl.includes('instagram.com') || cleanUrl.includes('instagr.am')) return 'instagram';
+  if (
+    cleanUrl.includes('instagram.com') ||
+    cleanUrl.includes('instagr.am') ||
+    cleanUrl.includes('ddinstagram.com')
+  ) {
+    return 'instagram';
+  }
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) return 'youtube';
   return 'unknown';
 }
 
 // Extract YouTube ID (Supports regular videos, shorts, and music.youtube.com)
 export function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
+  const clean = cleanInputUrl(url);
+  const match = clean.match(/(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
   return match ? match[1] : null;
 }
 
-// Extract Instagram shortcode
+// Extract Instagram shortcode (Supports /reel/, /reels/, /p/, /tv/, /share/reel/, username/reel/)
 export function extractInstagramShortcode(url: string): string | null {
-  const match = url.match(/(?:instagram\.com\/(?:p|reel|tv)\/)([\w-]+)/i);
+  const clean = cleanInputUrl(url);
+  const match =
+    clean.match(/(?:instagram\.com|instagr\.am)\/(?:share\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/i) ||
+    clean.match(/(?:instagram\.com|instagr\.am)\/[^/]+\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/i);
   return match ? match[1] : null;
 }
 
@@ -397,7 +435,7 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
 // UNIFIED EXTRACTOR
 // ==========================================
 export async function extractMedia(url: string): Promise<MediaMetadata> {
-  const trimmed = url.trim();
+  const trimmed = cleanInputUrl(url);
   if (!trimmed) {
     throw new Error('Please enter a valid video link.');
   }

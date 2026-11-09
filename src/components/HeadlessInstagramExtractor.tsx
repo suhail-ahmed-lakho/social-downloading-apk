@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { extractInstagramShortcode } from '../services/api/extractor';
+import { extractInstagramShortcode, cleanInstagramMediaUrl } from '../services/api/extractor';
 
 interface HeadlessInstagramExtractorProps {
   targetUrl: string | null;
@@ -64,14 +64,25 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
   const injectedBeforeContent = `
     (function() {
       window.__ig_captured = false;
+      function cleanUrl(raw) {
+        if (!raw) return '';
+        var u = raw;
+        u = u.replace(/\\\\\\//g, '/').replace(/\\\\\//g, '/');
+        u = u.replace(/\\\\u0026/g, '&').replace(/\\u0026/g, '&');
+        u = u.replace(/&amp;/g, '&');
+        u = u.replace(/["'\\\\]+$/, '');
+        return u;
+      }
+
       function report(url, poster, title) {
         if (!url || window.__ig_captured) return;
         if (url.indexOf('blob:') === 0 || url.indexOf('http') !== 0) return;
+        var finalUrl = cleanUrl(url);
         window.__ig_captured = true;
         try {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'VIDEO_FOUND',
-            videoUrl: url,
+            videoUrl: finalUrl,
             poster: poster || '',
             title: title || document.title || 'Instagram Video'
           }));
@@ -86,9 +97,15 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
           try {
             var clone = res.clone();
             var text = await clone.text();
-            var matches = text.match(/https:\\/\\/[^"'\\s\\\\]+?\\.mp4[^"'\\s\\\\]*/g);
+            var matches = text.match(/https?:[\\\\/]+[^"'\\s]+?\\.mp4[^"'\\s]*/g);
             if (matches && matches.length > 0) {
-              report(matches[0].replace(/\\\\u0026/g, '&'), '', document.title);
+              for (var m = 0; m < matches.length; m++) {
+                var candidate = cleanUrl(matches[m]);
+                if (candidate && candidate.indexOf('http') === 0) {
+                  report(candidate, '', document.title);
+                  break;
+                }
+              }
             }
           } catch(e) {}
           return res;
@@ -105,9 +122,15 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
         this.addEventListener('load', function() {
           try {
             var text = this.responseText;
-            var matches = text.match(/https:\\/\\/[^"'\\s\\\\]+?\\.mp4[^"'\\s\\\\]*/g);
+            var matches = text.match(/https?:[\\\\/]+[^"'\\s]+?\\.mp4[^"'\\s]*/g);
             if (matches && matches.length > 0) {
-              report(matches[0].replace(/\\\\u0026/g, '&'), '', document.title);
+              for (var m = 0; m < matches.length; m++) {
+                var candidate = cleanUrl(matches[m]);
+                if (candidate && candidate.indexOf('http') === 0) {
+                  report(candidate, '', document.title);
+                  break;
+                }
+              }
             }
           } catch(e) {}
         });
@@ -119,6 +142,16 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
 
   const injectedScript = `
     (function() {
+      function cleanUrl(raw) {
+        if (!raw) return '';
+        var u = raw;
+        u = u.replace(/\\\\\\//g, '/').replace(/\\\\\//g, '/');
+        u = u.replace(/\\\\u0026/g, '&').replace(/\\u0026/g, '&');
+        u = u.replace(/&amp;/g, '&');
+        u = u.replace(/["'\\\\]+$/, '');
+        return u;
+      }
+
       function scan() {
         if (window.__ig_captured) return;
 
@@ -129,7 +162,7 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
           window.__ig_captured = true;
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'VIDEO_FOUND',
-            videoUrl: meta.content,
+            videoUrl: cleanUrl(meta.content),
             poster: '',
             title: document.title || 'Instagram Video'
           }));
@@ -148,7 +181,7 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
             window.__ig_captured = true;
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'VIDEO_FOUND',
-              videoUrl: src,
+              videoUrl: cleanUrl(src),
               poster: v.poster || '',
               title: document.title || 'Instagram Video'
             }));
@@ -181,8 +214,11 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'VIDEO_FOUND' && data.videoUrl) {
-        setHasResolved(true);
-        onSuccess(data.videoUrl, data.title, data.poster);
+        const cleaned = cleanInstagramMediaUrl(data.videoUrl);
+        if (cleaned && cleaned.startsWith('http')) {
+          setHasResolved(true);
+          onSuccess(cleaned, data.title, data.poster);
+        }
       }
     } catch {
       // Ignore

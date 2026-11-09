@@ -12,6 +12,7 @@ import {
 import { WebView } from 'react-native-webview';
 import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
+import { cleanInstagramMediaUrl } from '../services/api/extractor';
 
 interface InstagramBrowserModalProps {
   visible: boolean;
@@ -34,14 +35,26 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   const injectedBeforeContent = `
     (function() {
       window.__captured_url = null;
+      function cleanUrl(raw) {
+        if (!raw) return '';
+        var u = raw;
+        u = u.replace(/\\\\\\//g, '/').replace(/\\\\\//g, '/');
+        u = u.replace(/\\\\u0026/g, '&').replace(/\\u0026/g, '&');
+        u = u.replace(/&amp;/g, '&');
+        u = u.replace(/["'\\\\]+$/, '');
+        return u;
+      }
+
       function report(url, poster) {
-        if (!url || window.__captured_url === url) return;
-        if (url.indexOf('blob:') === 0 || url.indexOf('http') !== 0) return;
-        window.__captured_url = url;
+        if (!url) return;
+        var finalUrl = cleanUrl(url);
+        if (!finalUrl || window.__captured_url === finalUrl) return;
+        if (finalUrl.indexOf('blob:') === 0 || finalUrl.indexOf('http') !== 0) return;
+        window.__captured_url = finalUrl;
         try {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'VIDEO_FOUND',
-            url: url,
+            url: finalUrl,
             poster: poster || ''
           }));
         } catch(e) {}
@@ -54,9 +67,15 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
           try {
             var clone = res.clone();
             var text = await clone.text();
-            var matches = text.match(/https:\\/\\/[^"'\\s\\\\]+?\\.mp4[^"'\\s\\\\]*/g);
+            var matches = text.match(/https?:[\\\\/]+[^"'\\s]+?\\.mp4[^"'\\s]*/g);
             if (matches && matches.length > 0) {
-              report(matches[0].replace(/\\\\u0026/g, '&'), '');
+              for (var m = 0; m < matches.length; m++) {
+                var candidate = cleanUrl(matches[m]);
+                if (candidate && candidate.indexOf('http') === 0) {
+                  report(candidate, '');
+                  break;
+                }
+              }
             }
           } catch(e) {}
           return res;
@@ -72,9 +91,15 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         this.addEventListener('load', function() {
           try {
             var text = this.responseText;
-            var matches = text.match(/https:\\/\\/[^"'\\s\\\\]+?\\.mp4[^"'\\s\\\\]*/g);
+            var matches = text.match(/https?:[\\\\/]+[^"'\\s]+?\\.mp4[^"'\\s]*/g);
             if (matches && matches.length > 0) {
-              report(matches[0].replace(/\\\\u0026/g, '&'), '');
+              for (var m = 0; m < matches.length; m++) {
+                var candidate = cleanUrl(matches[m]);
+                if (candidate && candidate.indexOf('http') === 0) {
+                  report(candidate, '');
+                  break;
+                }
+              }
             }
           } catch(e) {}
         });
@@ -87,6 +112,16 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   // Injected JavaScript that detects HTML5 video playback & auto-dismisses login prompts
   const injectedJS = `
     (function() {
+      function cleanUrl(raw) {
+        if (!raw) return '';
+        var u = raw;
+        u = u.replace(/\\\\\\//g, '/').replace(/\\\\\//g, '/');
+        u = u.replace(/\\\\u0026/g, '&').replace(/\\u0026/g, '&');
+        u = u.replace(/&amp;/g, '&');
+        u = u.replace(/["'\\\\]+$/, '');
+        return u;
+      }
+
       function scanForVideos() {
         // Meta og:video
         var meta = document.querySelector('meta[property="og:video"]') ||
@@ -94,7 +129,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         if (meta && meta.content && meta.content.indexOf('http') === 0) {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'VIDEO_FOUND',
-            url: meta.content,
+            url: cleanUrl(meta.content),
             poster: ''
           }));
           return;
@@ -111,7 +146,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
           if (src && src.indexOf('http') === 0 && src.indexOf('blob:') === -1) {
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'VIDEO_FOUND',
-              url: src,
+              url: cleanUrl(src),
               poster: v.poster || ''
             }));
             return;
@@ -137,8 +172,11 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'VIDEO_FOUND' && data.url) {
-        setCapturedVideoUrl(data.url);
-        if (data.poster) setCapturedPoster(data.poster);
+        const cleaned = cleanInstagramMediaUrl(data.url);
+        if (cleaned && cleaned.startsWith('http')) {
+          setCapturedVideoUrl(cleaned);
+          if (data.poster) setCapturedPoster(data.poster);
+        }
       }
     } catch {
       // Ignore non-json messages

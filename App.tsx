@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Image,
   LogBox,
+  ActivityIndicator,
   StatusBar as RNStatusBar,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -36,7 +37,12 @@ import { OpeningSplashScreen } from './src/components/OpeningSplashScreen';
 import { UpdateModal } from './src/components/UpdateModal';
 import { COLORS } from './src/theme/colors';
 import { MediaMetadata, PlatformType, QualityOption, DownloadHistoryItem } from './src/types';
-import { extractMedia, InstagramRequiresBrowserError } from './src/services/api/extractor';
+import {
+  extractMedia,
+  InstagramRequiresBrowserError,
+  cleanInputUrl,
+  cleanInstagramMediaUrl,
+} from './src/services/api/extractor';
 import {
   downloadAndSaveMedia,
   DownloadProgressInfo,
@@ -114,7 +120,7 @@ export default function App() {
 
   const handleFetchMedia = async (targetUrlToFetch?: string) => {
     const raw = typeof targetUrlToFetch === 'string' ? targetUrlToFetch : url;
-    const trimmed = raw.trim();
+    const trimmed = cleanInputUrl(raw);
     if (!trimmed) {
       Alert.alert('Empty Link', 'Please paste a TikTok, Instagram, or YouTube link first.');
       return;
@@ -183,18 +189,19 @@ export default function App() {
   };
 
   const handleCapturedInstagramVideo = (videoUrl: string, title?: string, poster?: string) => {
+    const cleanedUrl = cleanInstagramMediaUrl(videoUrl);
     const media: MediaMetadata = {
       id: String(Date.now()),
       platform: 'instagram',
       title: title || 'Instagram Video (No Login)',
       author: 'Instagram Creator',
       thumbnail: poster || '',
-      videoUrl: videoUrl,
+      videoUrl: cleanedUrl,
       originalUrl: browserInitialUrl || url,
       qualityOptions: [
         {
           label: 'HD Video (No Watermark)',
-          url: videoUrl,
+          url: cleanedUrl,
           type: 'video',
           quality: '1080p HD',
         },
@@ -443,6 +450,32 @@ export default function App() {
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* Real-time Analyzing / Loading Feedback Card */}
+            {isAnalyzing && (
+              <View style={styles.analyzingCard}>
+                <LinearGradient
+                  colors={['#171B28', '#0F121C']}
+                  style={styles.analyzingCardGradient}
+                >
+                  <View style={styles.analyzingSpinnerFrame}>
+                    <ActivityIndicator size="small" color={COLORS.accentPrimary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.analyzingTitle}>
+                      {url.includes('instagram.com') || url.includes('instagr.am')
+                        ? 'Capturing Instagram Reel...'
+                        : url.includes('tiktok.com')
+                        ? 'Resolving TikTok (No Watermark)...'
+                        : 'Extracting 4K & Audio Streams...'}
+                    </Text>
+                    <Text style={styles.analyzingSub}>
+                      Analyzing link & generating direct download links...
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </View>
+            )}
+
             {/* Media Result & Download Card */}
             {currentMedia && (
               <MediaPreviewCard
@@ -689,6 +722,40 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
+  },
+  analyzingCard: {
+    marginHorizontal: 20,
+    marginBottom: 18,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 94, 58, 0.35)',
+  },
+  analyzingCardGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 14,
+  },
+  analyzingSpinnerFrame: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 94, 58, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 94, 58, 0.25)',
+  },
+  analyzingTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  analyzingSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   instagramBrowserBanner: {
     marginHorizontal: 20,

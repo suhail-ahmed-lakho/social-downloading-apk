@@ -15,8 +15,8 @@ export interface AppReleaseManifest {
   changelog: string[];
 }
 
-export const CURRENT_APP_VERSION = '1.0.8';
-export const CURRENT_VERSION_CODE = 10008;
+export const CURRENT_APP_VERSION = '1.0.9';
+export const CURRENT_VERSION_CODE = 10009;
 
 export const UPDATE_CONFIG = {
   // Current installed app version

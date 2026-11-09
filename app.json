@@ -2,7 +2,7 @@
   "expo": {
     "name": "OmniSaver - All Video Downloader",
     "slug": "media-downloader",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -31,7 +31,7 @@
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 10008
+      "versionCode": 10009
     },
     "plugins": [
       [
