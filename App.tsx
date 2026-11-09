@@ -3,14 +3,18 @@ import {
   StyleSheet,
   View,
   ScrollView,
-  StatusBar,
   Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
   TouchableOpacity,
+  Image,
   LogBox,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 LogBox.ignoreLogs([
   'Due to changes in Androids permission requirements',
@@ -277,7 +281,7 @@ export default function App() {
         setShowUpdateModal(true);
       } else if (isManual) {
         Alert.alert(
-          'OmniSaver Up to Date ✨',
+          'OmniSaver Up to Date',
           `You are using the latest version (v${CURRENT_APP_VERSION}) by Lakho's team.`
         );
       }
@@ -320,7 +324,7 @@ export default function App() {
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+      <StatusBar style="light" />
 
       {/* Opening Splash Animation */}
       {showSplash && (
@@ -345,23 +349,35 @@ export default function App() {
         {clipboardBanner && activeTab === 'download' && (
           <TouchableOpacity
             style={styles.clipboardBanner}
-            onPress={handleApplyClipboard}
-            activeOpacity={0.8}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleApplyClipboard();
+            }}
+            activeOpacity={0.88}
           >
             <View style={styles.clipLeft}>
-              <Ionicons name="link-outline" size={18} color={COLORS.accentPrimary} />
+              <View style={styles.clipIconCircle}>
+                <Ionicons name="link-outline" size={16} color={COLORS.accentPrimary} />
+              </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.clipTitle}>
-                  {clipboardBanner.platform.toUpperCase()} Link Detected
-                </Text>
+                <View style={styles.clipTagRow}>
+                  <Text style={styles.clipTag}>{clipboardBanner.platform.toUpperCase()}</Text>
+                  <Text style={styles.clipTitle}>Link Detected</Text>
+                </View>
                 <Text style={styles.clipSub} numberOfLines={1}>
                   {clipboardBanner.text}
                 </Text>
               </View>
             </View>
-            <View style={styles.clipAction}>
+            <LinearGradient
+              colors={COLORS.gradientPrimary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.clipActionGradient}
+            >
+              <Ionicons name="arrow-down-circle-outline" size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
               <Text style={styles.clipActionText}>Paste & Fetch</Text>
-            </View>
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
@@ -390,23 +406,41 @@ export default function App() {
             <TouchableOpacity
               style={styles.instagramBrowserBanner}
               onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setBrowserInitialUrl(url.trim() || 'https://www.instagram.com');
                 setShowInstagramBrowser(true);
               }}
-              activeOpacity={0.8}
+              activeOpacity={0.88}
             >
-              <View style={styles.instagramCardContent}>
-                <View style={styles.igIconBox}>
-                  <FontAwesome5 name="instagram" size={17} color={COLORS.accentPrimary} />
-                </View>
+              <LinearGradient
+                colors={['#171B28', '#101420']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.instagramCardGradient}
+              >
+                <LinearGradient
+                  colors={COLORS.instagramGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.igIconBox}
+                >
+                  <FontAwesome5 name="instagram" size={18} color="#FFFFFF" />
+                </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.igBannerTitle}>Instagram Downloader Browser</Text>
+                  <View style={styles.igHeaderRow}>
+                    <Text style={styles.igBannerTitle}>Instagram In-App Browser</Text>
+                    <View style={styles.igBadge}>
+                      <Text style={styles.igBadgeText}>PRO</Text>
+                    </View>
+                  </View>
                   <Text style={styles.igBannerSub}>
-                    Download Public & Private Reels or Posts with 1 tap
+                    Browse, watch & capture private reels or stories in 1 tap
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-              </View>
+                <View style={styles.igArrowCircle}>
+                  <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
 
             {/* Media Result & Download Card */}
@@ -422,47 +456,118 @@ export default function App() {
               />
             )}
 
-            {/* Feature Highlights Grid */}
+            {/* Quick Engine Capabilities Grid */}
             {!currentMedia && (
-              <View style={styles.featureGrid}>
-                <View style={styles.featureCard}>
-                  <View style={styles.featureIconCircle}>
-                    <Ionicons name="musical-notes" size={18} color={COLORS.accentPrimary} />
+              <View style={styles.capabilitiesContainer}>
+                <View style={styles.capabilitiesRow}>
+                  <View style={styles.capabilityBadge}>
+                    <Ionicons name="film-outline" size={15} color={COLORS.accentPrimary} />
+                    <Text style={styles.capabilityText}>4K & 1080p Ultra HD</Text>
                   </View>
-                  <Text style={styles.featureTitle}>YouTube Songs & MP3</Text>
-                  <Text style={styles.featureDesc}>
-                    High-speed audio extraction for YouTube tracks & music in original HQ quality.
-                  </Text>
+                  <View style={styles.capabilityBadge}>
+                    <Ionicons name="musical-notes-outline" size={15} color="#38BDF8" />
+                    <Text style={styles.capabilityText}>320k Lossless MP3</Text>
+                  </View>
+                </View>
+                <View style={styles.capabilitiesRow}>
+                  <View style={styles.capabilityBadge}>
+                    <Ionicons name="shield-checkmark-outline" size={15} color="#10B981" />
+                    <Text style={styles.capabilityText}>Zero Watermarks</Text>
+                  </View>
+                  <View style={styles.capabilityBadge}>
+                    <Ionicons name="images-outline" size={15} color="#F59E0B" />
+                    <Text style={styles.capabilityText}>Instant Gallery Sync</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Recent Downloads Horizontal Carousel */}
+            {!currentMedia && historyItems.length > 0 && (
+              <View style={styles.recentSection}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionTitleRow}>
+                    <Ionicons name="time-outline" size={15} color={COLORS.accentPrimary} />
+                    <Text style={styles.sectionTitle}>RECENT DOWNLOADS</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setActiveTab('history');
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={styles.seeAllText}>See All ({historyItems.length}) ›</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recentCarousel}
+                >
+                  {historyItems.slice(0, 5).map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.recentCard}
+                      activeOpacity={0.82}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        handleShare(item.localUri);
+                      }}
+                    >
+                      {item.thumbnail ? (
+                        <Image source={{ uri: item.thumbnail }} style={styles.recentThumb} />
+                      ) : (
+                        <View style={[styles.recentThumb, styles.recentThumbPlaceholder]}>
+                          <Ionicons
+                            name={item.platform === 'youtube' ? 'logo-youtube' : item.platform === 'tiktok' ? 'videocam' : 'camera'}
+                            size={20}
+                            color={COLORS.textMuted}
+                          />
+                        </View>
+                      )}
+                      <View style={styles.recentCardInfo}>
+                        <View style={styles.recentPlatformBadge}>
+                          <Text style={styles.recentPlatformText}>{item.platform.toUpperCase()}</Text>
+                        </View>
+                        <Text style={styles.recentTitle} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                      </View>
+                      <View style={styles.recentShareBtn}>
+                        <Ionicons name="share-social-outline" size={13} color={COLORS.textPrimary} />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Platform Quick Guides Showcase */}
+            {!currentMedia && (
+              <View style={styles.platformShowcase}>
+                <View style={styles.showcaseCard}>
+                  <View style={[styles.showcaseIconWrap, { backgroundColor: 'rgba(255, 0, 0, 0.12)', borderColor: 'rgba(255, 0, 0, 0.25)' }]}>
+                    <Ionicons name="logo-youtube" size={18} color="#FF0000" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.showcaseTitle}>YouTube & Shorts</Text>
+                    <Text style={styles.showcaseSub}>
+                      Extract 1080p/720p MP4 or convert audio to 320kbps MP3 directly
+                    </Text>
+                  </View>
                 </View>
 
-                <View style={styles.featureCard}>
-                  <View style={styles.featureIconCircle}>
-                    <Ionicons name="play-circle-outline" size={18} color={COLORS.accentPrimary} />
+                <View style={styles.showcaseCard}>
+                  <View style={[styles.showcaseIconWrap, { backgroundColor: 'rgba(0, 242, 254, 0.12)', borderColor: 'rgba(0, 242, 254, 0.25)' }]}>
+                    <Ionicons name="videocam-outline" size={18} color={COLORS.tiktokCyan} />
                   </View>
-                  <Text style={styles.featureTitle}>YouTube Shorts & HD</Text>
-                  <Text style={styles.featureDesc}>
-                    Direct 1080p Full HD & 720p resolution downloads for Shorts and Videos.
-                  </Text>
-                </View>
-
-                <View style={styles.featureCard}>
-                  <View style={styles.featureIconCircle}>
-                    <Ionicons name="water-outline" size={18} color={COLORS.accentPrimary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.showcaseTitle}>TikTok (Clean HD)</Text>
+                    <Text style={styles.showcaseSub}>
+                      Clean video extraction with author watermark removed automatically
+                    </Text>
                   </View>
-                  <Text style={styles.featureTitle}>TikTok (No Watermark)</Text>
-                  <Text style={styles.featureDesc}>
-                    Crystal-clear downloads without creator watermark directly to Photos.
-                  </Text>
-                </View>
-
-                <View style={styles.featureCard}>
-                  <View style={styles.featureIconCircle}>
-                    <Ionicons name="film-outline" size={18} color={COLORS.accentPrimary} />
-                  </View>
-                  <Text style={styles.featureTitle}>Instagram Public & Private</Text>
-                  <Text style={styles.featureDesc}>
-                    In-app browser captures any video or reel directly to Gallery.
-                  </Text>
                 </View>
               </View>
             )}
@@ -514,7 +619,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 20) : 44,
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 20) : 44,
   },
   keyboardContainer: {
     flex: 1,
@@ -526,13 +631,13 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   clipboardBanner: {
-    marginHorizontal: 22,
+    marginHorizontal: 20,
     marginBottom: 16,
-    backgroundColor: COLORS.accentSoft,
+    backgroundColor: '#121624',
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     borderRadius: 14,
-    padding: 14,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -540,24 +645,45 @@ const styles = StyleSheet.create({
   clipLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
+  },
+  clipIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: COLORS.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clipTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  clipTag: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.accentPrimary,
+    letterSpacing: 0.5,
   },
   clipTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.accentPrimary,
+    color: COLORS.textPrimary,
   },
   clipSub: {
     fontSize: 11,
     color: COLORS.textSecondary,
+    marginTop: 2,
   },
-  clipAction: {
-    backgroundColor: COLORS.accentPrimary,
+  clipActionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 9,
-    marginLeft: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginLeft: 8,
   },
   clipActionText: {
     color: '#FFFFFF',
@@ -565,71 +691,197 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   instagramBrowserBanner: {
-    marginHorizontal: 22,
-    marginBottom: 22,
-    backgroundColor: COLORS.cardBg,
+    marginHorizontal: 20,
+    marginBottom: 18,
     borderRadius: 16,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  instagramCardContent: {
+  instagramCardGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
-    gap: 14,
+    gap: 12,
   },
   igIconBox: {
     width: 38,
     height: 38,
-    borderRadius: 12,
-    backgroundColor: COLORS.accentSoft,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  igHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   igBannerTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
+  igBadge: {
+    backgroundColor: 'rgba(245, 133, 41, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  igBadgeText: {
+    color: '#F58529',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   igBannerSub: {
     fontSize: 11,
     color: COLORS.textSecondary,
-    marginTop: 3,
+    marginTop: 2,
   },
-  featureGrid: {
-    paddingHorizontal: 22,
-    gap: 14,
-    marginTop: 4,
-  },
-  featureCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-  },
-  featureIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: COLORS.accentSoft,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+  igArrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  capabilitiesContainer: {
+    marginHorizontal: 20,
+    marginBottom: 18,
+    gap: 8,
+  },
+  capabilitiesRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  capabilityBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  capabilityText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  recentSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
     marginBottom: 12,
   },
-  featureTitle: {
-    fontSize: 14,
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    letterSpacing: 0.8,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.accentPrimary,
+  },
+  recentCarousel: {
+    paddingLeft: 20,
+    paddingRight: 8,
+    gap: 12,
+  },
+  recentCard: {
+    width: 170,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    overflow: 'hidden',
+  },
+  recentThumb: {
+    width: '100%',
+    height: 96,
+    backgroundColor: COLORS.surface,
+  },
+  recentThumbPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentCardInfo: {
+    padding: 10,
+  },
+  recentPlatformBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  recentPlatformText: {
+    color: COLORS.textSecondary,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  recentTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  recentShareBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  platformShowcase: {
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  showcaseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+  },
+  showcaseIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  showcaseTitle: {
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 5,
   },
-  featureDesc: {
-    fontSize: 12,
+  showcaseSub: {
+    fontSize: 11,
     color: COLORS.textSecondary,
-    lineHeight: 19,
+    marginTop: 2,
+    lineHeight: 16,
   },
 });

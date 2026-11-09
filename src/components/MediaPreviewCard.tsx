@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
@@ -350,42 +351,53 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         {/* Primary Download Trigger Button */}
         {!savedLocalUri && (
           <TouchableOpacity
-            style={[
-              styles.downloadBtn,
-              isDownloading && styles.downloadBtnDisabled,
-            ]}
-            onPress={() => onDownload(selectedOption)}
+            style={styles.downloadTouchWrapper}
+            onPress={async () => {
+              try {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              } catch (_) {}
+              onDownload(selectedOption);
+            }}
             disabled={isDownloading}
             activeOpacity={0.85}
           >
             {isDownloading ? (
-              <View style={styles.btnRow}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.btnText}>
-                  {selectedOption.type === 'audio'
-                    ? 'Downloading Song MP3...'
-                    : 'Downloading Video...'}
-                </Text>
+              <View style={styles.downloadBtnDisabled}>
+                <View style={styles.btnRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.btnText}>
+                    {selectedOption.type === 'audio'
+                      ? 'Downloading Song MP3...'
+                      : 'Downloading Video...'}
+                  </Text>
+                </View>
               </View>
             ) : (
-              <View style={styles.btnRow}>
-                <Ionicons
-                  name={
-                    selectedOption.type === 'audio'
-                      ? 'musical-notes'
-                      : 'arrow-down-circle'
-                  }
-                  size={18}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.btnText}>
-                  {selectedOption.type === 'audio'
-                    ? 'Download Song (MP3 Audio) 🎵'
-                    : media.platform === 'tiktok'
-                    ? 'Download No Watermark (Gallery)'
-                    : `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video to Gallery`}
-                </Text>
-              </View>
+              <LinearGradient
+                colors={COLORS.gradientPrimary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.downloadBtnGradient}
+              >
+                <View style={styles.btnRow}>
+                  <Ionicons
+                    name={
+                      selectedOption.type === 'audio'
+                        ? 'musical-notes'
+                        : 'arrow-down-circle'
+                    }
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.btnText}>
+                    {selectedOption.type === 'audio'
+                      ? 'Download Song (MP3 Audio) 🎵'
+                      : media.platform === 'tiktok'
+                      ? 'Download No Watermark (Gallery)'
+                      : `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video to Gallery`}
+                  </Text>
+                </View>
+              </LinearGradient>
             )}
           </TouchableOpacity>
         )}
@@ -608,7 +620,7 @@ const styles = StyleSheet.create({
   successBox: {
     backgroundColor: COLORS.successSoft,
     borderWidth: 1,
-    borderColor: 'rgba(124, 179, 104, 0.25)',
+    borderColor: 'rgba(16, 185, 129, 0.25)',
     borderRadius: 14,
     padding: 14,
     marginBottom: 14,
@@ -665,17 +677,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  downloadBtn: {
-    backgroundColor: COLORS.accentPrimary,
+  downloadTouchWrapper: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  downloadBtnGradient: {
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: COLORS.accentPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
   downloadBtnDisabled: {
     backgroundColor: COLORS.cardBgLight,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   btnRow: {
     flexDirection: 'row',

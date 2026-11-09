@@ -26,7 +26,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   onClose,
   onVideoCaptured,
 }) => {
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<any>(null);
   const [capturedVideoUrl, setCapturedVideoUrl] = useState<string | null>(null);
   const [capturedPoster, setCapturedPoster] = useState<string | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
@@ -198,15 +198,15 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
 
         {/* Embedded WebView */}
         <View style={styles.webViewContainer}>
-          <WebView
-            ref={webViewRef}
-            source={{ uri: cleanUrl }}
-            injectedJavaScriptBeforeContentLoaded={injectedBeforeContent}
-            injectedJavaScript={injectedJS}
-            onMessage={handleMessage}
-            onLoadStart={() => setIsLoadingPage(true)}
-            onLoadEnd={() => setIsLoadingPage(false)}
-            onShouldStartLoadWithRequest={(request) => {
+          {React.createElement(WebView as any, {
+            ref: webViewRef,
+            source: { uri: cleanUrl },
+            injectedJavaScriptBeforeContentLoaded: injectedBeforeContent,
+            injectedJavaScript: injectedJS,
+            onMessage: handleMessage,
+            onLoadStart: () => setIsLoadingPage(true),
+            onLoadEnd: () => setIsLoadingPage(false),
+            onShouldStartLoadWithRequest: (request: any) => {
               const reqUrl = request.url.toLowerCase();
               // Prevent redirecting away to native Instagram app
               if (
@@ -217,16 +217,17 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
                 return false;
               }
               return true;
-            }}
-            allowsInlineMediaPlayback={true}
-            mediaPlaybackRequiresUserAction={false}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            sharedCookiesEnabled={true}
-            thirdPartyCookiesEnabled={true}
-            userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            style={styles.webView}
-          />
+            },
+            allowsInlineMediaPlayback: true,
+            mediaPlaybackRequiresUserAction: false,
+            javaScriptEnabled: true,
+            domStorageEnabled: true,
+            sharedCookiesEnabled: true,
+            thirdPartyCookiesEnabled: true,
+            userAgent:
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            style: styles.webView,
+          })}
         </View>
 
         {/* Floating Capture Overlay Bar */}

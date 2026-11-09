@@ -7,6 +7,7 @@ import {
   Text,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -36,7 +37,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
   const handlePaste = async () => {
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const text = await Clipboard.getStringAsync();
       if (text) {
         onChangeUrl(text.trim());
@@ -52,18 +53,38 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
   const getPlatformIcon = () => {
     if (url.includes('music.youtube.com')) {
-      return <Ionicons name="musical-notes" size={17} color={COLORS.accentPrimary} />;
+      return (
+        <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(255, 0, 0, 0.12)' }]}>
+          <Ionicons name="musical-notes" size={14} color="#FF0000" />
+        </View>
+      );
     }
     switch (detected) {
       case 'tiktok':
-        return <FontAwesome5 name="tiktok" size={15} color={COLORS.accentPrimary} />;
+        return (
+          <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(0, 242, 254, 0.12)' }]}>
+            <FontAwesome5 name="tiktok" size={13} color="#00F2FE" />
+          </View>
+        );
       case 'instagram':
-        return <FontAwesome5 name="instagram" size={15} color={COLORS.accentPrimary} />;
+        return (
+          <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(225, 48, 108, 0.12)' }]}>
+            <FontAwesome5 name="instagram" size={13} color="#E1306C" />
+          </View>
+        );
       case 'youtube':
       case 'youtube_music':
-        return <FontAwesome5 name="youtube" size={15} color={COLORS.accentPrimary} />;
+        return (
+          <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(255, 0, 0, 0.12)' }]}>
+            <FontAwesome5 name="youtube" size={13} color="#FF0000" />
+          </View>
+        );
       default:
-        return <Feather name="link-2" size={15} color={COLORS.textMuted} />;
+        return (
+          <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+            <Feather name="link-2" size={14} color={COLORS.textMuted} />
+          </View>
+        );
     }
   };
 
@@ -71,7 +92,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Input Field */}
+      {/* Search / Input Box */}
       <View
         style={[
           styles.inputWrapper,
@@ -83,7 +104,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
         <TextInput
           style={styles.input}
-          placeholder="Paste YouTube Song, Video, TikTok, or IG link..."
+          placeholder="Paste YouTube, TikTok, or Instagram link..."
           placeholderTextColor={COLORS.textMuted}
           value={url}
           onChangeText={onChangeUrl}
@@ -109,42 +130,49 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
             onPress={handlePaste}
             activeOpacity={0.7}
           >
-            <Ionicons name="clipboard-outline" size={13} color={COLORS.accentPrimary} />
+            <Ionicons name="clipboard-outline" size={12} color={COLORS.accentPrimary} />
             <Text style={styles.pasteText}>Paste</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Solid Action Button */}
+      {/* Primary Action Button (Gradient on Active) */}
       <TouchableOpacity
-        style={[
-          styles.fetchButton,
-          isSubmitActive ? styles.fetchButtonActive : styles.fetchButtonDisabled,
-        ]}
-        onPress={onSubmit}
+        onPress={async () => {
+          try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch (_) {}
+          onSubmit();
+        }}
         disabled={!isSubmitActive}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
+        style={styles.touchableBtn}
       >
-        {isLoading ? (
-          <View style={styles.btnRow}>
-            <ActivityIndicator color="#FFFFFF" size="small" />
-            <Text style={styles.fetchText}>Analyzing Video...</Text>
-          </View>
+        {isSubmitActive ? (
+          <LinearGradient
+            colors={COLORS.gradientPrimary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientBtn}
+          >
+            {isLoading ? (
+              <View style={styles.btnRow}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={styles.fetchText}>Fetching Media...</Text>
+              </View>
+            ) : (
+              <View style={styles.btnRow}>
+                <Ionicons name="arrow-down-circle" size={18} color="#FFFFFF" />
+                <Text style={styles.fetchText}>Get Download Link</Text>
+              </View>
+            )}
+          </LinearGradient>
         ) : (
-          <View style={styles.btnRow}>
-            <Ionicons
-              name="flash"
-              size={16}
-              color={isSubmitActive ? '#FFFFFF' : COLORS.textMuted}
-            />
-            <Text
-              style={[
-                styles.fetchText,
-                !isSubmitActive && styles.fetchTextDisabled,
-              ]}
-            >
-              Get Download Link
-            </Text>
+          <View style={styles.disabledBtn}>
+            <View style={styles.btnRow}>
+              <Ionicons name="arrow-down-circle" size={18} color={COLORS.textMuted} />
+              <Text style={styles.disabledBtnText}>Paste a Link to Download</Text>
+            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -154,31 +182,36 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 22,
-    marginBottom: 24,
-    gap: 14,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.cardBg,
     borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 54,
+    paddingHorizontal: 14,
+    height: 56,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
   inputWrapperFocused: {
-    borderColor: COLORS.accentPrimary,
+    borderColor: 'rgba(255, 94, 58, 0.6)',
     backgroundColor: COLORS.cardBgLight,
   },
   inputWrapperDetected: {
-    borderColor: COLORS.accentBorder,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
   },
   iconContainer: {
-    marginRight: 12,
-    width: 22,
+    marginRight: 10,
+  },
+  platformIconFrame: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
@@ -193,9 +226,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.accentSoft,
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 9,
     gap: 5,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
@@ -205,34 +238,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  fetchButton: {
+  touchableBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  gradientBtn: {
     height: 50,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    shadowColor: COLORS.accentPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  fetchButtonActive: {
-    backgroundColor: COLORS.accentPrimary,
-    borderColor: COLORS.accentPrimary,
-  },
-  fetchButtonDisabled: {
+  disabledBtn: {
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
   btnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: 8,
   },
   fetchText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
-  fetchTextDisabled: {
+  disabledBtnText: {
     color: COLORS.textMuted,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

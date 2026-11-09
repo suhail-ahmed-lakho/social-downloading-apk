@@ -16,7 +16,7 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
   onError,
   timeoutMs = 9500,
 }) => {
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<any>(null);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [hasResolved, setHasResolved] = useState(false);
   const [fallbackAttempted, setFallbackAttempted] = useState(false);
@@ -195,27 +195,32 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
 
   return (
     <View style={styles.hiddenContainer} pointerEvents="none">
-      <WebView
-        ref={webViewRef}
-        source={{ uri: activeUrl }}
-        injectedJavaScriptBeforeContentLoaded={injectedBeforeContent}
-        injectedJavaScript={injectedScript}
-        onMessage={handleMessage}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        mediaPlaybackRequiresUserAction={false}
-        allowsInlineMediaPlayback={true}
-        mixedContentMode="always"
-        userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
-        onShouldStartLoadWithRequest={(request) => {
+      {React.createElement(WebView as any, {
+        ref: webViewRef,
+        source: { uri: activeUrl },
+        injectedJavaScriptBeforeContentLoaded: injectedBeforeContent,
+        injectedJavaScript: injectedScript,
+        onMessage: handleMessage,
+        javaScriptEnabled: true,
+        domStorageEnabled: true,
+        mediaPlaybackRequiresUserAction: false,
+        allowsInlineMediaPlayback: true,
+        mixedContentMode: 'always',
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        onShouldStartLoadWithRequest: (request: any) => {
           const reqUrl = request.url.toLowerCase();
-          if (reqUrl.startsWith('intent://') || reqUrl.startsWith('instagram://') || reqUrl.startsWith('market://')) {
+          if (
+            reqUrl.startsWith('intent://') ||
+            reqUrl.startsWith('instagram://') ||
+            reqUrl.startsWith('market://')
+          ) {
             return false;
           }
           return true;
-        }}
-        style={styles.hiddenWebView}
-      />
+        },
+        style: styles.hiddenWebView,
+      })}
     </View>
   );
 };

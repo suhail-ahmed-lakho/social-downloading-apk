@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { PlatformType } from '../types';
 
@@ -17,9 +18,10 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
     {
       id: 'all' as const,
       label: 'All Sites',
-      iconName: 'sparkles',
+      iconName: 'layers-outline',
       isIonicons: true,
       badge: 'Auto',
+      accentColor: COLORS.accentPrimary,
     },
     {
       id: 'youtube_music' as const,
@@ -27,13 +29,15 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
       iconName: 'musical-notes',
       isIonicons: true,
       badge: 'MP3',
+      accentColor: '#FF5E3A',
     },
     {
       id: 'youtube' as const,
       label: 'YouTube',
       iconName: 'youtube',
       isIonicons: false,
-      badge: 'Shorts/HD',
+      badge: '4K/HD',
+      accentColor: '#FF0000',
     },
     {
       id: 'tiktok' as const,
@@ -41,6 +45,7 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
       iconName: 'tiktok',
       isIonicons: false,
       badge: 'No Mark',
+      accentColor: '#00F2FE',
     },
     {
       id: 'instagram' as const,
@@ -48,8 +53,16 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
       iconName: 'instagram',
       isIonicons: false,
       badge: 'Reels',
+      accentColor: '#E1306C',
     },
   ];
+
+  const handleSelect = async (id: PlatformType | 'all') => {
+    try {
+      await Haptics.selectionAsync();
+    } catch (_) {}
+    onSelect(id);
+  };
 
   return (
     <View style={styles.container}>
@@ -60,7 +73,7 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
       >
         {platforms.map((p) => {
           const isSelected = selectedPlatform === p.id;
-          const iconColor = isSelected ? COLORS.accentPrimary : COLORS.textMuted;
+          const iconColor = isSelected ? p.accentColor : COLORS.textMuted;
 
           return (
             <TouchableOpacity
@@ -69,7 +82,7 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
                 styles.pill,
                 isSelected && styles.pillSelected,
               ]}
-              onPress={() => onSelect(p.id)}
+              onPress={() => handleSelect(p.id)}
               activeOpacity={0.7}
             >
               <View style={styles.pillIcon}>
@@ -90,13 +103,13 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
               <View
                 style={[
                   styles.badge,
-                  isSelected ? styles.badgeSelected : styles.badgeDefault,
+                  isSelected ? { backgroundColor: `${p.accentColor}25` } : styles.badgeDefault,
                 ]}
               >
                 <Text
                   style={[
                     styles.badgeText,
-                    isSelected ? styles.badgeTextSelected : styles.badgeTextDefault,
+                    isSelected ? { color: p.accentColor } : styles.badgeTextDefault,
                   ]}
                 >
                   {p.badge}
@@ -112,28 +125,33 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: 22,
-    marginBottom: 20,
+    paddingLeft: 20,
+    marginBottom: 16,
   },
   scrollRow: {
     flexDirection: 'row',
-    gap: 10,
-    paddingRight: 22,
+    gap: 8,
+    paddingRight: 20,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 9,
-    paddingHorizontal: 13,
-    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 14,
     backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
-    gap: 7,
+    gap: 6,
   },
   pillSelected: {
-    backgroundColor: COLORS.accentSoft,
-    borderColor: COLORS.accentPrimary,
+    backgroundColor: COLORS.cardBgElevated,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   pillIcon: {
     marginRight: 1,
@@ -148,25 +166,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   badge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   badgeDefault: {
-    backgroundColor: COLORS.cardBgLight,
-  },
-  badgeSelected: {
-    backgroundColor: 'rgba(212, 160, 82, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   badgeTextDefault: {
     color: COLORS.textMuted,
-  },
-  badgeTextSelected: {
-    color: COLORS.accentPrimary,
   },
 });

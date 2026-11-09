@@ -60,12 +60,14 @@ const versionManifest = {
   mandatory: false,
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
-    `OmniSaver v${newVersion} - by Lakho's team`,
-    'Fixed 0.0 MB download issue and format not supported error on sharing',
-    'Direct high-speed YouTube 1080p, 720p & lossless 320kbps MP3 conversion',
-    'Resilient multi-tier TikTok (TikWM + TikMate) and Instagram extractors',
-    'Enhanced CDN request headers and strict download integrity verification',
-    'Optimized in-app media gallery and instant WhatsApp/social sharing'
+    `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
+    'All-new modern Neo-Native UI design with zero AI artifacts and tactile haptic feedback',
+    'Brand new minimalist geometric app launcher and splash icons',
+    'Upgraded to Expo SDK 58 (58.0.23) and React 19 architecture',
+    'Dynamic Island clipboard link detection with 1-tap Paste & Fetch',
+    'Horizontal Recent Downloads carousel with instant sharing',
+    'Enhanced high-speed YouTube 4K/1080p & 320kbps MP3 lossless audio extractor',
+    'Direct watermark-free TikTok & in-app Instagram private reels capture'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

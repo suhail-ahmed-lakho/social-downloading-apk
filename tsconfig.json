@@ -3,5 +3,5 @@
   "compilerOptions": {
     "strict": true
   },
-  "exclude": ["website", "node_modules"]
+  "exclude": ["website", "node_modules", "devintell-npm"]
 }

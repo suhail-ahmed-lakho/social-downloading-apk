@@ -1,6 +1,6 @@
 {
   "name": "media-downloader",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "main": "index.ts",
   "engines": {
     "node": ">=22.0.0"
@@ -14,23 +14,23 @@
     "release": "node scripts/release.js"
   },
   "dependencies": {
-    "@expo/vector-icons": "^15.1.1",
-    "@react-native-async-storage/async-storage": "^2.1.2",
-    "expo": "~57.0.27",
-    "expo-clipboard": "~57.0.2",
-    "expo-file-system": "~57.0.7",
-    "expo-font": "^57.0.4",
-    "expo-haptics": "~57.0.3",
-    "expo-linear-gradient": "~57.0.2",
-    "expo-media-library": "~57.0.5",
-    "expo-sharing": "~57.0.22",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-webview": "13.16.1"
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~58.0.23",
+    "expo-clipboard": "~58.0.4",
+    "expo-file-system": "~58.0.13",
+    "expo-font": "~58.0.11",
+    "expo-haptics": "~58.0.7",
+    "expo-linear-gradient": "~58.0.3",
+    "expo-media-library": "~58.0.13",
+    "expo-sharing": "~58.0.22",
+    "expo-status-bar": "~58.0.4",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-webview": "14.0.1"
   },
   "devDependencies": {
-    "@types/react": "~19.2.2",
+    "@types/react": "~19.3.0",
     "typescript": "~6.0.3"
   },
   "private": true
