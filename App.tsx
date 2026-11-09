@@ -131,13 +131,6 @@ export default function App() {
     setSavedLocalUri(null);
     setDownloadProgress(null);
 
-    // If Instagram link, automatically extract in background WITHOUT login or signup
-    if (trimmed.includes('instagram.com') || trimmed.includes('instagr.am')) {
-      setBrowserInitialUrl(trimmed);
-      setHeadlessInstagramUrl(trimmed);
-      return;
-    }
-
     try {
       const media = await extractMedia(trimmed);
       setCurrentMedia(media);

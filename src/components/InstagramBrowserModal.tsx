@@ -12,7 +12,7 @@ import {
 import { WebView } from 'react-native-webview';
 import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
-import { cleanInstagramMediaUrl } from '../services/api/extractor';
+import { cleanInstagramMediaUrl, extractInstagramViaSnapSave } from '../services/api/extractor';
 
 interface InstagramBrowserModalProps {
   visible: boolean;
@@ -31,6 +31,10 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   const [capturedVideoUrl, setCapturedVideoUrl] = useState<string | null>(null);
   const [capturedPoster, setCapturedPoster] = useState<string | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [currentBrowserUrl, setCurrentBrowserUrl] = useState<string>(
+    initialUrl.trim().startsWith('http') ? initialUrl.trim() : 'https://www.instagram.com'
+  );
+  const [isQuickFetching, setIsQuickFetching] = useState(false);
 
   const injectedBeforeContent = `
     (function() {
@@ -266,6 +270,23 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
     }
   };
 
+  const handleQuickDownload = async () => {
+    const target = currentBrowserUrl || initialUrl;
+    setIsQuickFetching(true);
+    try {
+      const media = await extractInstagramViaSnapSave(target);
+      if (media && media.videoUrl) {
+        onVideoCaptured(media.videoUrl, media.title, media.thumbnail);
+        onClose();
+        return;
+      }
+    } catch (err: any) {
+      console.warn('Quick extract in browser failed:', err?.message);
+    } finally {
+      setIsQuickFetching(false);
+    }
+  };
+
   const cleanUrl = initialUrl.trim().startsWith('http')
     ? initialUrl.trim()
     : 'https://www.instagram.com';
@@ -318,6 +339,11 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             injectedJavaScriptBeforeContentLoaded: injectedBeforeContent,
             injectedJavaScript: injectedJS,
             onMessage: handleMessage,
+            onNavigationStateChange: (navState: any) => {
+              if (navState && navState.url && navState.url.startsWith('http')) {
+                setCurrentBrowserUrl(navState.url);
+              }
+            },
             onLoadStart: () => setIsLoadingPage(true),
             onLoadEnd: () => setIsLoadingPage(false),
             onShouldStartLoadWithRequest: (request: any) => {
@@ -367,11 +393,31 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.hintBar}>
-            <Ionicons name="information-circle-outline" size={16} color={COLORS.textMuted} />
-            <Text style={styles.hintText}>
-              Play the video once. The download button will pop up automatically.
-            </Text>
+          <View style={styles.bottomBarContainer}>
+            <TouchableOpacity
+              style={styles.quickExtractBtn}
+              onPress={handleQuickDownload}
+              disabled={isQuickFetching}
+              activeOpacity={0.85}
+            >
+              {isQuickFetching ? (
+                <View style={styles.btnRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.quickExtractText}>Resolving Video...</Text>
+                </View>
+              ) : (
+                <View style={styles.btnRow}>
+                  <Ionicons name="flash" size={16} color="#FFD700" />
+                  <Text style={styles.quickExtractText}>⚡ Download This Reel (Instant)</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.hintBar}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.textMuted} />
+              <Text style={styles.hintText}>
+                Or play the video once for in-browser capture.
+              </Text>
+            </View>
           </View>
         )}
       </View>
@@ -489,16 +535,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.cardBg,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.cardBorder,
   },
   hintText: {
     fontSize: 12,
     color: COLORS.textMuted,
     textAlign: 'center',
+  },
+  bottomBarContainer: {
+    backgroundColor: COLORS.cardBg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.cardBorder,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  quickExtractBtn: {
+    backgroundColor: '#E1306C',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    shadowColor: '#E1306C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  quickExtractText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

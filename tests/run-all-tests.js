@@ -3,6 +3,7 @@ const { runExtractorTests } = require('./extractor.test');
 const { runDownloadTests } = require('./download.test');
 const { runDetectionTests } = require('./url-detection-and-shortcodes.test');
 const { runSanitizerTests } = require('./instagram-url-sanitizer.test');
+const { runSnapSaveTests } = require('./instagram-snapsave.test');
 
 async function main() {
   console.log('==================================================');
@@ -37,6 +38,13 @@ async function main() {
     runDownloadTests();
   } catch (err) {
     console.error('❌ Download tests failed:', err);
+    errors++;
+  }
+
+  try {
+    await runSnapSaveTests();
+  } catch (err) {
+    console.error('❌ Instagram SnapSave tests failed:', err);
     errors++;
   }
 

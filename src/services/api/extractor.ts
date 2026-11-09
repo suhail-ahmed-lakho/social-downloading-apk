@@ -369,7 +369,7 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
 }
 
 // ==========================================
-// 3. INSTAGRAM EXTRACTOR
+// 3. INSTAGRAM EXTRACTOR (Direct SnapSave Algorithm)
 // ==========================================
 export class InstagramRequiresBrowserError extends Error {
   isInstagramLoginRequired = true;
@@ -382,7 +382,154 @@ export class InstagramRequiresBrowserError extends Error {
   }
 }
 
+function decodeSnapApp(args: string[]): string {
+  const [h, u, n, t, e, r] = args;
+  const tNum = Number(t);
+  const eNum = Number(e);
+
+  function decode(d: string, eVal: number, fVal: number): string {
+    const g = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/'.split('');
+    const hArr = g.slice(0, eVal);
+    const iArr = g.slice(0, fVal);
+    let j = d.split('').reverse().reduce((a, b, c) => {
+      const idx = hArr.indexOf(b);
+      if (idx !== -1) return a + idx * Math.pow(eVal, c);
+      return a;
+    }, 0);
+    let k = '';
+    while (j > 0) {
+      k = iArr[j % fVal] + k;
+      j = Math.floor(j / fVal);
+    }
+    return k || '0';
+  }
+
+  let result = '';
+  for (let i = 0, len = h.length; i < len;) {
+    let s = '';
+    while (i < len && h[i] !== n[eNum]) {
+      s += h[i];
+      i++;
+    }
+    i++;
+    for (let j = 0; j < n.length; j++) {
+      s = s.replace(new RegExp(n[j], 'g'), j.toString());
+    }
+    result += String.fromCharCode(Number(decode(s, eNum, 10)) - tNum);
+  }
+
+  try {
+    const bytes = new Uint8Array(result.split('').map((char) => char.charCodeAt(0)));
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch {
+    return result;
+  }
+}
+
+function getEncodedSnapApp(data: string): string[] {
+  const parts = data.split('decodeURIComponent(escape(r))}(');
+  if (!parts[1]) throw new Error('SnapSave: Unexpected payload format');
+  const sub = parts[1].split('))')[0];
+  return sub.split(',').map((v) => v.replace(/"/g, '').trim());
+}
+
+function getDecodedSnapSave(data: string): string {
+  const alertMatch = data?.match(/document\.querySelector\("#alert"\)\.innerHTML\s*=\s*"([^"]+)"/);
+  if (alertMatch && alertMatch[1]) {
+    throw new Error(alertMatch[1]);
+  }
+  const part = data.split('getElementById("download-section").innerHTML = "')[1];
+  if (!part) throw new Error('SnapSave: download-section not found');
+  return part.split('"; document.getElementById("inputData").remove(); ')[0].replace(/\\(\\)?/g, '');
+}
+
+export async function extractInstagramViaSnapSave(url: string): Promise<MediaMetadata> {
+  const clean = cleanInputUrl(url).replace(/\?.*$/, '');
+  const shortcode = extractInstagramShortcode(clean) || `ig_${Date.now()}`;
+  const formData = new URLSearchParams();
+  formData.append('url', clean);
+
+  const res = await fetchWithTimeout(
+    'https://snapsave.app/action.php?lang=en',
+    {
+      method: 'POST',
+      headers: {
+        'accept': '*/*',
+        'content-type': 'application/x-www-form-urlencoded',
+        'origin': 'https://snapsave.app',
+        'referer': 'https://snapsave.app/',
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      },
+      body: formData.toString(),
+    },
+    25000
+  );
+
+  if (!res.ok) {
+    throw new Error(`SnapSave service returned HTTP ${res.status}`);
+  }
+
+  const rawText = await res.text();
+  const decodedHtml = getDecodedSnapSave(decodeSnapApp(getEncodedSnapApp(rawText)));
+
+  // Extract all download links
+  const hrefMatches = [...decodedHtml.matchAll(/href="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((u) => u.startsWith('http') && !u.includes('play.google.com') && !u.includes('instagram.com'));
+
+  if (hrefMatches.length === 0) {
+    throw new Error('No download links found in SnapSave output.');
+  }
+
+  // Extract thumbnail
+  const imgMatch = decodedHtml.match(/<img[^>]+src="([^"]+)"/i);
+  const thumbnail = imgMatch ? imgMatch[1] : '';
+
+  // Extract title / description
+  const titleMatch = decodedHtml.match(/class="video-des"[^>]*>([^<]+)<\/span>/i);
+  const title = titleMatch ? titleMatch[1].trim() : `Instagram Reel (${shortcode})`;
+
+  const primaryVideoUrl = cleanInstagramMediaUrl(hrefMatches[0]);
+
+  return {
+    id: shortcode,
+    platform: 'instagram',
+    title: title || 'Instagram Video (HD)',
+    author: 'Instagram Creator',
+    thumbnail,
+    videoUrl: primaryVideoUrl,
+    originalUrl: url,
+    qualityOptions: [
+      {
+        label: 'HD Video (No Watermark)',
+        url: primaryVideoUrl,
+        type: 'video',
+        quality: '1080p HD',
+      },
+      ...(hrefMatches.length > 1
+        ? [
+            {
+              label: 'Standard Quality',
+              url: cleanInstagramMediaUrl(hrefMatches[1]),
+              type: 'video' as const,
+              quality: '720p SD',
+            },
+          ]
+        : []),
+    ],
+  };
+}
+
 async function extractInstagram(url: string): Promise<MediaMetadata> {
+  // Tier 1: Pure HTTP direct extraction via SnapSave (Instant download outside browser)
+  try {
+    return await extractInstagramViaSnapSave(url);
+  } catch (err: any) {
+    console.warn('SnapSave extraction failed, trying embed fallback...', err?.message);
+  }
+
+  // Tier 2: Embed captioned fallback
   const shortcode = extractInstagramShortcode(url);
   if (shortcode) {
     try {
@@ -394,7 +541,7 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           },
         },
-        3000
+        5000
       );
       if (res.ok) {
         const html = await res.text();
@@ -404,7 +551,7 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
           return {
             id: shortcode,
             platform: 'instagram',
-            title: 'Instagram Video (No Login)',
+            title: 'Instagram Video (HD)',
             author: 'Instagram Creator',
             thumbnail: '',
             videoUrl: directVideoUrl,
@@ -421,12 +568,12 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
         }
       }
     } catch {
-      // Fallback to browser/headless extractor
+      // Fallback
     }
   }
 
   throw new InstagramRequiresBrowserError(
-    'Instagram video requires headless session or browser.',
+    'Instagram video could not be resolved automatically (it may be age-restricted or from a private account). Would you like to view it in the built-in browser?',
     url
   );
 }

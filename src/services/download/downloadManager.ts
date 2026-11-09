@@ -39,6 +39,35 @@ export async function requestGalleryPermissions(): Promise<boolean> {
   }
 }
 
+function extractDirectUrlFromRapidCdn(url: string): string | null {
+  try {
+    const match = url.match(/token=([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/);
+    if (!match) return null;
+    const parts = match[1].split('.');
+    if (parts.length < 2) return null;
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let output = '';
+    const cleanStr = String(base64).replace(/=+$/, '');
+    for (
+      let bc = 0, bs = 0, buffer: number, idx = 0;
+      (buffer = cleanStr.charCodeAt(idx++));
+      ~buffer && ((bs = bc % 4 ? bs * 64 + buffer : buffer), bc++ % 4)
+        ? (output += String.fromCharCode(255 & (bs >> ((-2 * bc) & 6))))
+        : 0
+    ) {
+      buffer = chars.indexOf(String.fromCharCode(buffer));
+    }
+    const parsed = JSON.parse(output);
+    return parsed?.url || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function downloadAndSaveMedia(options: DownloadOptions): Promise<DownloadResult> {
   const { url, filename, isAudio = false, originalUrl, onProgress } = options;
 
@@ -114,6 +143,9 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     downloadHeaders['Sec-Fetch-Dest'] = 'video';
     downloadHeaders['Sec-Fetch-Mode'] = 'cors';
     downloadHeaders['Sec-Fetch-Site'] = 'cross-site';
+  } else if (finalDirectUrl.includes('rapidcdn.app') || finalDirectUrl.includes('snapsave.app')) {
+    downloadHeaders['Referer'] = 'https://snapsave.app/';
+    downloadHeaders['Origin'] = 'https://snapsave.app';
   } else if (finalDirectUrl.includes('tiktok.com') || finalDirectUrl.includes('tiktokcdn.com') || finalDirectUrl.includes('tikwm.com')) {
     downloadHeaders['Referer'] = 'https://www.tiktok.com/';
   } else if (finalDirectUrl.includes('twimg.com') || finalDirectUrl.includes('twitter.com') || finalDirectUrl.includes('x.com')) {
@@ -173,6 +205,37 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     const retryResult = await retryResumable.downloadAsync();
     if (retryResult && retryResult.uri) {
       downloadResult = retryResult;
+    }
+  }
+
+  // If rapidcdn fails or returns 403, retry directly with unpacked Instagram CDN URL
+  if (
+    downloadResult &&
+    downloadResult.status &&
+    (downloadResult.status < 200 || downloadResult.status >= 300) &&
+    finalDirectUrl.includes('rapidcdn.app')
+  ) {
+    const directMetaUrl = extractDirectUrlFromRapidCdn(finalDirectUrl);
+    if (directMetaUrl && directMetaUrl.startsWith('http')) {
+      try {
+        await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+      } catch {}
+
+      const directHeaders: Record<string, string> = {
+        'User-Agent': 'TelegramBot (like TwitterBot)',
+        'Accept': '*/*',
+        'Accept-Encoding': 'identity',
+      };
+
+      const fallbackResumable = FileSystem.createDownloadResumable(
+        directMetaUrl,
+        localUri,
+        { headers: directHeaders }
+      );
+      const fallbackResult = await fallbackResumable.downloadAsync();
+      if (fallbackResult && fallbackResult.uri) {
+        downloadResult = fallbackResult;
+      }
     }
   }
 

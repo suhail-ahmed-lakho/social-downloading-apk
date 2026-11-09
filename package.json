@@ -1,6 +1,6 @@
 {
   "name": "media-downloader",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "main": "index.ts",
   "engines": {
     "node": ">=22.0.0"

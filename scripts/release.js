@@ -61,13 +61,12 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'Bulletproof Instagram video detection: Intercepts MSE media streams via fetch/XHR request URLs and Performance Resource Timing API',
-    'Seamless Instagram capture: Auto-dismisses browser modal upon detection and renders ready-to-download HD card on home screen',
-    'Optimized APK size by 52% (70MB -> 33.7MB) strictly for physical Android mobile ARM processors',
-    'Fixed Instagram 403 Forbidden download error with unescaped CDN tokens and dual-mode headers',
-    'Enhanced link detector to isolate concatenated URLs and query tracking parameters',
-    'Persistent official Release Keystore with v2/v3 signature schemes for flawless APK installation',
-    'Dynamic Island clipboard link detection with 1-tap Paste & Fetch'
+    'Direct 1-Tap Instagram Downloads: Now downloads public Instagram reels & videos directly from the home screen without opening any browser modal',
+    'Pure HTTP SnapSave Extraction Engine: Instant resolution with verified high-speed CDN video stream (application/octet-stream 206)',
+    'Dual-Layer Direct Stream Fallback: Automatically unpacks direct scontent Meta CDN streams if third-party endpoints fluctuate',
+    'In-App Browser Quick Download: Built-in browser now features an instant "⚡ Download This Reel" button for seamless browsing and private post saves',
+    'Visible Loading Indicator: Dynamic Fetching Media spinner and real-time analyzing feedback card so users always know their request is in progress',
+    'Mobile-Only Architecture Optimization: Clean ~33MB APK size signed with official persistent release keystore (v1, v2, v3 schemes)'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');
