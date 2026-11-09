@@ -400,7 +400,7 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
         const html = await res.text();
         const mp4Matches = html.match(/https:\/\/[^"'\s\\]+?\.mp4[^"'\s\\]*/g);
         if (mp4Matches && mp4Matches.length > 0) {
-          const directVideoUrl = mp4Matches[0].replace(/\\u0026/g, '&');
+          const directVideoUrl = cleanInstagramMediaUrl(mp4Matches[0]);
           return {
             id: shortcode,
             platform: 'instagram',

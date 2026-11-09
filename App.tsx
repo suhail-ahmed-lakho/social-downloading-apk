@@ -144,17 +144,7 @@ export default function App() {
     } catch (err: any) {
       if (err instanceof InstagramRequiresBrowserError || err.isInstagramLoginRequired) {
         setBrowserInitialUrl(trimmed);
-        Alert.alert(
-          'Instagram Reel Detected 📸',
-          'Instagram blocks external servers. Would you like to open it in the built-in browser to capture & download this video (works for both public & private)?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Open in Browser',
-              onPress: () => setShowInstagramBrowser(true),
-            },
-          ]
-        );
+        setShowInstagramBrowser(true);
       } else {
         Alert.alert(
           'Extraction Error',
@@ -175,17 +165,8 @@ export default function App() {
   const handleHeadlessInstagramError = (errorMsg: string) => {
     setIsAnalyzing(false);
     setHeadlessInstagramUrl(null);
-    Alert.alert(
-      'Instagram Private or Restricted 📸',
-      'This Reel could not be resolved automatically (it may be age-restricted or from a private account). Would you like to view it in the built-in browser?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Open in Browser',
-          onPress: () => setShowInstagramBrowser(true),
-        },
-      ]
-    );
+    // Seamlessly transition to in-app browser without jarring error popups
+    setShowInstagramBrowser(true);
   };
 
   const handleCapturedInstagramVideo = (videoUrl: string, title?: string, poster?: string) => {

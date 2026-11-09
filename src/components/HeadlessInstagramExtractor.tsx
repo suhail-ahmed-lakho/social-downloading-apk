@@ -14,7 +14,7 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
   targetUrl,
   onSuccess,
   onError,
-  timeoutMs = 9500,
+  timeoutMs = 8000,
 }) => {
   const webViewRef = useRef<any>(null);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
@@ -33,20 +33,20 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
     setFallbackAttempted(false);
 
     const shortcode = extractInstagramShortcode(targetUrl);
-    // Prefer lightweight embed URL first because it has zero login wall
+    // Start with canonical post/reel URL with desktop UA for full media hydration
     if (shortcode) {
-      setActiveUrl(`https://www.instagram.com/reel/${shortcode}/embed/captioned/`);
+      setActiveUrl(`https://www.instagram.com/reel/${shortcode}/`);
     } else {
       setActiveUrl(targetUrl);
     }
 
-    // If embed doesn't resolve in 4.5 seconds, fallback to canonical post URL
+    // Fallback to embed URL if full page doesn't resolve in 3.5 seconds
     const fallbackTimer = setTimeout(() => {
       if (!hasResolved && shortcode) {
         setFallbackAttempted(true);
-        setActiveUrl(`https://www.instagram.com/reel/${shortcode}/`);
+        setActiveUrl(`https://www.instagram.com/reel/${shortcode}/embed/`);
       }
-    }, 4500);
+    }, 3500);
 
     // Total timeout safety timer
     const totalTimer = setTimeout(() => {
@@ -189,20 +189,50 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
           }
         }
 
-        // 3. Auto-click play buttons
-        var clickables = document.querySelectorAll('[aria-label="Play"], button[type="button"], .EmbeddedMedia, [role="button"]');
+        // 3. Scan document HTML for direct mp4 links in script/JSON tags
+        var docHtml = document.documentElement ? document.documentElement.innerHTML : '';
+        if (docHtml) {
+          var htmlMatches = docHtml.match(/https?:[\\/]+[^"'\\s<>]+\.mp4[^"'\\s<>"]*/g);
+          if (htmlMatches && htmlMatches.length > 0) {
+            for (var h = 0; h < htmlMatches.length; h++) {
+              var candidate = cleanUrl(htmlMatches[h]);
+              if (candidate && candidate.indexOf('http') === 0 && candidate.indexOf('blob:') === -1) {
+                window.__ig_captured = true;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'VIDEO_FOUND',
+                  videoUrl: candidate,
+                  poster: '',
+                  title: document.title || 'Instagram Video'
+                }));
+                return;
+              }
+            }
+          }
+        }
+
+        // 4. Force HTML5 video playback
+        var vList = document.querySelectorAll('video');
+        for (var vi = 0; vi < vList.length; vi++) {
+          try {
+            vList[vi].muted = true;
+            vList[vi].play().catch(function(){});
+          } catch(e) {}
+        }
+
+        // 5. Auto-click play buttons
+        var clickables = document.querySelectorAll('[aria-label="Play"], [aria-label="play"], button[type="button"], .EmbeddedMedia, [role="button"]');
         for (var j = 0; j < clickables.length; j++) {
           try { clickables[j].click(); } catch(e) {}
         }
 
-        // 4. Dismiss login overlays
+        // 6. Dismiss login overlays
         var dialogs = document.querySelectorAll('div[role="dialog"]');
         for (var k = 0; k < dialogs.length; k++) {
           try { dialogs[k].remove(); } catch(e) {}
         }
       }
 
-      setInterval(scan, 600);
+      setInterval(scan, 500);
       scan();
       document.addEventListener('loadeddata', scan, true);
       document.addEventListener('play', scan, true);
@@ -239,11 +269,13 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
         onMessage: handleMessage,
         javaScriptEnabled: true,
         domStorageEnabled: true,
+        sharedCookiesEnabled: true,
+        thirdPartyCookiesEnabled: true,
         mediaPlaybackRequiresUserAction: false,
         allowsInlineMediaPlayback: true,
         mixedContentMode: 'always',
         userAgent:
-          'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         onShouldStartLoadWithRequest: (request: any) => {
           const reqUrl = request.url.toLowerCase();
           if (
@@ -263,15 +295,16 @@ export const HeadlessInstagramExtractor: React.FC<HeadlessInstagramExtractorProp
 
 const styles = StyleSheet.create({
   hiddenContainer: {
-    width: 1,
-    height: 1,
-    opacity: 0,
+    width: 360,
+    height: 480,
     position: 'absolute',
-    top: -500,
-    left: -500,
+    top: 0,
+    left: 0,
+    zIndex: -999,
+    opacity: 0.01,
   },
   hiddenWebView: {
-    width: 1,
-    height: 1,
+    width: 360,
+    height: 480,
   },
 });
