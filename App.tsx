@@ -31,8 +31,9 @@ import { UrlInputBar } from './src/components/UrlInputBar';
 import { MediaPreviewCard } from './src/components/MediaPreviewCard';
 import { HistoryList } from './src/components/HistoryList';
 import { HowToUseModal } from './src/components/HowToUseModal';
-import { InstagramBrowserModal } from './src/components/InstagramBrowserModal';
-import { HeadlessInstagramExtractor } from './src/components/HeadlessInstagramExtractor';
+import { BottomNavBar, AppTab } from './src/components/BottomNavBar';
+import { DownloadsScreen } from './src/components/DownloadsScreen';
+import { AlertsScreen } from './src/components/AlertsScreen';
 import { OpeningSplashScreen } from './src/components/OpeningSplashScreen';
 import { UpdateModal } from './src/components/UpdateModal';
 import { COLORS } from './src/theme/colors';
@@ -43,15 +44,18 @@ import {
   cleanInputUrl,
   cleanInstagramMediaUrl,
 } from './src/services/api/extractor';
+import { shareDownloadedMedia } from './src/services/download/downloadManager';
 import {
-  downloadAndSaveMedia,
-  DownloadProgressInfo,
-  shareDownloadedMedia,
-  requestGalleryPermissions,
-} from './src/services/download/downloadManager';
+  enqueueDownload,
+  subscribeDownloadCompleted,
+  useDownloadQueue,
+} from './src/services/download/downloadQueue';
+import {
+  requestNotificationPermissions,
+  useNotifications,
+} from './src/services/notifications/notificationService';
 import {
   getDownloadHistory,
-  addDownloadToHistory,
   deleteHistoryItem,
   clearAllHistory,
 } from './src/services/storage/history';
@@ -64,16 +68,22 @@ import {
 import { CURRENT_APP_VERSION } from './src/config/updateConfig';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
+const NativeInstagramBrowserModal =
+  Platform.OS !== 'web'
+    ? (require('./src/components/InstagramBrowserModal').InstagramBrowserModal as React.ComponentType<any>)
+    : null;
+const NativeHeadlessInstagramExtractor =
+  Platform.OS !== 'web'
+    ? (require('./src/components/HeadlessInstagramExtractor').HeadlessInstagramExtractor as React.ComponentType<any>)
+    : null;
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [url, setUrl] = useState('');
-  const [activeTab, setActiveTab] = useState<'download' | 'history'>('download');
+  const [activeTab, setActiveTab] = useState<AppTab>('download');
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformType | 'all'>('all');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [currentMedia, setCurrentMedia] = useState<MediaMetadata | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<DownloadProgressInfo | null>(null);
-  const [savedLocalUri, setSavedLocalUri] = useState<string | null>(null);
   const [historyItems, setHistoryItems] = useState<DownloadHistoryItem[]>([]);
   const [showHowToModal, setShowHowToModal] = useState(false);
   const [showInstagramBrowser, setShowInstagramBrowser] = useState(false);
@@ -86,15 +96,30 @@ export default function App() {
     platform: string;
   } | null>(null);
 
-  // Load history on mount
+  const queue = useDownloadQueue();
+  const notificationState = useNotifications();
+
+  // Load history & subscribe to completed background downloads on mount
   useEffect(() => {
-    loadHistory();
-    checkClipboard();
+    void loadHistory();
+    void checkClipboard();
+
+    const unsubCompleted = subscribeDownloadCompleted((savedItem) => {
+      setHistoryItems((prev) => [
+        savedItem,
+        ...prev.filter((existing) => existing.id !== savedItem.id),
+      ]);
+    });
+
     // Auto-check for update after splash screen initializes
     const updateTimer = setTimeout(() => {
-      handleCheckForUpdates(false);
+      void handleCheckForUpdates(false);
     }, 2000);
-    return () => clearTimeout(updateTimer);
+
+    return () => {
+      unsubCompleted();
+      clearTimeout(updateTimer);
+    };
   }, []);
 
   const loadHistory = async () => {
@@ -128,8 +153,6 @@ export default function App() {
 
     setIsAnalyzing(true);
     setCurrentMedia(null);
-    setSavedLocalUri(null);
-    setDownloadProgress(null);
 
     try {
       const media = await extractMedia(trimmed);
@@ -183,74 +206,37 @@ export default function App() {
     };
 
     setCurrentMedia(media);
-    setSavedLocalUri(null);
-    setDownloadProgress(null);
   };
 
   const handleDownload = async (option: QualityOption) => {
     if (!currentMedia) return;
 
-    // Check permission upfront
-    await requestGalleryPermissions();
-
-    setIsDownloading(true);
-    setDownloadProgress({ percent: 0, totalBytesWritten: 0, totalBytesExpectedToWrite: 0 });
-
     try {
+      if (notificationState.permissionStatus === 'undetermined') {
+        void requestNotificationPermissions();
+      }
+
       const isAudio = option.type === 'audio';
       const cleanTitle = (currentMedia.title || 'video')
         .slice(0, 30)
         .replace(/[^a-zA-Z0-9]/g, '_');
-      const filename = `${currentMedia.platform.toUpperCase()}_${cleanTitle}_${Date.now()}`;
+      const filename = `${currentMedia.platform.toUpperCase()}_${cleanTitle}`;
 
-      const result = await downloadAndSaveMedia({
+      await enqueueDownload({
         url: option.url,
         filename,
-        isAudio,
-        originalUrl: currentMedia.originalUrl || url,
-        onProgress: (info) => {
-          setDownloadProgress(info);
-        },
-      });
-
-      setSavedLocalUri(result.localUri);
-
-      // Save to persistent history
-      const historyItem: DownloadHistoryItem = {
-        id: String(Date.now()),
-        platform: currentMedia.platform,
         title: currentMedia.title || 'Untitled Video',
         author: currentMedia.author || 'Creator',
+        platform: currentMedia.platform,
         thumbnail: currentMedia.thumbnail,
-        localUri: result.localUri,
-        originalUrl: currentMedia.originalUrl,
-        fileSize: result.fileSize,
-        createdAt: Date.now(),
-      };
+        originalUrl: currentMedia.originalUrl || url,
+        qualityLabel: option.quality || (isAudio ? '320kbps MP3' : 'HD'),
+        isAudio,
+      });
 
-      const updated = await addDownloadToHistory(historyItem);
-      setHistoryItems(updated);
-
-      if (isAudio) {
-        Alert.alert(
-          'Song Downloaded! 🎵',
-          'Your MP3 audio has been saved to your device & OmniSaver Songs album.'
-        );
-      } else if (result.savedToGallery) {
-        Alert.alert(
-          'Saved to Gallery! 🎉',
-          'Your video has been downloaded and added to your Photos & OmniSaver album.'
-        );
-      } else {
-        Alert.alert(
-          'Download Complete',
-          'Media saved to your device. You can share it directly or view it in the Saved Files tab.'
-        );
-      }
+      setActiveTab('queue');
     } catch (err: any) {
-      Alert.alert('Download Error', err.message || 'Failed to download the file.');
-    } finally {
-      setIsDownloading(false);
+      Alert.alert('Download Error', err.message || 'Failed to queue the download.');
     }
   };
 
@@ -296,13 +282,6 @@ export default function App() {
     setHistoryItems([]);
   };
 
-  const handleResetCard = () => {
-    setCurrentMedia(null);
-    setSavedLocalUri(null);
-    setDownloadProgress(null);
-    setUrl('');
-  };
-
   return (
     <View style={styles.safeArea}>
       <StatusBar style="light" />
@@ -316,12 +295,11 @@ export default function App() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardContainer}
       >
-        {/* Top Header & Navigation Tabs */}
+        {/* Top Header App Bar */}
         <Header
           onOpenHowTo={() => setShowHowToModal(true)}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          historyCount={historyItems.length}
+          activeDownloadsCount={queue.activeCount}
+          onOpenDownloads={() => setActiveTab('queue')}
           hasUpdate={!!updateInfo?.hasUpdate}
           onOpenUpdate={() => handleCheckForUpdates(true)}
         />
@@ -455,11 +433,8 @@ export default function App() {
               <MediaPreviewCard
                 media={currentMedia}
                 onDownload={handleDownload}
-                isDownloading={isDownloading}
-                downloadProgress={downloadProgress}
-                savedLocalUri={savedLocalUri}
-                onShare={handleShare}
-                onReset={handleResetCard}
+                activeQueueCount={queue.activeCount}
+                onOpenDownloads={() => setActiveTab('queue')}
               />
             )}
 
@@ -579,6 +554,16 @@ export default function App() {
               </View>
             )}
           </ScrollView>
+        ) : activeTab === 'queue' ? (
+          <DownloadsScreen
+            queue={queue}
+            notificationPermission={notificationState.permissionStatus}
+            onRequestNotifications={() => void requestNotificationPermissions()}
+            onGoToHome={() => setActiveTab('download')}
+            onOpenSaved={() => setActiveTab('history')}
+          />
+        ) : activeTab === 'alerts' ? (
+          <AlertsScreen notificationState={notificationState} />
         ) : (
           <HistoryList
             items={historyItems}
@@ -587,6 +572,17 @@ export default function App() {
             onClearAll={handleClearAllHistory}
           />
         )}
+
+        {/* Dedicated Professional Bottom Navigation Bar */}
+        <BottomNavBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          activeDownloadsCount={queue.activeCount}
+          pausedDownloadsCount={queue.pausedCount}
+          historyCount={historyItems.length}
+          unreadAlertsCount={notificationState.unreadCount}
+          notificationsDenied={notificationState.permissionStatus === 'denied'}
+        />
 
         {/* How To Use Modal */}
         <HowToUseModal
@@ -603,20 +599,24 @@ export default function App() {
           onDismissUpdate={handleDismissUpdate}
         />
 
-        {/* In-App Instagram Downloader Browser Modal (Optional Fallback) */}
-        <InstagramBrowserModal
-          visible={showInstagramBrowser}
-          initialUrl={browserInitialUrl}
-          onClose={() => setShowInstagramBrowser(false)}
-          onVideoCaptured={handleCapturedInstagramVideo}
-        />
+        {/* In-App Instagram Downloader Browser Modal (Native Mobile Only) */}
+        {NativeInstagramBrowserModal && (
+          <NativeInstagramBrowserModal
+            visible={showInstagramBrowser}
+            initialUrl={browserInitialUrl}
+            onClose={() => setShowInstagramBrowser(false)}
+            onVideoCaptured={handleCapturedInstagramVideo}
+          />
+        )}
 
-        {/* Background Headless Instagram Extractor (1-Tap Direct Download - No Login / Signup) */}
-        <HeadlessInstagramExtractor
-          targetUrl={headlessInstagramUrl}
-          onSuccess={handleHeadlessInstagramSuccess}
-          onError={handleHeadlessInstagramError}
-        />
+        {/* Background Headless Instagram Extractor (Native Mobile Only) */}
+        {NativeHeadlessInstagramExtractor && (
+          <NativeHeadlessInstagramExtractor
+            targetUrl={headlessInstagramUrl}
+            onSuccess={handleHeadlessInstagramSuccess}
+            onError={handleHeadlessInstagramError}
+          />
+        )}
       </KeyboardAvoidingView>
     </View>
   );

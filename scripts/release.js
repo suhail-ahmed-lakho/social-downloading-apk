@@ -61,12 +61,11 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'Direct 1-Tap Instagram Downloads: Now downloads public Instagram reels & videos directly from the home screen without opening any browser modal',
-    'Pure HTTP SnapSave Extraction Engine: Instant resolution with verified high-speed CDN video stream (application/octet-stream 206)',
-    'Dual-Layer Direct Stream Fallback: Automatically unpacks direct scontent Meta CDN streams if third-party endpoints fluctuate',
-    'In-App Browser Quick Download: Built-in browser now features an instant "⚡ Download This Reel" button for seamless browsing and private post saves',
-    'Visible Loading Indicator: Dynamic Fetching Media spinner and real-time analyzing feedback card so users always know their request is in progress',
-    'Mobile-Only Architecture Optimization: Clean ~33MB APK size signed with official persistent release keystore (v1, v2, v3 schemes)'
+    'True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading even when you switch apps',
+    'Professional Bottom Navigation Bar: Dedicated Home, Downloads, Saved Files, and Alerts tabs for an uncluttered experience',
+    'Live Download Telemetry: Real-time MB/s download speed, progress %, downloaded MB, remaining MB left, ETA, plus Pause/Resume/Cancel controls',
+    'Smart Notification Center & Push Support: Status-bar progress/completion alerts, in-app Alerts Inbox, and graceful Settings recovery if notifications are denied',
+    'All-Platform HD & MP3 Engine: Instant TikTok, YouTube/Music, and 1-Tap Instagram Reels downloads'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

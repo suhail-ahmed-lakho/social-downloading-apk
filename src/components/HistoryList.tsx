@@ -43,6 +43,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       case 'instagram':
         return <FontAwesome5 name="instagram" size={10} color={COLORS.accentPrimary} />;
       case 'youtube':
+      case 'youtube_music':
         return <FontAwesome5 name="youtube" size={10} color={COLORS.accentPrimary} />;
       default:
         return <Feather name="video" size={10} color={COLORS.textMuted} />;
@@ -107,7 +108,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
   if (items.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
+      <View style={styles.emptyContainer} testID="screen-history">
         <View style={styles.emptyIconCircle}>
           <Ionicons name="folder-open-outline" size={36} color={COLORS.textMuted} />
         </View>
@@ -120,7 +121,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="screen-history">
       <View style={styles.listHeader}>
         <Text style={styles.headerTitle}>Saved Media ({items.length})</Text>
         <TouchableOpacity onPress={confirmClearAll} activeOpacity={0.7}>

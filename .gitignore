@@ -49,3 +49,8 @@ website/out/
 
 # local cloned packages
 devintell-npm/
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/

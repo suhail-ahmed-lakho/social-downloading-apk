@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import * as Sharing from 'expo-sharing';
@@ -26,7 +27,10 @@ export interface DownloadResult {
   fileSize?: number;
 }
 
+export const MIN_VALID_MEDIA_BYTES = 5120;
+
 export async function requestGalleryPermissions(): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
   try {
     if (!MediaLibrary || typeof MediaLibrary.requestPermissionsAsync !== 'function') {
       return false;
@@ -39,7 +43,21 @@ export async function requestGalleryPermissions(): Promise<boolean> {
   }
 }
 
-function extractDirectUrlFromRapidCdn(url: string): string | null {
+export function sanitizeMediaFilename(filename: string, isAudio = false): string {
+  const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const extension = isAudio ? '.mp3' : '.mp4';
+  return cleanName.endsWith(extension) ? cleanName : `${cleanName}${extension}`;
+}
+
+export function isMetaCdnUrl(url: string): boolean {
+  return (
+    url.includes('instagram.com') ||
+    url.includes('cdninstagram.com') ||
+    url.includes('fbcdn.net')
+  );
+}
+
+export function extractDirectUrlFromRapidCdn(url: string): string | null {
   try {
     const match = url.match(/token=([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/);
     if (!match) return null;
@@ -68,28 +86,85 @@ function extractDirectUrlFromRapidCdn(url: string): string | null {
   }
 }
 
-export async function downloadAndSaveMedia(options: DownloadOptions): Promise<DownloadResult> {
-  const { url, filename, isAudio = false, originalUrl, onProgress } = options;
+export function buildDownloadHeaders(
+  finalDirectUrl: string,
+  variant: 'default' | 'no-referer' | 'bot-direct' = 'default'
+): Record<string, string> {
+  if (variant === 'no-referer') {
+    return {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      Accept: '*/*',
+      'Accept-Encoding': 'identity',
+    };
+  }
 
-  let finalDirectUrl = cleanInstagramMediaUrl(url);
+  if (variant === 'bot-direct') {
+    return {
+      'User-Agent': 'TelegramBot (like TwitterBot)',
+      Accept: '*/*',
+      'Accept-Encoding': 'identity',
+    };
+  }
 
-  // Resolve cloud conversion stream if option requires loader resolution
-  if (url.startsWith('loader:')) {
-    const parts = url.split(':');
+  const downloadHeaders: Record<string, string> = {
+    'User-Agent':
+      'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+    Accept: '*/*',
+    'Accept-Encoding': 'identity',
+  };
+
+  if (isMetaCdnUrl(finalDirectUrl)) {
+    downloadHeaders['Referer'] = 'https://www.instagram.com/';
+    downloadHeaders['Origin'] = 'https://www.instagram.com';
+    downloadHeaders['Sec-Fetch-Dest'] = 'video';
+    downloadHeaders['Sec-Fetch-Mode'] = 'cors';
+    downloadHeaders['Sec-Fetch-Site'] = 'cross-site';
+  } else if (finalDirectUrl.includes('rapidcdn.app') || finalDirectUrl.includes('snapsave.app')) {
+    downloadHeaders['Referer'] = 'https://snapsave.app/';
+    downloadHeaders['Origin'] = 'https://snapsave.app';
+  } else if (
+    finalDirectUrl.includes('tiktok.com') ||
+    finalDirectUrl.includes('tiktokcdn.com') ||
+    finalDirectUrl.includes('tikwm.com')
+  ) {
+    downloadHeaders['Referer'] = 'https://www.tiktok.com/';
+  } else if (
+    finalDirectUrl.includes('twimg.com') ||
+    finalDirectUrl.includes('twitter.com') ||
+    finalDirectUrl.includes('x.com')
+  ) {
+    downloadHeaders['Referer'] = 'https://twitter.com/';
+  } else if (
+    finalDirectUrl.includes('loader.to') ||
+    finalDirectUrl.includes('savenow.to') ||
+    finalDirectUrl.includes('affadaffa.com')
+  ) {
+    downloadHeaders['Referer'] = 'https://loader.to/';
+  }
+
+  return downloadHeaders;
+}
+
+export async function resolveDownloadTargetUrl(
+  rawUrl: string,
+  isAudio: boolean,
+  originalUrl?: string,
+  onConversionProgress?: (conversionRatio: number, statusText?: string) => void
+): Promise<string> {
+  let finalDirectUrl = cleanInstagramMediaUrl(rawUrl);
+
+  if (rawUrl.startsWith('loader:')) {
+    const parts = rawUrl.split(':');
     const format = parts[1] || (isAudio ? 'mp3' : '720');
-    const targetIdOrUrl = parts[2] || originalUrl || url;
+    const targetIdOrUrl = parts[2] || originalUrl || rawUrl;
 
     finalDirectUrl = await resolveYouTubeDownloadUrl(
       targetIdOrUrl,
       format,
       (conversionPct, status) => {
-        if (onProgress) {
-          onProgress({
-            percent: Math.min(45, Math.round(conversionPct * 45)),
-            totalBytesWritten: 0,
-            totalBytesExpectedToWrite: 0,
-            statusText: status,
-          });
+        if (onConversionProgress) {
+          onConversionProgress(conversionPct, status);
         }
       }
     );
@@ -99,15 +174,81 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     throw new Error('Unable to resolve download URL. Please try again.');
   }
 
-  // Clean filename
-  const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const extension = isAudio ? '.mp3' : '.mp4';
-  const targetName = cleanName.endsWith(extension) ? cleanName : `${cleanName}${extension}`;
-  
+  return finalDirectUrl;
+}
+
+export async function validateAndFinalizeNativeFile(
+  fileUri: string,
+  isAudio: boolean
+): Promise<{ localUri: string; savedToGallery: boolean; fileSize: number }> {
+  const normalizedUri = fileUri.startsWith('file://') || fileUri.startsWith('content://')
+    ? fileUri
+    : `file://${fileUri}`;
+
+  const fileInfo = await FileSystem.getInfoAsync(normalizedUri);
+  if (!fileInfo.exists || (fileInfo.size ?? 0) < MIN_VALID_MEDIA_BYTES) {
+    try {
+      await FileSystem.deleteAsync(normalizedUri, { idempotent: true });
+    } catch {}
+    throw new Error('Downloaded file is incomplete or 0.0 MB. Please try another resolution.');
+  }
+
+  try {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  } catch {}
+
+  let savedToGallery = false;
+  try {
+    const hasPermission = await requestGalleryPermissions();
+    if (hasPermission && typeof MediaLibrary.createAssetAsync === 'function') {
+      const asset = await MediaLibrary.createAssetAsync(normalizedUri);
+      try {
+        const albumName = isAudio ? 'OmniSaver Songs' : 'OmniSaver';
+        const album = await MediaLibrary.getAlbumAsync(albumName);
+        if (album == null) {
+          await MediaLibrary.createAlbumAsync(albumName, asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+      } catch (albumErr) {
+        console.warn('Could not add to custom album, but asset was registered:', albumErr);
+      }
+      savedToGallery = true;
+    }
+  } catch (mediaError) {
+    console.warn('Could not register to media library:', mediaError);
+  }
+
+  return {
+    localUri: normalizedUri,
+    savedToGallery,
+    fileSize: fileInfo.size ?? 0,
+  };
+}
+
+export async function downloadAndSaveMedia(options: DownloadOptions): Promise<DownloadResult> {
+  const { url, filename, isAudio = false, originalUrl, onProgress } = options;
+
+  const finalDirectUrl = await resolveDownloadTargetUrl(
+    url,
+    isAudio,
+    originalUrl,
+    (conversionPct, status) => {
+      if (onProgress) {
+        onProgress({
+          percent: Math.min(45, Math.round(conversionPct * 45)),
+          totalBytesWritten: 0,
+          totalBytesExpectedToWrite: 0,
+          statusText: status,
+        });
+      }
+    }
+  );
+
+  const targetName = sanitizeMediaFilename(filename, isAudio);
   const targetDir = FileSystem.documentDirectory || '';
   const localUri = `${targetDir}${targetName}`;
 
-  // Clean up any stale or 0-byte file from a previous failed attempt
   try {
     const existing = await FileSystem.getInfoAsync(localUri);
     if (existing.exists) {
@@ -124,37 +265,9 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     });
   }
 
-  // Build browser-compatible headers to prevent CDN 403 Forbidden blocks
-  const downloadHeaders: Record<string, string> = {
-    'User-Agent':
-      'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-    'Accept': '*/*',
-    'Accept-Encoding': 'identity',
-  };
+  const downloadHeaders = buildDownloadHeaders(finalDirectUrl, 'default');
+  const isMetaCdn = isMetaCdnUrl(finalDirectUrl);
 
-  const isMetaCdn =
-    finalDirectUrl.includes('instagram.com') ||
-    finalDirectUrl.includes('cdninstagram.com') ||
-    finalDirectUrl.includes('fbcdn.net');
-
-  if (isMetaCdn) {
-    downloadHeaders['Referer'] = 'https://www.instagram.com/';
-    downloadHeaders['Origin'] = 'https://www.instagram.com';
-    downloadHeaders['Sec-Fetch-Dest'] = 'video';
-    downloadHeaders['Sec-Fetch-Mode'] = 'cors';
-    downloadHeaders['Sec-Fetch-Site'] = 'cross-site';
-  } else if (finalDirectUrl.includes('rapidcdn.app') || finalDirectUrl.includes('snapsave.app')) {
-    downloadHeaders['Referer'] = 'https://snapsave.app/';
-    downloadHeaders['Origin'] = 'https://snapsave.app';
-  } else if (finalDirectUrl.includes('tiktok.com') || finalDirectUrl.includes('tiktokcdn.com') || finalDirectUrl.includes('tikwm.com')) {
-    downloadHeaders['Referer'] = 'https://www.tiktok.com/';
-  } else if (finalDirectUrl.includes('twimg.com') || finalDirectUrl.includes('twitter.com') || finalDirectUrl.includes('x.com')) {
-    downloadHeaders['Referer'] = 'https://twitter.com/';
-  } else if (finalDirectUrl.includes('loader.to') || finalDirectUrl.includes('savenow.to') || finalDirectUrl.includes('affadaffa.com')) {
-    downloadHeaders['Referer'] = 'https://loader.to/';
-  }
-
-  // Create download resumable
   const downloadResumable = FileSystem.createDownloadResumable(
     finalDirectUrl,
     localUri,
@@ -184,23 +297,15 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     throw new Error('Download failed: No file URI received.');
   }
 
-  // If 403 Forbidden on Instagram/Meta CDN, retry without Referer (some edge CDNs block Referer from third party IPs)
   if (downloadResult.status === 403 && isMetaCdn) {
     try {
       await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
     } catch {}
 
-    const retryHeaders: Record<string, string> = {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-      'Accept-Encoding': 'identity',
-    };
-
     const retryResumable = FileSystem.createDownloadResumable(
       finalDirectUrl,
       localUri,
-      { headers: retryHeaders }
+      { headers: buildDownloadHeaders(finalDirectUrl, 'no-referer') }
     );
     const retryResult = await retryResumable.downloadAsync();
     if (retryResult && retryResult.uri) {
@@ -208,7 +313,6 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     }
   }
 
-  // If rapidcdn fails or returns 403, retry directly with unpacked Instagram CDN URL
   if (
     downloadResult &&
     downloadResult.status &&
@@ -221,16 +325,10 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
         await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
       } catch {}
 
-      const directHeaders: Record<string, string> = {
-        'User-Agent': 'TelegramBot (like TwitterBot)',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity',
-      };
-
       const fallbackResumable = FileSystem.createDownloadResumable(
         directMetaUrl,
         localUri,
-        { headers: directHeaders }
+        { headers: buildDownloadHeaders(directMetaUrl, 'bot-direct') }
       );
       const fallbackResult = await fallbackResumable.downloadAsync();
       if (fallbackResult && fallbackResult.uri) {
@@ -243,69 +341,36 @@ export async function downloadAndSaveMedia(options: DownloadOptions): Promise<Do
     throw new Error('Download failed: No file URI received.');
   }
 
-  // Verify HTTP status code (detect 401, 403, 404, 500 error pages)
-  if (downloadResult && downloadResult.status && (downloadResult.status < 200 || downloadResult.status >= 300)) {
+  if (downloadResult.status && (downloadResult.status < 200 || downloadResult.status >= 300)) {
     try {
       await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
     } catch {}
     throw new Error(`Download failed with server error ${downloadResult.status}. Stream may be expired or restricted.`);
   }
 
-  // Verify file size (detect 0-byte or corrupt error text files)
-  const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
-  if (!fileInfo.exists || fileInfo.size < 5120) {
-    try {
-      await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
-    } catch {}
-    throw new Error('Downloaded file is incomplete or 0.0 MB. Please try another resolution.');
-  }
-
-  // Trigger success vibration
-  try {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  } catch {
-    // Ignore in web/unsupported
-  }
-
-  // Save to Media Library / Gallery
-  let savedToGallery = false;
-  try {
-    const hasPermission = await requestGalleryPermissions();
-    if (hasPermission && typeof MediaLibrary.createAssetAsync === 'function') {
-      const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
-      
-      try {
-        const albumName = isAudio ? 'OmniSaver Songs' : 'OmniSaver';
-        const album = await MediaLibrary.getAlbumAsync(albumName);
-        if (album == null) {
-          await MediaLibrary.createAlbumAsync(albumName, asset, false);
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        }
-      } catch (albumErr) {
-        console.warn('Could not add to custom album, but asset was registered:', albumErr);
-      }
-      savedToGallery = true;
-    }
-  } catch (mediaError) {
-    console.warn('Could not register to media library:', mediaError);
-  }
-
-  return {
-    localUri: downloadResult.uri,
-    savedToGallery,
-    fileSize: fileInfo.exists ? fileInfo.size : undefined,
-  };
+  return validateAndFinalizeNativeFile(downloadResult.uri, isAudio);
 }
 
 export async function shareDownloadedMedia(localUri: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const a = document.createElement('a');
+      a.href = localUri;
+      a.download = localUri.split('/').pop() || 'omnisaver-media';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    return;
+  }
+
   const isAvailable = await Sharing.isAvailableAsync();
   if (!isAvailable) {
     throw new Error('Sharing is not available on this device');
   }
 
   const fileInfo = await FileSystem.getInfoAsync(localUri);
-  if (!fileInfo.exists || fileInfo.size < 5120) {
+  if (!fileInfo.exists || (fileInfo.size ?? 0) < MIN_VALID_MEDIA_BYTES) {
     throw new Error('Cannot share: File is 0.0 MB or corrupt. Please re-download.');
   }
 

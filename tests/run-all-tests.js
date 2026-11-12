@@ -4,6 +4,7 @@ const { runDownloadTests } = require('./download.test');
 const { runDetectionTests } = require('./url-detection-and-shortcodes.test');
 const { runSanitizerTests } = require('./instagram-url-sanitizer.test');
 const { runSnapSaveTests } = require('./instagram-snapsave.test');
+const { runTelemetryTests } = require('./download-telemetry.test');
 
 async function main() {
   console.log('==================================================');
@@ -45,6 +46,13 @@ async function main() {
     await runSnapSaveTests();
   } catch (err) {
     console.error('❌ Instagram SnapSave tests failed:', err);
+    errors++;
+  }
+
+  try {
+    runTelemetryTests();
+  } catch (err) {
+    console.error('❌ Telemetry & Background config tests failed:', err);
     errors++;
   }
 

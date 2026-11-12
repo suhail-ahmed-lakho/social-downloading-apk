@@ -5,33 +5,25 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { MediaMetadata, QualityOption } from '../types';
-import { DownloadProgressInfo } from '../services/download/downloadManager';
 
 interface MediaPreviewCardProps {
   media: MediaMetadata;
   onDownload: (option: QualityOption) => void;
-  isDownloading: boolean;
-  downloadProgress: DownloadProgressInfo | null;
-  savedLocalUri: string | null;
-  onShare: (uri: string) => void;
-  onReset: () => void;
+  activeQueueCount?: number;
+  onOpenDownloads?: () => void;
 }
 
 export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
   media,
   onDownload,
-  isDownloading,
-  downloadProgress,
-  savedLocalUri,
-  onShare,
-  onReset,
+  activeQueueCount = 0,
+  onOpenDownloads,
 }) => {
   const videoOptions = (media.qualityOptions || []).filter((o) => o.type === 'video');
   const audioOptions = (media.qualityOptions || []).filter((o) => o.type === 'audio');
@@ -155,7 +147,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         </View>
 
         {/* Format Category Switcher (Video vs Audio / Song) */}
-        {!savedLocalUri && videoOptions.length > 0 && audioOptions.length > 0 && (
+        {videoOptions.length > 0 && audioOptions.length > 0 && (
           <View style={styles.formatSwitchContainer}>
             <TouchableOpacity
               style={[
@@ -218,7 +210,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         )}
 
         {/* Quality Options / Resolution Buttons */}
-        {currentOptionsToShow && currentOptionsToShow.length > 0 && !savedLocalUri && (
+        {currentOptionsToShow && currentOptionsToShow.length > 0 && (
           <View style={styles.optionsSection}>
             <Text style={styles.sectionLabel}>
               {activeFormatTab === 'audio' ? 'Select Audio Bitrate / Quality:' : 'Select Video Resolution:'}
@@ -239,7 +231,6 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
                       } catch (_) {}
                       setSelectedOption(opt);
                     }}
-                    disabled={isDownloading}
                     activeOpacity={0.7}
                   >
                     <Ionicons
@@ -268,137 +259,56 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
           </View>
         )}
 
-        {/* Download Progress Bar */}
-        {isDownloading && downloadProgress && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>
-                {downloadProgress.statusText ||
-                  (selectedOption.type === 'audio'
-                    ? 'Downloading Song (MP3)...'
-                    : 'Downloading Video to Device...')}
-              </Text>
-              <Text style={styles.progressPercent}>{downloadProgress.percent}%</Text>
-            </View>
-
-            <View style={styles.progressBarTrack}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${downloadProgress.percent}%` },
-                ]}
-              />
-            </View>
-
-            {downloadProgress.totalBytesExpectedToWrite > 0 ? (
-              <Text style={styles.progressBytes}>
-                {(downloadProgress.totalBytesWritten / 1024 / 1024).toFixed(1)} MB of{' '}
-                {(downloadProgress.totalBytesExpectedToWrite / 1024 / 1024).toFixed(1)} MB
-              </Text>
-            ) : (
-              <Text style={styles.progressBytes}>
-                {downloadProgress.statusText || 'Converting & preparing media...'}
-              </Text>
-            )}
-          </View>
-        )}
-
-        {/* Post-Download Success Status */}
-        {savedLocalUri && (
-          <View style={styles.successBox}>
-            <View style={styles.successRow}>
-              <Ionicons
-                name={selectedOption.type === 'audio' ? 'musical-notes' : 'checkmark-circle'}
-                size={22}
-                color={COLORS.success}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.successTitle}>
-                  {selectedOption.type === 'audio' ? 'Song Downloaded! 🎵' : 'Download Complete!'}
-                </Text>
-                <Text style={styles.successSub}>
-                  {selectedOption.type === 'audio'
-                    ? 'Saved as MP3 in device & OmniSaver Songs'
-                    : 'Saved to your Gallery & OmniSaver album'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.successActions}>
-              <TouchableOpacity
-                style={styles.shareBtn}
-                onPress={() => onShare(savedLocalUri)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" />
-                <Text style={styles.shareBtnText}>
-                  {selectedOption.type === 'audio' ? 'Share Song' : 'Share'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.newBtn}
-                onPress={onReset}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={15} color={COLORS.textPrimary} />
-                <Text style={styles.newBtnText}>Download Another</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
         {/* Primary Download Trigger Button */}
-        {!savedLocalUri && (
-          <TouchableOpacity
-            style={styles.downloadTouchWrapper}
-            onPress={async () => {
-              try {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              } catch (_) {}
-              onDownload(selectedOption);
-            }}
-            disabled={isDownloading}
-            activeOpacity={0.85}
+        <TouchableOpacity
+          testID="start-download-btn"
+          style={styles.downloadTouchWrapper}
+          onPress={async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch (_) {}
+            onDownload(selectedOption);
+          }}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={COLORS.gradientPrimary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.downloadBtnGradient}
           >
-            {isDownloading ? (
-              <View style={styles.downloadBtnDisabled}>
-                <View style={styles.btnRow}>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.btnText}>
-                    {selectedOption.type === 'audio'
-                      ? 'Downloading Song MP3...'
-                      : 'Downloading Video...'}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <LinearGradient
-                colors={COLORS.gradientPrimary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.downloadBtnGradient}
-              >
-                <View style={styles.btnRow}>
-                  <Ionicons
-                    name={
-                      selectedOption.type === 'audio'
-                        ? 'musical-notes'
-                        : 'arrow-down-circle'
-                    }
-                    size={18}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.btnText}>
-                    {selectedOption.type === 'audio'
-                      ? 'Download Song (MP3 Audio) 🎵'
-                      : media.platform === 'tiktok'
-                      ? 'Download No Watermark (Gallery)'
-                      : `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video to Gallery`}
-                  </Text>
-                </View>
-              </LinearGradient>
-            )}
+            <View style={styles.btnRow}>
+              <Ionicons
+                name={
+                  selectedOption.type === 'audio'
+                    ? 'musical-notes'
+                    : 'arrow-down-circle'
+                }
+                size={18}
+                color="#FFFFFF"
+              />
+              <Text style={styles.btnText}>
+                {selectedOption.type === 'audio'
+                  ? 'Download Song (MP3 Audio)'
+                  : media.platform === 'tiktok'
+                  ? 'Download No Watermark'
+                  : `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video`}
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {activeQueueCount > 0 && onOpenDownloads && (
+          <TouchableOpacity
+            testID="preview-view-downloads-btn"
+            style={styles.newBtn}
+            onPress={onOpenDownloads}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="cloud-download-outline" size={15} color={COLORS.accentPrimary} />
+            <Text style={styles.newBtnText}>
+              View Active Downloads ({activeQueueCount})
+            </Text>
           </TouchableOpacity>
         )}
       </View>

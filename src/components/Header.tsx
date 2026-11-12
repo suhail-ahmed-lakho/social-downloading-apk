@@ -1,36 +1,24 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { AppLogo } from './AppLogo';
 import { COLORS } from '../theme/colors';
 
 interface HeaderProps {
   onOpenHowTo: () => void;
-  activeTab: 'download' | 'history';
-  onTabChange: (tab: 'download' | 'history') => void;
-  historyCount: number;
   hasUpdate?: boolean;
   onOpenUpdate?: () => void;
+  activeDownloadsCount?: number;
+  onOpenDownloads?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenHowTo,
-  activeTab,
-  onTabChange,
-  historyCount,
   hasUpdate = false,
   onOpenUpdate,
+  activeDownloadsCount = 0,
+  onOpenDownloads,
 }) => {
-  const handleTabSwitch = async (tab: 'download' | 'history') => {
-    if (tab !== activeTab) {
-      try {
-        await Haptics.selectionAsync();
-      } catch (_) {}
-      onTabChange(tab);
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Top App Bar */}
@@ -50,8 +38,21 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
 
         <View style={styles.actionsRow}>
+          {activeDownloadsCount > 0 && onOpenDownloads && (
+            <TouchableOpacity
+              testID="header-active-downloads-pill"
+              style={styles.activeQueuePill}
+              onPress={onOpenDownloads}
+              activeOpacity={0.8}
+            >
+              <View style={styles.pulseDot} />
+              <Text style={styles.activeQueueText}>{activeDownloadsCount} active</Text>
+            </TouchableOpacity>
+          )}
+
           {onOpenUpdate && (
             <TouchableOpacity
+              testID="header-update-btn"
               style={[
                 styles.iconButton,
                 hasUpdate && styles.iconButtonActive,
@@ -69,6 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           <TouchableOpacity
+            testID="header-howto-btn"
             style={styles.iconButton}
             onPress={onOpenHowTo}
             activeOpacity={0.7}
@@ -76,60 +78,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Feather name="help-circle" size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Floating Segmented Pill Controller */}
-      <View style={styles.segmentedContainer}>
-        <TouchableOpacity
-          style={[
-            styles.segmentItem,
-            activeTab === 'download' && styles.segmentItemActive,
-          ]}
-          onPress={() => handleTabSwitch('download')}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            name="arrow-down-circle"
-            size={15}
-            color={activeTab === 'download' ? '#FFFFFF' : COLORS.textMuted}
-          />
-          <Text
-            style={[
-              styles.segmentText,
-              activeTab === 'download' && styles.segmentTextActive,
-            ]}
-          >
-            Downloader
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.segmentItem,
-            activeTab === 'history' && styles.segmentItemActive,
-          ]}
-          onPress={() => handleTabSwitch('history')}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            name="file-tray-full"
-            size={15}
-            color={activeTab === 'history' ? '#FFFFFF' : COLORS.textMuted}
-          />
-          <Text
-            style={[
-              styles.segmentText,
-              activeTab === 'history' && styles.segmentTextActive,
-            ]}
-          >
-            Saved Files
-          </Text>
-          {historyCount > 0 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{historyCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -139,14 +87,13 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 16,
+    paddingBottom: 10,
     backgroundColor: COLORS.bg,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
   brandRow: {
     flexDirection: 'row',
@@ -194,6 +141,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  activeQueuePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.accentSoft,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+  },
+  pulseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.accentPrimary,
+  },
+  activeQueueText: {
+    color: COLORS.accentPrimary,
+    fontSize: 11.5,
+    fontWeight: '800',
   },
   iconButton: {
     width: 38,

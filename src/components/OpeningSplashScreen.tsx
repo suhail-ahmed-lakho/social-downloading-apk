@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AppLogo } from './AppLogo';
@@ -26,18 +27,19 @@ export const OpeningSplashScreen: React.FC<OpeningSplashScreenProps> = ({
 
   useEffect(() => {
     // 1. Snappy logo entrance
+    const useNative = Platform.OS !== 'web';
     Animated.parallel([
       Animated.spring(logoScale, {
         toValue: 1,
         friction: 6,
         tension: 60,
-        useNativeDriver: true,
+        useNativeDriver: useNative,
       }),
       Animated.timing(logoOpacity, {
         toValue: 1,
         duration: 300,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: useNative,
       }),
     ]).start();
 
@@ -48,14 +50,14 @@ export const OpeningSplashScreen: React.FC<OpeningSplashScreenProps> = ({
         duration: 300,
         delay: 100,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: useNative,
       }),
       Animated.timing(textTranslateY, {
         toValue: 0,
         duration: 300,
         delay: 100,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: useNative,
       }),
     ]).start();
 
@@ -65,7 +67,7 @@ export const OpeningSplashScreen: React.FC<OpeningSplashScreenProps> = ({
         toValue: 0,
         duration: 220,
         easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: useNative,
       }).start(() => {
         onAnimationFinish();
       });

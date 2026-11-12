@@ -104,6 +104,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
         <View style={styles.iconContainer}>{getPlatformIcon()}</View>
 
         <TextInput
+          testID="url-input"
           style={styles.input}
           placeholder="Paste YouTube, TikTok, or Instagram link..."
           placeholderTextColor={COLORS.textMuted}
@@ -119,6 +120,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
         {url.length > 0 ? (
           <TouchableOpacity
+            testID="url-clear-btn"
             style={styles.actionBtn}
             onPress={handleClear}
             activeOpacity={0.7}
@@ -127,6 +129,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
+            testID="url-paste-btn"
             style={styles.pasteBadge}
             onPress={handlePaste}
             activeOpacity={0.7}
@@ -139,6 +142,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
 
       {/* Primary Action Button (Gradient on Active / Loading) */}
       <TouchableOpacity
+        testID="get-download-link-btn"
         onPress={async () => {
           if (isLoading || !hasUrl) return;
           try {
