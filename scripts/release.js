@@ -61,11 +61,12 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading even when you switch apps',
-    'Professional Bottom Navigation Bar: Dedicated Home, Downloads, Saved Files, and Alerts tabs for an uncluttered experience',
-    'Live Download Telemetry: Real-time MB/s download speed, progress %, downloaded MB, remaining MB left, ETA, plus Pause/Resume/Cancel controls',
-    'Smart Notification Center & Push Support: Status-bar progress/completion alerts, in-app Alerts Inbox, and graceful Settings recovery if notifications are denied',
-    'All-Platform HD & MP3 Engine: Instant TikTok, YouTube/Music, and 1-Tap Instagram Reels downloads'
+    'YouTube Playback & Corrupt Song Fix: Defaulted YouTube videos to universally compatible 1080p H.264, added clean faststart M4A HD song audio + container integrity checks & automatic stream recovery',
+    'Live Progress & Remaining MB on Chunked Streams: Estimated %, remaining MB & ETA now track smoothly even when media servers omit Content-Length',
+    'Refreshed Bottom Navbar: Smooth coral-pink gradient active capsule pill with high-contrast badge replacing the boxy square highlight',
+    'Silent Zero-Prompt Gallery Saving: Eliminated Android "Allow OmniSaver to modify this video?" popup after downloads complete',
+    'Refreshed Edge-to-Edge App Icon & Short Name: Clean borderless gradient icon without dark halo and clean "OmniSaver" launcher title',
+    'True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading cleanly in the background'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

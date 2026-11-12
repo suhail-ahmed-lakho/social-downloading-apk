@@ -44,6 +44,8 @@ export interface EnqueueDownloadRequest {
   originalUrl: string;
   qualityLabel: string;
   isAudio?: boolean;
+  estimatedBytes?: number;
+  fileExtension?: '.mp4' | '.mp3' | '.m4a';
 }
 
 export interface DownloadQueueItem {
@@ -57,6 +59,8 @@ export interface DownloadQueueItem {
   resolvedUrl?: string;
   qualityLabel: string;
   isAudio: boolean;
+  estimatedBytes?: number;
+  fileExtension?: '.mp4' | '.mp3' | '.m4a';
   filename: string;
   destinationPath: string;
   status: QueueItemStatus;
@@ -264,7 +268,11 @@ async function recordSavedHistoryAndNotify(
   const sizeMB = fileSize > 0 ? formatBytesToMB(fileSize) : undefined;
   await notifyDownloadComplete(item.title, item.isAudio, sizeMB);
 
-  const finalBytes = Math.max(fileSize, item.telemetry.totalBytes, item.telemetry.downloadedBytes);
+  const latestItem = queueItems.find((i) => i.id === item.id) || item;
+  const finalBytes =
+    fileSize > 0
+      ? fileSize
+      : Math.max(latestItem.telemetry.downloadedBytes, latestItem.telemetry.totalBytes);
   updateItem(
     item.id,
     (prev) => ({
@@ -286,6 +294,7 @@ async function recordSavedHistoryAndNotify(
         speedText: '0 KB/s',
         etaSeconds: 0,
         etaText: 'Done',
+        isEstimated: false,
         statusText: savedToGallery ? 'Saved to Gallery' : 'Download Complete',
       },
     }),
@@ -323,6 +332,8 @@ async function attemptFallbackRetryIfApplicable(
   item: DownloadQueueItem,
   currentUrl: string
 ): Promise<boolean> {
+  if (item.status === 'cancelled') return false;
+
   const retryKey = `${item.id}:${currentUrl}`;
   if (fallbackTriedSet.has(retryKey)) return false;
 
@@ -350,6 +361,53 @@ async function attemptFallbackRetryIfApplicable(
     return true;
   }
 
+  if (item.sourceUrl.startsWith('loader:')) {
+    const [, fmt = '', ytId = ''] = item.sourceUrl.split(':');
+    const ytRetryKey = `${item.id}:yt:${fmt}`;
+    if (fallbackTriedSet.has(ytRetryKey)) return false;
+    fallbackTriedSet.add(ytRetryKey);
+    fallbackTriedSet.add(retryKey);
+
+    let nextSourceUrl = item.sourceUrl;
+    let nextQuality = item.qualityLabel;
+    let nextExt = item.fileExtension;
+    let nextFilename = item.filename;
+    let nextDest = item.destinationPath;
+
+    if ((fmt === '4k' || fmt === '2160' || fmt === '1440') && ytId) {
+      // AV1 high-res failed or dropped connection: auto-recover on universal 1080p H.264
+      nextSourceUrl = `loader:1080:${ytId}`;
+      nextQuality = '1080p Full HD (Stable Retry)';
+    } else if ((fmt === 'mp3' || fmt === '128') && ytId) {
+      // Converter MP3 stream corrupt/truncated: auto-recover using clean faststart M4A
+      nextSourceUrl = `loader:m4a:${ytId}`;
+      nextQuality = 'M4A HD Audio (Clean Retry)';
+      nextExt = '.m4a';
+      nextFilename = nextFilename.replace(/\.(mp3|m4a)$/i, '.m4a');
+      nextDest = nextDest.replace(/\.(mp3|m4a)$/i, '.m4a');
+    }
+
+    updateItem(item.id, (prev) => ({
+      ...prev,
+      sourceUrl: nextSourceUrl,
+      resolvedUrl: undefined,
+      qualityLabel: nextQuality,
+      fileExtension: nextExt,
+      filename: nextFilename,
+      destinationPath: nextDest,
+      status: 'resolving',
+      errorMessage: undefined,
+      updatedAt: Date.now(),
+      telemetry: getEmptyTelemetry('Recovering with clean stream...'),
+    }));
+
+    const refreshed = queueItems.find((i) => i.id === item.id);
+    if (refreshed) {
+      void startDownloadPipeline(refreshed);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -368,9 +426,15 @@ function attachNativeTaskHandlers(task: BgDownloadTask, initialItem: DownloadQue
         updatedAt: now,
         telemetry: computeDownloadTelemetry({
           writtenBytes: 0,
-          totalBytes: expectedBytes > 0 ? expectedBytes : prev.telemetry.totalBytes,
+          totalBytes: expectedBytes > 0 ? expectedBytes : 0,
+          estimatedTotalBytes: prev.estimatedBytes,
           samples,
-          statusText: prev.isAudio ? 'Downloading MP3 audio...' : 'Downloading in background...',
+          statusText:
+            prev.fileExtension === '.m4a'
+              ? 'Downloading HD M4A song...'
+              : prev.isAudio
+                ? 'Downloading MP3 audio...'
+                : 'Downloading in background...',
         }),
       }));
     })
@@ -385,9 +449,15 @@ function attachNativeTaskHandlers(task: BgDownloadTask, initialItem: DownloadQue
         updatedAt: now,
         telemetry: computeDownloadTelemetry({
           writtenBytes: bytesDownloaded,
-          totalBytes: bytesTotal > 0 ? bytesTotal : prev.telemetry.totalBytes,
+          totalBytes: bytesTotal > 0 ? bytesTotal : 0,
+          estimatedTotalBytes: prev.estimatedBytes,
           samples,
-          statusText: prev.isAudio ? 'Saving MP3 audio...' : 'Downloading HD video...',
+          statusText:
+            prev.fileExtension === '.m4a'
+              ? 'Saving HD M4A song...'
+              : prev.isAudio
+                ? 'Saving MP3 audio...'
+                : 'Downloading HD video...',
         }),
       }));
     })
@@ -402,7 +472,10 @@ function attachNativeTaskHandlers(task: BgDownloadTask, initialItem: DownloadQue
 
       try {
         const uri = location.startsWith('file://') ? location : `file://${location}`;
-        const finalized = await validateAndFinalizeNativeFile(uri, currentItem.isAudio);
+        const finalized = await validateAndFinalizeNativeFile(uri, currentItem.isAudio, {
+          expectedExt: currentItem.fileExtension,
+          estimatedBytes: currentItem.estimatedBytes,
+        });
         await recordSavedHistoryAndNotify(
           currentItem,
           finalized.localUri,
@@ -492,6 +565,8 @@ async function launchNativeBackgroundTask(
     resolvedUrl: directUrl,
     qualityLabel: item.qualityLabel,
     isAudio: item.isAudio,
+    estimatedBytes: item.estimatedBytes || 0,
+    fileExtension: item.fileExtension || '',
     filename: item.filename,
     destinationPath: item.destinationPath,
   };
@@ -561,8 +636,14 @@ async function runExpoGoFallbackDownload(item: DownloadQueueItem, directUrl: str
         telemetry: computeDownloadTelemetry({
           writtenBytes: progress.totalBytesWritten,
           totalBytes: progress.totalBytesExpectedToWrite,
+          estimatedTotalBytes: prev.estimatedBytes,
           samples,
-          statusText: prev.isAudio ? 'Downloading MP3...' : 'Downloading video...',
+          statusText:
+            prev.fileExtension === '.m4a'
+              ? 'Downloading HD M4A song...'
+              : prev.isAudio
+                ? 'Downloading MP3...'
+                : 'Downloading video...',
         }),
       }));
     }
@@ -590,7 +671,10 @@ async function runExpoGoFallbackDownload(item: DownloadQueueItem, directUrl: str
       throw new Error(`Server returned HTTP ${result.status}`);
     }
 
-    const finalized = await validateAndFinalizeNativeFile(result.uri, item.isAudio);
+    const finalized = await validateAndFinalizeNativeFile(result.uri, latest.isAudio, {
+      expectedExt: latest.fileExtension,
+      estimatedBytes: latest.estimatedBytes,
+    });
     resumableTasks.delete(item.id);
     speedSamplesMap.delete(item.id);
     await recordSavedHistoryAndNotify(
@@ -602,6 +686,9 @@ async function runExpoGoFallbackDownload(item: DownloadQueueItem, directUrl: str
   } catch (err: unknown) {
     const latest = queueItems.find((i) => i.id === item.id);
     if (latest?.status === 'cancelled' || latest?.status === 'paused') return;
+    if (latest && (await attemptFallbackRetryIfApplicable(latest, directUrl))) {
+      return;
+    }
     const message = err instanceof Error ? err.message : 'Download failed';
     await failQueueItem(item.id, item.title, message);
   }
@@ -671,9 +758,15 @@ async function runWebStreamDownload(item: DownloadQueueItem, directUrl: string) 
             updatedAt: now,
             telemetry: computeDownloadTelemetry({
               writtenBytes: bytesDownloaded,
-              totalBytes: totalBytes > 0 ? totalBytes : bytesDownloaded,
+              totalBytes,
+              estimatedTotalBytes: prev.estimatedBytes,
               samples,
-              statusText: prev.isAudio ? 'Downloading MP3...' : 'Downloading HD video...',
+              statusText:
+                prev.fileExtension === '.m4a'
+                  ? 'Downloading HD M4A song...'
+                  : prev.isAudio
+                    ? 'Downloading MP3...'
+                    : 'Downloading HD video...',
             }),
           }));
         }
@@ -696,7 +789,12 @@ async function runWebStreamDownload(item: DownloadQueueItem, directUrl: string) 
       return copy.buffer;
     });
     const blob = new Blob(blobParts, {
-      type: item.isAudio ? 'audio/mpeg' : 'video/mp4',
+      type:
+        item.fileExtension === '.m4a'
+          ? 'audio/mp4'
+          : item.isAudio
+            ? 'audio/mpeg'
+            : 'video/mp4',
     });
     const objectUrl =
       typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
@@ -705,7 +803,8 @@ async function runWebStreamDownload(item: DownloadQueueItem, directUrl: string) 
 
     webControllers.delete(item.id);
     speedSamplesMap.delete(item.id);
-    await recordSavedHistoryAndNotify(item, objectUrl, true, Math.max(bytesDownloaded, MIN_VALID_MEDIA_BYTES));
+    const completedItem = queueItems.find((i) => i.id === item.id) || item;
+    await recordSavedHistoryAndNotify(completedItem, objectUrl, true, bytesDownloaded);
   } catch (err: unknown) {
     const latest = queueItems.find((i) => i.id === item.id);
     if (latest?.status === 'cancelled' || controller.signal.aborted) return;
@@ -739,6 +838,7 @@ async function startDownloadPipeline(item: DownloadQueueItem) {
             telemetry: computeDownloadTelemetry({
               writtenBytes: 0,
               totalBytes: 0,
+              estimatedTotalBytes: prev.estimatedBytes,
               samples: [],
               overridePercent: Math.min(25, Math.round(conversionPct * 25)),
               statusText: statusText || 'Preparing media stream...',
@@ -796,6 +896,14 @@ export async function initializeDownloadQueue(): Promise<DownloadQueueSnapshot> 
         let matched = queueItems.find((i) => i.id === task.id);
 
         if (!matched) {
+          const recoveredExt =
+            meta.fileExtension === '.m4a' || meta.fileExtension === '.mp3' || meta.fileExtension === '.mp4'
+              ? meta.fileExtension
+              : undefined;
+          const recoveredEst =
+            typeof meta.estimatedBytes === 'number' && meta.estimatedBytes > 0
+              ? meta.estimatedBytes
+              : undefined;
           matched = {
             id: task.id,
             title: String(meta.title || 'Background Download'),
@@ -807,6 +915,8 @@ export async function initializeDownloadQueue(): Promise<DownloadQueueSnapshot> 
             resolvedUrl: typeof meta.resolvedUrl === 'string' ? meta.resolvedUrl : undefined,
             qualityLabel: String(meta.qualityLabel || 'HD'),
             isAudio: Boolean(meta.isAudio),
+            estimatedBytes: recoveredEst,
+            fileExtension: recoveredExt,
             filename: String(meta.filename || `${task.id}.mp4`),
             destinationPath: String(meta.destinationPath || ''),
             status:
@@ -818,6 +928,7 @@ export async function initializeDownloadQueue(): Promise<DownloadQueueSnapshot> 
             telemetry: computeDownloadTelemetry({
               writtenBytes: task.bytesDownloaded || 0,
               totalBytes: task.bytesTotal || 0,
+              estimatedTotalBytes: recoveredEst,
               samples: [],
               statusText: task.state === 'PAUSED' ? 'Paused' : 'Resuming background transfer...',
             }),
@@ -836,7 +947,8 @@ export async function initializeDownloadQueue(): Promise<DownloadQueueSnapshot> 
                   : 'downloading',
             telemetry: computeDownloadTelemetry({
               writtenBytes: task.bytesDownloaded || prev.telemetry.downloadedBytes,
-              totalBytes: task.bytesTotal || prev.telemetry.totalBytes,
+              totalBytes: task.bytesTotal || 0,
+              estimatedTotalBytes: prev.estimatedBytes,
               samples: [],
               statusText: task.state === 'PAUSED' ? 'Paused' : 'Background transfer active',
             }),
@@ -848,7 +960,10 @@ export async function initializeDownloadQueue(): Promise<DownloadQueueSnapshot> 
           if (dest) {
             void (async () => {
               try {
-                const finalized = await validateAndFinalizeNativeFile(dest, matched!.isAudio);
+                const finalized = await validateAndFinalizeNativeFile(dest, matched!.isAudio, {
+                  expectedExt: matched!.fileExtension,
+                  estimatedBytes: matched!.estimatedBytes,
+                });
                 await recordSavedHistoryAndNotify(
                   matched!,
                   finalized.localUri,
@@ -899,7 +1014,14 @@ export async function enqueueDownload(request: EnqueueDownloadRequest): Promise<
   void requestGalleryPermissions();
 
   const isAudio = Boolean(request.isAudio);
-  const safeFilename = sanitizeMediaFilename(`${request.filename}_${Date.now()}`, isAudio);
+  const resolvedExt: '.mp4' | '.mp3' | '.m4a' =
+    request.fileExtension ||
+    (request.url.startsWith('loader:m4a:')
+      ? '.m4a'
+      : isAudio
+        ? '.mp3'
+        : '.mp4');
+  const safeFilename = sanitizeMediaFilename(`${request.filename}_${Date.now()}`, isAudio, resolvedExt);
   const id = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
   let destinationPath = safeFilename;
@@ -922,6 +1044,8 @@ export async function enqueueDownload(request: EnqueueDownloadRequest): Promise<
     sourceUrl: request.url,
     qualityLabel: request.qualityLabel,
     isAudio,
+    estimatedBytes: request.estimatedBytes,
+    fileExtension: resolvedExt,
     filename: safeFilename,
     destinationPath,
     status: 'queued',
@@ -1036,7 +1160,10 @@ export async function resumeDownload(id: string): Promise<void> {
       const res = await resumable.resumeAsync();
       const latest = queueItems.find((i) => i.id === id);
       if (res && res.uri && latest) {
-        const finalized = await validateAndFinalizeNativeFile(res.uri, latest.isAudio);
+        const finalized = await validateAndFinalizeNativeFile(res.uri, latest.isAudio, {
+          expectedExt: latest.fileExtension,
+          estimatedBytes: latest.estimatedBytes,
+        });
         resumableTasks.delete(id);
         await recordSavedHistoryAndNotify(
           latest,
@@ -1103,6 +1230,11 @@ export async function retryDownload(id: string): Promise<void> {
   const item = queueItems.find((i) => i.id === id);
   if (!item) return;
 
+  for (const key of Array.from(fallbackTriedSet)) {
+    if (key.startsWith(`${id}:`)) {
+      fallbackTriedSet.delete(key);
+    }
+  }
   speedSamplesMap.delete(id);
   updateItem(
     id,

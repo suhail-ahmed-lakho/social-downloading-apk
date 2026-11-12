@@ -17,6 +17,7 @@ interface MediaPreviewCardProps {
   onDownload: (option: QualityOption) => void;
   activeQueueCount?: number;
   onOpenDownloads?: () => void;
+  defaultFormatTab?: 'video' | 'audio';
 }
 
 export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
@@ -24,16 +25,22 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
   onDownload,
   activeQueueCount = 0,
   onOpenDownloads,
+  defaultFormatTab,
 }) => {
   const videoOptions = (media.qualityOptions || []).filter((o) => o.type === 'video');
   const audioOptions = (media.qualityOptions || []).filter((o) => o.type === 'audio');
 
-  const [activeFormatTab, setActiveFormatTab] = useState<'video' | 'audio'>(
-    videoOptions.length > 0 ? 'video' : 'audio'
-  );
+  const preferredTab: 'video' | 'audio' =
+    defaultFormatTab === 'audio' && audioOptions.length > 0
+      ? 'audio'
+      : videoOptions.length > 0
+        ? 'video'
+        : 'audio';
+
+  const [activeFormatTab, setActiveFormatTab] = useState<'video' | 'audio'>(preferredTab);
 
   const [selectedOption, setSelectedOption] = useState<QualityOption>(
-    media.qualityOptions?.find((o) => o.type === 'video') ||
+    (preferredTab === 'audio' ? audioOptions[0] : videoOptions[0]) ||
       media.qualityOptions?.[0] || {
         label: 'HD Video',
         url: media.videoUrl,
@@ -43,7 +50,14 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
 
   useEffect(() => {
     if (media.qualityOptions && media.qualityOptions.length > 0) {
-      if (activeFormatTab === 'audio' && audioOptions.length > 0) {
+      const targetTab =
+        defaultFormatTab === 'audio' && audioOptions.length > 0
+          ? 'audio'
+          : videoOptions.length > 0
+            ? 'video'
+            : 'audio';
+      setActiveFormatTab(targetTab);
+      if (targetTab === 'audio' && audioOptions.length > 0) {
         setSelectedOption(audioOptions[0]);
       } else {
         const defaultOpt =
@@ -52,7 +66,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         setSelectedOption(defaultOpt);
       }
     }
-  }, [media.id, media.originalUrl, media.qualityOptions]);
+  }, [media.id, media.originalUrl, media.qualityOptions, defaultFormatTab]);
 
   const getPlatformMeta = () => {
     switch (media.platform) {
@@ -72,7 +86,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
       case 'youtube_music':
         return {
           name: 'YouTube',
-          badgeText: selectedOption.type === 'audio' ? 'SONG / MP3' : 'SHORTS / HD',
+          badgeText: selectedOption.type === 'audio' ? 'SONG / AUDIO' : 'SHORTS / HD',
           icon: <FontAwesome5 name="youtube" size={11} color={COLORS.accentPrimary} />,
         };
       default:
@@ -203,7 +217,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
                   activeFormatTab === 'audio' && styles.formatTabBtnTextActive,
                 ]}
               >
-                Songs / MP3 ({audioOptions.length})
+                Songs / Audio ({audioOptions.length})
               </Text>
             </TouchableOpacity>
           </View>

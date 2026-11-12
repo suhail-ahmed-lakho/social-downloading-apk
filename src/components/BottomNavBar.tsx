@@ -1,5 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
@@ -92,24 +93,39 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               activeOpacity={0.8}
               style={[styles.tabButton, isActive && styles.tabButtonActive]}
             >
-              <View style={[styles.iconPill, isActive && styles.iconPillActive]}>
-                <Ionicons
-                  name={isActive ? tab.activeIcon : tab.icon}
-                  size={20}
-                  color={isActive ? COLORS.accentPrimary : COLORS.textSecondary}
-                />
+              <View style={styles.iconContainer}>
+                {isActive ? (
+                  <LinearGradient
+                    testID="nav-active-capsule"
+                    colors={COLORS.gradientPrimary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.activeCapsule}
+                  >
+                    <Ionicons name={tab.activeIcon} size={19} color="#FFFFFF" />
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.inactiveIconBox}>
+                    <Ionicons name={tab.icon} size={20} color={COLORS.textSecondary} />
+                  </View>
+                )}
 
                 {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 ? (
                   <View
                     testID={`nav-badge-${tab.key}`}
                     style={[
                       styles.badge,
-                      tab.badgeTone === 'accent' && styles.badgeAccent,
+                      tab.badgeTone === 'accent' && (isActive ? styles.badgeActiveInvert : styles.badgeAccent),
                       tab.badgeTone === 'warning' && styles.badgeWarning,
                       tab.badgeTone === 'neutral' && styles.badgeNeutral,
                     ]}
                   >
-                    <Text style={styles.badgeText}>
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        tab.badgeTone === 'accent' && isActive && styles.badgeTextInvert,
+                      ]}
+                    >
                       {tab.badgeCount > 99 ? '99+' : tab.badgeCount}
                     </Text>
                   </View>
@@ -134,8 +150,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0C0F17',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     paddingHorizontal: 10,
   },
   dockInner: {
@@ -151,21 +167,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingVertical: 2,
   },
   tabButtonActive: {},
-  iconPill: {
+  iconContainer: {
     position: 'relative',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 3,
+    width: 58,
+    height: 30,
+    marginBottom: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconPillActive: {
-    backgroundColor: COLORS.accentSoft,
+  activeCapsule: {
+    width: 58,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inactiveIconBox: {
+    width: 58,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabLabel: {
     color: COLORS.textMuted,
@@ -174,24 +200,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   tabLabelActive: {
-    color: COLORS.textPrimary,
+    color: COLORS.accentLight,
     fontWeight: '700',
   },
   badge: {
     position: 'absolute',
-    top: 1,
-    right: 4,
-    minWidth: 17,
-    height: 17,
+    top: -3,
+    right: 2,
+    minWidth: 18,
+    height: 18,
     borderRadius: 9,
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1.8,
     borderColor: '#0C0F17',
   },
   badgeAccent: {
     backgroundColor: COLORS.accentPrimary,
+  },
+  badgeActiveInvert: {
+    backgroundColor: '#FFFFFF',
   },
   badgeWarning: {
     backgroundColor: '#F59E0B',
@@ -204,10 +233,13 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '800',
   },
+  badgeTextInvert: {
+    color: '#FF2A6D',
+  },
   warningDot: {
     position: 'absolute',
-    top: 4,
-    right: 8,
+    top: 1,
+    right: 6,
     width: 8,
     height: 8,
     borderRadius: 4,

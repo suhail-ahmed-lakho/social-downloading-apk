@@ -43,9 +43,17 @@ test.describe('OmniSaver Mobile Navigation, Live Downloads & Alerts', () => {
     await expect(page.getByTestId('nav-tab-history')).toBeVisible();
     await expect(page.getByTestId('nav-tab-alerts')).toBeVisible();
 
+    // Active navbar indicator must be a wide rounded pill capsule (never a muddy square box)
+    const activeCapsule = page.getByTestId('nav-active-capsule');
+    await expect(activeCapsule).toBeVisible();
+    const capsuleBox = await activeCapsule.boundingBox();
+    expect(capsuleBox).not.toBeNull();
+    expect(capsuleBox!.width).toBeGreaterThanOrEqual(capsuleBox!.height * 1.75);
+
     // Switch to Downloads tab
     await page.getByTestId('nav-tab-queue').click();
     await expect(page.getByTestId('screen-downloads')).toBeVisible();
+    await expect(page.getByTestId('nav-tab-queue').getByTestId('nav-active-capsule')).toBeVisible();
     await expect(page.getByTestId('downloads-empty-state')).toBeVisible();
     await expect(page.getByTestId('downloads-total-speed')).toContainText('KB/s');
 
@@ -166,5 +174,94 @@ test.describe('OmniSaver Mobile Navigation, Live Downloads & Alerts', () => {
     // Mark all read clears unread badge
     await page.getByTestId('alerts-mark-read-btn').click();
     await expect(page.getByTestId('nav-badge-alerts')).not.toBeVisible();
+  });
+
+  test('YouTube extraction defaults to 1080p H.264, M4A song tab & tracks estimated % and remaining MB without Content-Length', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    await page.route('https://www.youtube.com/oembed*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          title: 'Endless Love Chillout Lo-Fi Test',
+          author_name: 'LofiChannel',
+          thumbnail_url: '',
+        }),
+      });
+    });
+
+    await page.route('**/youtubei/v1/player*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          playabilityStatus: { status: 'OK' },
+          videoDetails: {
+            videoId: 'dtwc9W5l5lA',
+            title: 'Endless Love Chillout Lo-Fi Test',
+            author: 'LofiChannel',
+            lengthSeconds: '300',
+          },
+          streamingData: {
+            adaptiveFormats: [
+              { qualityLabel: '2160p', mimeType: 'video/mp4; codecs="av01.0.12M.08"', contentLength: '90000000' },
+              { qualityLabel: '1080p', mimeType: 'video/mp4; codecs="avc1.640028"', contentLength: '5800000' },
+              { mimeType: 'audio/mp4; codecs="mp4a.40.2"', contentLength: '480000' },
+            ],
+          },
+        }),
+      });
+    });
+
+    await page.route('https://loader.to/ajax/download.php*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          id: 'e2e_job_1',
+          progress_url: 'https://loader.to/ajax/progress.php?id=e2e_job_1',
+        }),
+      });
+    });
+
+    await page.route('https://loader.to/ajax/progress.php*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: 1,
+          progress: 1000,
+          download_url: 'http://127.0.0.1:4173/e2e-media/sample-video.mp4?chunked=1&slow=1',
+        }),
+      });
+    });
+
+    await waitForAppReady(page);
+    await page.getByTestId('url-input').fill('https://www.youtube.com/watch?v=dtwc9W5l5lA');
+    await page.getByTestId('get-download-link-btn').click();
+
+    await expect(page.getByTestId('start-download-btn')).toBeVisible({ timeout: 10_000 });
+    // Default selected quality should be compatible 1080p Full HD (NOT 4K AV1)
+    await expect(page.getByText('1080p Full HD')).toBeVisible();
+    await expect(page.getByText('Songs / Audio')).toBeVisible();
+
+    await page.getByTestId('start-download-btn').click();
+    await expect(page.getByTestId('screen-downloads')).toBeVisible();
+
+    const percentEl = page.getByTestId('telemetry-percent').first();
+    const remainingEl = page.getByTestId('telemetry-remaining').first();
+
+    // Even when Content-Length is omitted (?chunked=1), estimated % & remaining MB update live
+    await expect(percentEl).toContainText(/^~[1-9]\d*%$/, { timeout: 12_000 });
+    await expect(remainingEl).toContainText(/^~.*MB left$/, { timeout: 12_000 });
+
+    // Completes cleanly at 100%
+    await expect(page.getByTestId('btn-share-download').first()).toBeVisible({ timeout: 25_000 });
+    await expect(percentEl).toContainText('100%');
+    await expect(remainingEl).toContainText('0.00 MB left');
+    expect(pageErrors).toEqual([]);
   });
 });

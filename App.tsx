@@ -230,8 +230,10 @@ export default function App() {
         platform: currentMedia.platform,
         thumbnail: currentMedia.thumbnail,
         originalUrl: currentMedia.originalUrl || url,
-        qualityLabel: option.quality || (isAudio ? '320kbps MP3' : 'HD'),
+        qualityLabel: option.quality || (isAudio ? 'HD Song Audio' : 'HD'),
         isAudio,
+        estimatedBytes: option.estimatedBytes,
+        fileExtension: option.fileExtension,
       });
 
       setActiveTab('queue');
@@ -435,6 +437,7 @@ export default function App() {
                 onDownload={handleDownload}
                 activeQueueCount={queue.activeCount}
                 onOpenDownloads={() => setActiveTab('queue')}
+                defaultFormatTab={selectedPlatform === 'youtube_music' ? 'audio' : 'video'}
               />
             )}
 

@@ -16,6 +16,7 @@ export interface DownloadTelemetry {
   etaSeconds: number | null;
   etaText: string;
   statusText?: string;
+  isEstimated?: boolean;
 }
 
 const MB_IN_BYTES = 1024 * 1024;
@@ -114,44 +115,66 @@ export function calculateSpeedBps(samples: SpeedSample[]): number {
 export function computeDownloadTelemetry(params: {
   writtenBytes: number;
   totalBytes: number;
+  estimatedTotalBytes?: number;
   samples: SpeedSample[];
   overridePercent?: number;
   statusText?: string;
 }): DownloadTelemetry {
-  const { writtenBytes, totalBytes, samples, overridePercent, statusText } = params;
+  const { writtenBytes, totalBytes, estimatedTotalBytes, samples, overridePercent, statusText } = params;
   const safeWritten = Math.max(0, Number.isFinite(writtenBytes) ? writtenBytes : 0);
-  const safeTotal = Math.max(0, Number.isFinite(totalBytes) ? totalBytes : 0);
-  const effectiveWritten = safeTotal > 0 ? Math.min(safeWritten, safeTotal) : safeWritten;
-  const remainingBytes = safeTotal > 0 ? Math.max(0, safeTotal - effectiveWritten) : 0;
+  const safeServerTotal = Math.max(0, Number.isFinite(totalBytes) ? totalBytes : 0);
+  const safeEstimated =
+    typeof estimatedTotalBytes === 'number' && Number.isFinite(estimatedTotalBytes) && estimatedTotalBytes > 0
+      ? estimatedTotalBytes
+      : 0;
+
+  const isEstimated = safeServerTotal <= 0 && safeEstimated > 0 && overridePercent !== 100;
+  // When using an estimate and actual bytes approach/exceed it while still streaming,
+  // smoothly expand the baseline so progress stays <= 98% instead of freezing at 100%.
+  const resolvedTotal =
+    safeServerTotal > 0
+      ? safeServerTotal
+      : isEstimated
+        ? safeWritten >= safeEstimated * 0.92
+          ? Math.round(safeWritten * 1.12)
+          : safeEstimated
+        : 0;
+
+  const effectiveWritten = safeServerTotal > 0 ? Math.min(safeWritten, safeServerTotal) : safeWritten;
+  const remainingBytes = resolvedTotal > 0 ? Math.max(0, resolvedTotal - effectiveWritten) : 0;
 
   let percent = 0;
   if (typeof overridePercent === 'number' && Number.isFinite(overridePercent)) {
     percent = Math.max(0, Math.min(100, Math.round(overridePercent)));
-  } else if (safeTotal > 0) {
-    percent = Math.max(0, Math.min(100, Math.round((effectiveWritten / safeTotal) * 100)));
+  } else if (resolvedTotal > 0) {
+    const rawPct = Math.round((effectiveWritten / resolvedTotal) * 100);
+    percent = isEstimated
+      ? Math.max(effectiveWritten > 0 ? 1 : 0, Math.min(98, rawPct))
+      : Math.max(0, Math.min(100, rawPct));
   }
 
   const speedBps = calculateSpeedBps(samples);
   const etaSeconds =
-    speedBps > 0 && safeTotal > 0 && remainingBytes > 0
+    speedBps > 0 && resolvedTotal > 0 && remainingBytes > 0
       ? remainingBytes / speedBps
-      : remainingBytes === 0 && safeTotal > 0
+      : remainingBytes === 0 && safeServerTotal > 0
         ? 0
         : null;
 
   return {
     percent,
     downloadedBytes: effectiveWritten,
-    totalBytes: safeTotal,
+    totalBytes: resolvedTotal,
     remainingBytes,
     downloadedMB: formatBytesToMB(effectiveWritten),
-    totalMB: safeTotal > 0 ? formatBytesToMB(safeTotal) : '-- MB',
-    remainingMB: safeTotal > 0 ? formatBytesToMB(remainingBytes) : '-- MB',
+    totalMB: resolvedTotal > 0 ? formatBytesToMB(resolvedTotal) : '-- MB',
+    remainingMB: resolvedTotal > 0 ? formatBytesToMB(remainingBytes) : '-- MB',
     speedBps,
     speedText: formatSpeed(speedBps),
     etaSeconds,
     etaText: formatEta(etaSeconds),
     statusText,
+    isEstimated,
   };
 }
 

@@ -148,7 +148,13 @@ export const DownloadsScreen: React.FC<DownloadsScreenProps> = ({
               end={{ x: 1, y: 0 }}
               style={[
                 styles.progressFill,
-                { width: `${Math.max(item.status === 'queued' ? 4 : 2, telemetry.percent)}%` },
+                {
+                  width: `${
+                    telemetry.totalBytes <= 0 && isActiveTransfer && telemetry.downloadedBytes > 0
+                      ? Math.max(15, Math.min(82, Math.round(Math.log10(1 + telemetry.downloadedBytes / 1048576) * 35)))
+                      : Math.max(item.status === 'queued' ? 4 : 2, telemetry.percent)
+                  }%`,
+                },
               ]}
             />
           </View>
@@ -159,7 +165,9 @@ export const DownloadsScreen: React.FC<DownloadsScreenProps> = ({
           <View style={styles.telemetryCell}>
             <Text style={styles.telemetryLabel}>PROGRESS</Text>
             <Text style={styles.telemetryValueAccent} testID="telemetry-percent">
-              {telemetry.percent}%
+              {telemetry.totalBytes <= 0 && isActiveTransfer && telemetry.downloadedBytes > 0
+                ? 'Live'
+                : `${telemetry.isEstimated ? '~' : ''}${telemetry.percent}%`}
             </Text>
           </View>
 
@@ -180,7 +188,11 @@ export const DownloadsScreen: React.FC<DownloadsScreenProps> = ({
           <View style={styles.telemetryCell}>
             <Text style={styles.telemetryLabel}>REMAINING</Text>
             <Text style={styles.telemetryValue} testID="telemetry-remaining">
-              {telemetry.totalBytes > 0 ? `${telemetry.remainingMB} left` : telemetry.etaText}
+              {telemetry.totalBytes > 0
+                ? `${telemetry.isEstimated ? '~' : ''}${telemetry.remainingMB} left`
+                : isActiveTransfer && telemetry.downloadedBytes > 0
+                  ? 'Streaming'
+                  : telemetry.etaText}
             </Text>
           </View>
         </View>
@@ -189,11 +201,13 @@ export const DownloadsScreen: React.FC<DownloadsScreenProps> = ({
         <View style={styles.subTelemetryRow}>
           <Text style={styles.subTelemetryText} numberOfLines={1}>
             {telemetry.statusText || 'Ready'}
-            {telemetry.totalBytes > 0 ? ` • Total ${telemetry.totalMB}` : ''}
+            {telemetry.totalBytes > 0
+              ? ` • ${telemetry.isEstimated ? 'Est. Total ~' : 'Total '}${telemetry.totalMB}`
+              : ''}
           </Text>
           {isActiveTransfer && telemetry.etaText !== '--' ? (
             <Text style={styles.etaBadge} testID="telemetry-eta">
-              {telemetry.etaText}
+              {telemetry.isEstimated ? `~${telemetry.etaText}` : telemetry.etaText}
             </Text>
           ) : null}
         </View>

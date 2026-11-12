@@ -38,15 +38,19 @@ const server = http.createServer((req, res) => {
   // Real chunked HTTP video stream endpoint for testing live speed, %, downloaded MB, remaining MB, pause/resume/cancel
   if (pathname === '/e2e-media/sample-video.mp4') {
     const isSlow = urlObj.searchParams.get('slow') === '1';
+    const omitContentLength = urlObj.searchParams.get('chunked') === '1';
     const totalBytes = isSlow ? 6 * 1024 * 1024 : 3 * 1024 * 1024;
     const chunkSize = isSlow ? 128 * 1024 : 256 * 1024;
     const intervalMs = isSlow ? 160 : 90;
 
-    res.writeHead(200, {
+    const headers = {
       'Content-Type': 'video/mp4',
-      'Content-Length': String(totalBytes),
       'Cache-Control': 'no-store',
-    });
+    };
+    if (!omitContentLength) {
+      headers['Content-Length'] = String(totalBytes);
+    }
+    res.writeHead(200, headers);
 
     let sent = 0;
     const chunkBuf = Buffer.alloc(chunkSize, 0x42);

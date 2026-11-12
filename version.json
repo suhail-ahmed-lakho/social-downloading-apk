@@ -1,18 +1,19 @@
 {
-  "version": "1.0.13",
-  "versionCode": 10013,
-  "releaseTitle": "OmniSaver v1.0.13 - Lakho's Team Official Release",
+  "version": "1.0.14",
+  "versionCode": 10014,
+  "releaseTitle": "OmniSaver v1.0.14 - Lakho's Team Official Release",
   "releaseDate": "2026-11-12",
   "fileSize": "33.7 MB",
   "fileSizeBytes": 35338561,
   "mandatory": false,
   "downloadUrl": "https://looknow.cyou/api/download/apk",
   "changelog": [
-    "OmniSaver v1.0.13 - Official Release by Lakho's Team",
-    "True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading even when you switch apps",
-    "Professional Bottom Navigation Bar: Dedicated Home, Downloads, Saved Files, and Alerts tabs for an uncluttered experience",
-    "Live Download Telemetry: Real-time MB/s download speed, progress %, downloaded MB, remaining MB left, ETA, plus Pause/Resume/Cancel controls",
-    "Smart Notification Center & Push Support: Status-bar progress/completion alerts, in-app Alerts Inbox, and graceful Settings recovery if notifications are denied",
-    "All-Platform HD & MP3 Engine: Instant TikTok, YouTube/Music, and 1-Tap Instagram Reels downloads"
+    "OmniSaver v1.0.14 - Official Release by Lakho's Team",
+    "YouTube Playback & Corrupt Song Fix: Defaulted YouTube videos to universally compatible 1080p H.264, added clean faststart M4A HD song audio + container integrity checks & automatic stream recovery",
+    "Live Progress & Remaining MB on Chunked Streams: Estimated %, remaining MB & ETA now track smoothly even when media servers omit Content-Length",
+    "Refreshed Bottom Navbar: Smooth coral-pink gradient active capsule pill with high-contrast badge replacing the boxy square highlight",
+    "Silent Zero-Prompt Gallery Saving: Eliminated Android \"Allow OmniSaver to modify this video?\" popup after downloads complete",
+    "Refreshed Edge-to-Edge App Icon & Short Name: Clean borderless gradient icon without dark halo and clean \"OmniSaver\" launcher title",
+    "True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading cleanly in the background"
   ]
 }

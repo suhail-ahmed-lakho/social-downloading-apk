@@ -271,86 +271,130 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     adaptiveFormats.find((f: any) => f.mimeType?.startsWith('audio/'));
   const audioBytes = Number(audioStream?.contentLength || (durationSec * 128 * 1000) / 8);
 
-  const getFormatSize = (targetRes: string, fallbackKbps: number): string => {
+  const formatMetricLabel = (bytes: number): string => {
+    const mb = bytes / 1024 / 1024;
+    return mb >= 1000 ? `${(mb / 1024).toFixed(1)}GB` : `${Math.max(1, Math.round(mb))}MB`;
+  };
+
+  const getFormatMetrics = (targetRes: string, fallbackKbps: number): { label: string; bytes: number } => {
     let vStream = adaptiveFormats.find(
       (f: any) => f.qualityLabel?.includes(targetRes) && f.mimeType?.includes('video/mp4') && f.contentLength
     );
     if (!vStream) {
       vStream = adaptiveFormats.find((f: any) => f.qualityLabel?.includes(targetRes) && f.contentLength);
     }
+    let totalBytes: number;
     if (vStream && vStream.contentLength) {
-      const totalBytes = Number(vStream.contentLength) + audioBytes;
-      const mb = totalBytes / 1024 / 1024;
-      return mb >= 1000 ? `${(mb / 1024).toFixed(1)}GB` : `${Math.round(mb)}MB`;
+      totalBytes = Number(vStream.contentLength) + audioBytes;
+    } else {
+      totalBytes = Math.round((durationSec * fallbackKbps * 1000) / 8);
     }
-    const mb = (durationSec * fallbackKbps * 1000) / 8 / (1024 * 1024);
-    return `${Math.round(mb)}MB`;
+    return { label: formatMetricLabel(totalBytes), bytes: totalBytes };
   };
 
-  const getAudioSize = (kbps: number): string => {
-    const mb = (durationSec * kbps * 1000) / 8 / (1024 * 1024);
-    return `${Math.round(mb * 10) / 10}MB`;
+  const getAudioMetrics = (kbps: number, preferStreamBytes = false): { label: string; bytes: number } => {
+    const fallbackBytes = Math.round((durationSec * kbps * 1000) / 8);
+    const bytes = preferStreamBytes && audioStream?.contentLength ? Number(audioStream.contentLength) : fallbackBytes;
+    const mb = bytes / 1024 / 1024;
+    return { label: `${Math.max(0.1, Math.round(mb * 10) / 10)}MB`, bytes };
   };
 
   const has4K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('2160'));
   const has2K = adaptiveFormats.length === 0 || adaptiveFormats.some((f: any) => f.qualityLabel?.includes('1440'));
 
-  const qualityOptions: QualityOption[] = [];
+  const m1080 = getFormatMetrics('1080', 1800);
+  const m720 = getFormatMetrics('720', 850);
+  const m480 = getFormatMetrics('480', 450);
+  const m360 = getFormatMetrics('360', 250);
+  const m2k = getFormatMetrics('1440', 2500);
+  const m4k = getFormatMetrics('2160', 4800);
+  const mM4a = getAudioMetrics(128, true);
+  const mMp3Hq = getAudioMetrics(320, false);
+  const mMp3Std = getAudioMetrics(128, false);
 
-  if (has4K) {
-    qualityOptions.push({
-      label: `Ultra HD 4K (2160p ~${getFormatSize('2160', 4800)})`,
-      url: `loader:4k:${ytId}`,
+  // Order compatible H.264 presets (1080p/720p) first so default playback works on all phones;
+  // AV1 high-res options (2K/4K) remain available below clearly labeled.
+  const qualityOptions: QualityOption[] = [
+    {
+      label: `Full HD 1080p (~${m1080.label})`,
+      url: `loader:1080:${ytId}`,
       type: 'video',
-      quality: '4K 2160p Ultra HD',
-    });
-  }
+      quality: '1080p Full HD',
+      estimatedBytes: m1080.bytes,
+      fileExtension: '.mp4',
+    },
+    {
+      label: `HD Video 720p (~${m720.label})`,
+      url: `loader:720:${ytId}`,
+      type: 'video',
+      quality: '720p HD',
+      estimatedBytes: m720.bytes,
+      fileExtension: '.mp4',
+    },
+    {
+      label: `Standard 480p (~${m480.label})`,
+      url: `loader:480:${ytId}`,
+      type: 'video',
+      quality: '480p SD',
+      estimatedBytes: m480.bytes,
+      fileExtension: '.mp4',
+    },
+    {
+      label: `Fast 360p MP4 (~${m360.label})`,
+      url: `loader:360:${ytId}`,
+      type: 'video',
+      quality: '360p Fast',
+      estimatedBytes: m360.bytes,
+      fileExtension: '.mp4',
+    },
+  ];
 
   if (has2K) {
     qualityOptions.push({
-      label: `Quad HD 2K (1440p ~${getFormatSize('1440', 2500)})`,
+      label: `Quad HD 2K AV1 (~${m2k.label})`,
       url: `loader:1440:${ytId}`,
       type: 'video',
-      quality: '2K 1440p QHD',
+      quality: '2K 1440p (AV1)',
+      estimatedBytes: m2k.bytes,
+      fileExtension: '.mp4',
+    });
+  }
+
+  if (has4K) {
+    qualityOptions.push({
+      label: `Ultra HD 4K AV1 (~${m4k.label})`,
+      url: `loader:4k:${ytId}`,
+      type: 'video',
+      quality: '4K 2160p (AV1)',
+      estimatedBytes: m4k.bytes,
+      fileExtension: '.mp4',
     });
   }
 
   qualityOptions.push(
     {
-      label: `Full HD 1080p (~${getFormatSize('1080', 1800)})`,
-      url: `loader:1080:${ytId}`,
-      type: 'video',
-      quality: '1080p Full HD',
+      label: `Best Song Audio • M4A (~${mM4a.label})`,
+      url: `loader:m4a:${ytId}`,
+      type: 'audio',
+      quality: 'M4A HD Audio',
+      estimatedBytes: mM4a.bytes,
+      fileExtension: '.m4a',
     },
     {
-      label: `HD Video 720p (~${getFormatSize('720', 850)})`,
-      url: `loader:720:${ytId}`,
-      type: 'video',
-      quality: '720p HD',
-    },
-    {
-      label: `Standard 480p (~${getFormatSize('480', 450)})`,
-      url: `loader:480:${ytId}`,
-      type: 'video',
-      quality: '480p SD',
-    },
-    {
-      label: `Light 360p (~${getFormatSize('360', 250)})`,
-      url: `loader:360:${ytId}`,
-      type: 'video',
-      quality: '360p SD',
-    },
-    {
-      label: `Song / MP3 (HQ 320k ~${getAudioSize(320)})`,
+      label: `Song / MP3 (HQ 320k ~${mMp3Hq.label})`,
       url: `loader:mp3:${ytId}`,
       type: 'audio',
-      quality: 'HQ Audio 320kbps',
+      quality: 'MP3 320kbps',
+      estimatedBytes: mMp3Hq.bytes,
+      fileExtension: '.mp3',
     },
     {
-      label: `Standard MP3 (128k ~${getAudioSize(128)})`,
+      label: `Standard MP3 (128k ~${mMp3Std.label})`,
       url: `loader:128:${ytId}`,
       type: 'audio',
-      quality: '128kbps',
+      quality: 'MP3 128kbps',
+      estimatedBytes: mMp3Std.bytes,
+      fileExtension: '.mp3',
     }
   );
 
@@ -361,8 +405,8 @@ async function extractYouTube(url: string): Promise<MediaMetadata> {
     author: finalAuthor,
     thumbnail: finalThumb,
     duration: durationSec,
-    videoUrl: `loader:720:${ytId}`,
-    audioUrl: `loader:mp3:${ytId}`,
+    videoUrl: `loader:1080:${ytId}`,
+    audioUrl: `loader:m4a:${ytId}`,
     originalUrl: url,
     qualityOptions,
   };

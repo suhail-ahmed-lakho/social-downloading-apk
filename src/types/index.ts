@@ -5,6 +5,8 @@ export interface QualityOption {
   url: string;
   type: 'video' | 'audio';
   quality?: string;
+  estimatedBytes?: number;
+  fileExtension?: '.mp4' | '.mp3' | '.m4a';
 }
 
 export interface MediaMetadata {
