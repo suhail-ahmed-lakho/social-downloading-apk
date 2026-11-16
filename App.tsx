@@ -66,6 +66,7 @@ import {
   UpdateCheckResult,
 } from './src/services/update/updateChecker';
 import { CURRENT_APP_VERSION } from './src/config/updateConfig';
+import { trackAppLaunch, trackAppDownload } from './src/services/telemetry/appAnalytics';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 const NativeInstagramBrowserModal =
@@ -103,12 +104,14 @@ export default function App() {
   useEffect(() => {
     void loadHistory();
     void checkClipboard();
+    void trackAppLaunch();
 
     const unsubCompleted = subscribeDownloadCompleted((savedItem) => {
       setHistoryItems((prev) => [
         savedItem,
         ...prev.filter((existing) => existing.id !== savedItem.id),
       ]);
+      void trackAppDownload(savedItem.platform, 'HD', savedItem.platform === 'youtube_music' ? 'audio' : 'media');
     });
 
     // Auto-check for update after splash screen initializes
@@ -147,7 +150,7 @@ export default function App() {
     const raw = typeof targetUrlToFetch === 'string' ? targetUrlToFetch : url;
     const trimmed = cleanInputUrl(raw);
     if (!trimmed) {
-      Alert.alert('Empty Link', 'Please paste a TikTok, Instagram, or YouTube link first.');
+      Alert.alert('Empty Link', 'Please paste a TikTok, Instagram, YouTube, or Pinterest link first.');
       return;
     }
 
@@ -420,6 +423,8 @@ export default function App() {
                         ? 'Capturing Instagram Reel...'
                         : url.includes('tiktok.com')
                         ? 'Resolving TikTok (No Watermark)...'
+                        : url.includes('pinterest.com') || url.includes('pin.it')
+                        ? 'Fetching Pinterest Pin & Media...'
                         : 'Extracting 4K & Audio Streams...'}
                     </Text>
                     <Text style={styles.analyzingSub}>
@@ -505,7 +510,7 @@ export default function App() {
                       ) : (
                         <View style={[styles.recentThumb, styles.recentThumbPlaceholder]}>
                           <Ionicons
-                            name={item.platform === 'youtube' ? 'logo-youtube' : item.platform === 'tiktok' ? 'videocam' : 'camera'}
+                            name={item.platform === 'youtube' ? 'logo-youtube' : item.platform === 'tiktok' ? 'videocam' : item.platform === 'pinterest' ? 'logo-pinterest' : 'camera'}
                             size={20}
                             color={COLORS.textMuted}
                           />
@@ -551,6 +556,18 @@ export default function App() {
                     <Text style={styles.showcaseTitle}>TikTok (Clean HD)</Text>
                     <Text style={styles.showcaseSub}>
                       Clean video extraction with author watermark removed automatically
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.showcaseCard}>
+                  <View style={[styles.showcaseIconWrap, { backgroundColor: 'rgba(230, 0, 35, 0.12)', borderColor: 'rgba(230, 0, 35, 0.25)' }]}>
+                    <Ionicons name="logo-pinterest" size={18} color="#E60023" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.showcaseTitle}>Pinterest (Video & HD Pins)</Text>
+                    <Text style={styles.showcaseSub}>
+                      Save crystal-clear 720p MP4 videos and full-resolution uncompressed photos
                     </Text>
                   </View>
                 </View>

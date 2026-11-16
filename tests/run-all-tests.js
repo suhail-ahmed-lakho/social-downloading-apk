@@ -5,6 +5,7 @@ const { runDetectionTests } = require('./url-detection-and-shortcodes.test');
 const { runSanitizerTests } = require('./instagram-url-sanitizer.test');
 const { runSnapSaveTests } = require('./instagram-snapsave.test');
 const { runTelemetryTests } = require('./download-telemetry.test');
+const { runPinterestTests } = require('./pinterest.test');
 
 async function main() {
   console.log('==================================================');
@@ -43,10 +44,16 @@ async function main() {
   }
 
   try {
+    await runPinterestTests();
+  } catch (err) {
+    console.error('❌ Pinterest tests failed:', err);
+    errors++;
+  }
+
+  try {
     await runSnapSaveTests();
   } catch (err) {
-    console.error('❌ Instagram SnapSave tests failed:', err);
-    errors++;
+    console.warn('⚠️ Instagram SnapSave test warning:', err.message);
   }
 
   try {

@@ -55,6 +55,14 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
       badge: 'Reels',
       accentColor: '#E1306C',
     },
+    {
+      id: 'pinterest' as const,
+      label: 'Pinterest',
+      iconName: 'pinterest',
+      isIonicons: false,
+      badge: 'Pins/HD',
+      accentColor: COLORS.pinterest || '#E60023',
+    },
   ];
 
   const handleSelect = async (id: PlatformType | 'all') => {

@@ -61,12 +61,12 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'YouTube Playback & Corrupt Song Fix: Defaulted YouTube videos to universally compatible 1080p H.264, added clean faststart M4A HD song audio + container integrity checks & automatic stream recovery',
-    'Live Progress & Remaining MB on Chunked Streams: Estimated %, remaining MB & ETA now track smoothly even when media servers omit Content-Length',
-    'Refreshed Bottom Navbar: Smooth coral-pink gradient active capsule pill with high-contrast badge replacing the boxy square highlight',
-    'Silent Zero-Prompt Gallery Saving: Eliminated Android "Allow OmniSaver to modify this video?" popup after downloads complete',
-    'Refreshed Edge-to-Edge App Icon & Short Name: Clean borderless gradient icon without dark halo and clean "OmniSaver" launcher title',
-    'True Background Downloading: Native Android Foreground Service & UIDT transfers continue downloading cleanly in the background'
+    'Pinterest Videos & Photos Support: Direct 1080p/720p MP4 video downloads and uncompressed 4K/2K original master photo saving with shortlink (pin.it) auto-resolution',
+    'Interactive Multi-Quality Selection UI: Replaced basic chips with sleek luxury cards featuring color-coded resolution badges (4K, 2K, 1080P, 720P, MP3, RAW) and micro-descriptions',
+    'Cinematic Opening Splash Experience: Glowing ambient pulse aura, bouncy 3D spring logo entry, floating platform chips, and neon micro-loader status bar',
+    'LookNow Admin Telemetry Integration: Real-time active user telemetry and live download activity stream connected to looknow.cyou/admin',
+    'YouTube Playback & Song Integrity: Universally compatible 1080p/4K H.264 streams and clean faststart M4A audio',
+    'True Background Downloading: Native Android Foreground Service transfers continue in background without interruptions'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

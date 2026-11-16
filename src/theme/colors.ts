@@ -46,4 +46,7 @@ export const COLORS = {
   youtube: '#FF0000',
   youtubeDark: '#CC0000',
   youtubeGradient: ['#FF0000', '#B30000'] as const,
+  pinterest: '#E60023',
+  pinterestDark: '#AD081B',
+  pinterestGradient: ['#E60023', '#BD081C'] as const,
 };

@@ -45,6 +45,8 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       case 'youtube':
       case 'youtube_music':
         return <FontAwesome5 name="youtube" size={10} color={COLORS.accentPrimary} />;
+      case 'pinterest':
+        return <FontAwesome5 name="pinterest" size={10} color={COLORS.pinterest || '#E60023'} />;
       default:
         return <Feather name="video" size={10} color={COLORS.textMuted} />;
     }

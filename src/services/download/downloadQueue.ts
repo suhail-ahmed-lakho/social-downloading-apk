@@ -45,7 +45,7 @@ export interface EnqueueDownloadRequest {
   qualityLabel: string;
   isAudio?: boolean;
   estimatedBytes?: number;
-  fileExtension?: '.mp4' | '.mp3' | '.m4a';
+  fileExtension?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif';
 }
 
 export interface DownloadQueueItem {
@@ -60,7 +60,7 @@ export interface DownloadQueueItem {
   qualityLabel: string;
   isAudio: boolean;
   estimatedBytes?: number;
-  fileExtension?: '.mp4' | '.mp3' | '.m4a';
+  fileExtension?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif';
   filename: string;
   destinationPath: string;
   status: QueueItemStatus;
@@ -1014,13 +1014,21 @@ export async function enqueueDownload(request: EnqueueDownloadRequest): Promise<
   void requestGalleryPermissions();
 
   const isAudio = Boolean(request.isAudio);
-  const resolvedExt: '.mp4' | '.mp3' | '.m4a' =
+  const resolvedExt: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif' =
     request.fileExtension ||
     (request.url.startsWith('loader:m4a:')
       ? '.m4a'
       : isAudio
         ? '.mp3'
-        : '.mp4');
+        : request.url.includes('.jpg') || request.url.includes('.jpeg')
+          ? '.jpg'
+          : request.url.includes('.png')
+            ? '.png'
+            : request.url.includes('.webp')
+              ? '.webp'
+              : request.url.includes('.gif')
+                ? '.gif'
+                : '.mp4');
   const safeFilename = sanitizeMediaFilename(`${request.filename}_${Date.now()}`, isAudio, resolvedExt);
   const id = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 

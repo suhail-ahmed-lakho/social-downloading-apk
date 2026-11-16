@@ -20,6 +20,13 @@ function detectPlatform(url) {
     return 'instagram';
   }
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) return 'youtube';
+  if (
+    cleanUrl.includes('pinterest.') ||
+    cleanUrl.includes('pin.it') ||
+    cleanUrl.includes('pinimg.com')
+  ) {
+    return 'pinterest';
+  }
   return 'unknown';
 }
 
@@ -77,6 +84,12 @@ async function runExtractorTests() {
   assert.strictEqual(detectPlatform('https://www.instagram.com/p/C7z19hXMo6k/'), 'instagram');
   assert.strictEqual(detectPlatform('https://instagr.am/p/C7z19hXMo6k/'), 'instagram');
   console.log('✅ Instagram URL pattern detection passed');
+
+  // Test Pinterest detection
+  assert.strictEqual(detectPlatform('https://www.pinterest.com/pin/1148418092497645166/'), 'pinterest');
+  assert.strictEqual(detectPlatform('https://pin.it/7w4uK6l'), 'pinterest');
+  assert.strictEqual(detectPlatform('https://in.pinterest.com/pin/39617671718303098/'), 'pinterest');
+  console.log('✅ Pinterest URL pattern detection passed');
 
   // Test Unknown URLs
   assert.strictEqual(detectPlatform('https://google.com'), 'unknown');

@@ -89,6 +89,17 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
           badgeText: selectedOption.type === 'audio' ? 'SONG / AUDIO' : 'SHORTS / HD',
           icon: <FontAwesome5 name="youtube" size={11} color={COLORS.accentPrimary} />,
         };
+      case 'pinterest':
+        const isPhoto =
+          selectedOption.fileExtension === '.jpg' ||
+          selectedOption.fileExtension === '.png' ||
+          selectedOption.url.includes('.jpg') ||
+          selectedOption.url.includes('.png');
+        return {
+          name: 'Pinterest',
+          badgeText: isPhoto ? 'PIN / PHOTO' : 'PIN / HD VIDEO',
+          icon: <FontAwesome5 name="pinterest" size={11} color={COLORS.pinterest || '#E60023'} />,
+        };
       default:
         return {
           name: 'Video',
@@ -96,6 +107,90 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
           icon: <Feather name="video" size={11} color={COLORS.accentPrimary} />,
         };
     }
+  };
+
+  const getQualityBadgeMeta = (opt: QualityOption) => {
+    const text = `${opt.quality || ''} ${opt.label || ''}`.toLowerCase();
+    const isAudio =
+      opt.type === 'audio' ||
+      text.includes('mp3') ||
+      text.includes('audio') ||
+      text.includes('song');
+    const isPhoto =
+      opt.fileExtension === '.jpg' ||
+      opt.fileExtension === '.png' ||
+      opt.fileExtension === '.webp' ||
+      text.includes('photo') ||
+      text.includes('image');
+
+    if (text.includes('4k') || text.includes('2160')) {
+      return {
+        badge: '4K',
+        color: '#F59E0B',
+        bg: 'rgba(245, 158, 11, 0.16)',
+        borderColor: 'rgba(245, 158, 11, 0.45)',
+        icon: 'sparkles' as const,
+        desc: 'Master 4K Ultra HD • Crystal Clear',
+      };
+    }
+    if (text.includes('2k') || text.includes('1440')) {
+      return {
+        badge: '2K',
+        color: '#06B6D4',
+        bg: 'rgba(6, 182, 212, 0.16)',
+        borderColor: 'rgba(6, 182, 212, 0.45)',
+        icon: 'film' as const,
+        desc: 'Crisp 1440p Quad HD • High Bitrate',
+      };
+    }
+    if (text.includes('1080') || text.includes('full hd')) {
+      return {
+        badge: '1080P',
+        color: '#3B82F6',
+        bg: 'rgba(59, 130, 246, 0.16)',
+        borderColor: 'rgba(59, 130, 246, 0.45)',
+        icon: 'videocam' as const,
+        desc: 'Cinema 1080p • Most Popular',
+      };
+    }
+    if (text.includes('720') || text.includes('hd') || text.includes('standard')) {
+      return {
+        badge: '720P',
+        color: '#10B981',
+        bg: 'rgba(16, 185, 129, 0.16)',
+        borderColor: 'rgba(16, 185, 129, 0.45)',
+        icon: 'videocam-outline' as const,
+        desc: 'Fast Download • Smooth Playback',
+      };
+    }
+    if (isAudio) {
+      return {
+        badge: 'AUDIO',
+        color: '#FF5E3A',
+        bg: 'rgba(255, 94, 58, 0.16)',
+        borderColor: 'rgba(255, 94, 58, 0.45)',
+        icon: 'musical-notes' as const,
+        desc: text.includes('320') ? '320kbps Studio MP3 Audio' : 'High Quality Audio Track',
+      };
+    }
+    if (isPhoto) {
+      return {
+        badge: 'RAW',
+        color: '#EC4899',
+        bg: 'rgba(236, 72, 153, 0.16)',
+        borderColor: 'rgba(236, 72, 153, 0.45)',
+        icon: 'image' as const,
+        desc: 'Original Full-Resolution Master Photo',
+      };
+    }
+    return {
+      badge: 'STD',
+      color: '#94A3B8',
+      bg: 'rgba(148, 163, 184, 0.12)',
+      borderColor: 'rgba(148, 163, 184, 0.3)',
+      icon: 'play-circle-outline' as const,
+      desc: 'Standard Compatible Stream',
+    };
   };
 
   const meta = getPlatformMeta();
@@ -226,18 +321,36 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         {/* Quality Options / Resolution Buttons */}
         {currentOptionsToShow && currentOptionsToShow.length > 0 && (
           <View style={styles.optionsSection}>
-            <Text style={styles.sectionLabel}>
-              {activeFormatTab === 'audio' ? 'Select Audio Bitrate / Quality:' : 'Select Video Resolution:'}
-            </Text>
-            <View style={styles.optionsRow}>
+            <View style={styles.optionsHeaderRow}>
+              <View style={styles.optionsHeaderLeft}>
+                <Ionicons name="options-outline" size={13} color={COLORS.accentPrimary} />
+                <Text style={styles.sectionLabel}>
+                  {activeFormatTab === 'audio'
+                    ? `Available Audio Streams (${currentOptionsToShow.length})`
+                    : `Available Resolutions (${currentOptionsToShow.length})`}
+                </Text>
+              </View>
+              {currentOptionsToShow.length > 1 && (
+                <View style={styles.multiQualityBadge}>
+                  <Ionicons name="sparkles" size={10} color={COLORS.accentPrimary} />
+                  <Text style={styles.multiQualityBadgeText}>TAP TO SWITCH</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.qualityCardsContainer}>
               {currentOptionsToShow.map((opt, idx) => {
                 const isSelected = selectedOption.url === opt.url;
+                const badgeMeta = getQualityBadgeMeta(opt);
+                const fileExt = (opt.fileExtension || (opt.type === 'audio' ? '.mp3' : '.mp4')).toUpperCase();
+
                 return (
                   <TouchableOpacity
                     key={idx}
                     style={[
-                      styles.optionChip,
-                      isSelected && styles.optionChipActive,
+                      styles.qualityCard,
+                      isSelected && styles.qualityCardActive,
+                      isSelected && { borderColor: badgeMeta.borderColor },
                     ]}
                     onPress={async () => {
                       try {
@@ -245,27 +358,54 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
                       } catch (_) {}
                       setSelectedOption(opt);
                     }}
-                    activeOpacity={0.7}
+                    activeOpacity={0.75}
                   >
-                    <Ionicons
-                      name={
-                        isSelected
-                          ? 'checkmark-circle'
-                          : opt.type === 'audio'
-                          ? 'musical-notes'
-                          : 'videocam'
-                      }
-                      size={14}
-                      color={isSelected ? COLORS.accentPrimary : COLORS.textSecondary}
-                    />
-                    <Text
+                    {/* Left: Resolution Badge */}
+                    <View
                       style={[
-                        styles.optionChipText,
-                        isSelected && styles.optionChipTextActive,
+                        styles.resBadgeBox,
+                        { backgroundColor: badgeMeta.bg, borderColor: badgeMeta.borderColor },
                       ]}
                     >
-                      {opt.label}
-                    </Text>
+                      <Ionicons name={badgeMeta.icon} size={12} color={badgeMeta.color} />
+                      <Text style={[styles.resBadgeText, { color: badgeMeta.color }]}>
+                        {badgeMeta.badge}
+                      </Text>
+                    </View>
+
+                    {/* Middle: Title & Description */}
+                    <View style={styles.qualityCardMiddle}>
+                      <Text
+                        style={[
+                          styles.qualityCardTitle,
+                          isSelected && styles.qualityCardTitleActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {opt.label}
+                      </Text>
+                      <Text style={styles.qualityCardDesc} numberOfLines={1}>
+                        {badgeMeta.desc}
+                      </Text>
+                    </View>
+
+                    {/* Right: Extension chip + Selection Check */}
+                    <View style={styles.qualityCardRight}>
+                      <View style={styles.extChip}>
+                        <Text style={styles.extChipText}>{fileExt}</Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.radioCircle,
+                          isSelected && styles.radioCircleActive,
+                          isSelected && { backgroundColor: COLORS.accentPrimary, borderColor: COLORS.accentPrimary },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                        )}
+                      </View>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -463,15 +603,134 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   optionsSection: {
-    marginBottom: 18,
+    marginBottom: 20,
+  },
+  optionsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  optionsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   sectionLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  multiQualityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 94, 58, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 94, 58, 0.25)',
+  },
+  multiQualityBadgeText: {
+    fontSize: 9,
+    color: COLORS.accentPrimary,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  qualityCardsContainer: {
+    gap: 8,
+  },
+  qualityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardBgLight,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.cardBorder,
+  },
+  qualityCardActive: {
+    backgroundColor: COLORS.cardBgElevated,
+    shadowColor: COLORS.accentPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  resBadgeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 58,
+    justifyContent: 'center',
+  },
+  resBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  qualityCardMiddle: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+    justifyContent: 'center',
+  },
+  qualityCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  qualityCardTitleActive: {
+    color: COLORS.textPrimary,
+    fontWeight: '700',
+  },
+  qualityCardDesc: {
     fontSize: 11,
     color: COLORS.textMuted,
-    fontWeight: '600',
-    marginBottom: 10,
-    textTransform: 'uppercase',
+    fontWeight: '400',
+  },
+  qualityCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  extChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  extChipText: {
+    fontSize: 9,
+    color: COLORS.textMuted,
+    fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.cardBorderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  radioCircleActive: {
+    shadowColor: COLORS.accentPrimary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
   },
   optionsRow: {
     flexDirection: 'row',

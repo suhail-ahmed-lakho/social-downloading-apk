@@ -57,6 +57,18 @@ export const HowToUseModal: React.FC<HowToUseModalProps> = ({
         'Paste the URL into OmniSaver and tap "Download & Save to Gallery".',
       ],
     },
+    {
+      platform: 'Pinterest',
+      icon: <FontAwesome5 name="pinterest" size={15} color={COLORS.pinterest || '#E60023'} />,
+      title: 'Pinterest Videos & High-Res Pins',
+      instructions: [
+        'Open Pinterest and find any Pin (Video or Photo).',
+        'Tap the Share icon or the three dots (•••).',
+        'Tap "Copy link".',
+        'Paste inside OmniSaver and tap "Get Download Link".',
+        'Select HD Video or Original High-Res Photo to save directly to Gallery!',
+      ],
+    },
   ];
 
   return (

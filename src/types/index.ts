@@ -1,4 +1,4 @@
-export type PlatformType = 'tiktok' | 'instagram' | 'youtube' | 'youtube_music' | 'unknown';
+export type PlatformType = 'tiktok' | 'instagram' | 'youtube' | 'youtube_music' | 'pinterest' | 'unknown';
 
 export interface QualityOption {
   label: string;
@@ -6,7 +6,7 @@ export interface QualityOption {
   type: 'video' | 'audio';
   quality?: string;
   estimatedBytes?: number;
-  fileExtension?: '.mp4' | '.mp3' | '.m4a';
+  fileExtension?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif';
 }
 
 export interface MediaMetadata {

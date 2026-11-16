@@ -40,7 +40,21 @@ export function detectPlatform(url: string): PlatformType {
     return 'instagram';
   }
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) return 'youtube';
+  if (
+    cleanUrl.includes('pinterest.') ||
+    cleanUrl.includes('pin.it') ||
+    cleanUrl.includes('pinimg.com')
+  ) {
+    return 'pinterest';
+  }
   return 'unknown';
+}
+
+// Extract Pinterest Pin ID (supports /pin/<id>/, /pin/<id>, and regional domains)
+export function extractPinterestPinId(url: string): string | null {
+  const clean = cleanInputUrl(url);
+  const match = clean.match(/(?:pinterest\.[a-z.]+|pinimg\.com)\/pin\/(\d+)/i);
+  return match ? match[1] : null;
 }
 
 // Extract YouTube ID (Supports regular videos, shorts, and music.youtube.com)
@@ -623,6 +637,205 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
 }
 
 // ==========================================
+// 4. PINTEREST EXTRACTOR (Videos & Photos)
+// ==========================================
+export async function extractPinterest(url: string): Promise<MediaMetadata> {
+  const cleanUrl = cleanInputUrl(url);
+
+  const fetchHeaders = [
+    {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    {
+      'User-Agent':
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  ];
+
+  let html = '';
+  let finalUrl = cleanUrl;
+  let lastError: Error | null = null;
+
+  for (const headers of fetchHeaders) {
+    try {
+      const res = await fetchWithTimeout(
+        cleanUrl,
+        {
+          headers,
+          redirect: 'follow',
+        },
+        7000
+      );
+      if (res.ok) {
+        html = await res.text();
+        finalUrl = res.url || cleanUrl;
+        break;
+      }
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+
+  if (!html) {
+    throw new Error(
+      lastError?.message ||
+        'Unable to load Pinterest page. Please check your internet connection or URL.'
+    );
+  }
+
+  // 1. Extract Pin ID
+  const pinIdMatch =
+    finalUrl.match(/\/pin\/(\d+)/i) ||
+    cleanUrl.match(/\/pin\/(\d+)/i) ||
+    html.match(/pin\/(\d+)/i);
+  const pinId = pinIdMatch ? pinIdMatch[1] : `pin_${Date.now()}`;
+
+  // 2. Extract Title
+  const ogTitleMatch =
+    html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) ||
+    html.match(/<title>([^<]*)<\/title>/i);
+  let title = ogTitleMatch ? ogTitleMatch[1].trim() : 'Pinterest Media';
+  title = title
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/\s*\|\s*Pinterest.*$/i, '')
+    .trim();
+
+  // 3. Extract Author
+  const authorMatch =
+    html.match(/<meta[^>]+name=["']author["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+property=["']og:article:author["'][^>]+content=["']([^"']+)["']/i);
+  const author = authorMatch ? authorMatch[1].trim() : 'Pinterest Creator';
+
+  // 4. Extract Thumbnail / Cover Image
+  const ogImageMatch =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  let thumbnail = ogImageMatch ? ogImageMatch[1].trim() : '';
+
+  // 5. Extract Direct MP4 Video URLs
+  const rawMp4Matches = html.match(/https?:\/\/[^"'<>\s]+\.mp4[^"'<>\s]*/gi) || [];
+  const validMp4s = [
+    ...new Set(
+      rawMp4Matches
+        .map((u) => u.replace(/\\/g, ''))
+        .filter((u) => u.includes('pinimg.com') || u.includes('pinterest.com'))
+    ),
+  ];
+
+  // 6. Extract M3U8 Playlists and convert to 720p MP4 if no direct MP4 found
+  const rawM3u8Matches = html.match(/https?:\/\/[^"'<>\s]+\.m3u8[^"'<>\s]*/gi) || [];
+  const validM3u8s = [
+    ...new Set(rawM3u8Matches.map((u) => u.replace(/\\/g, ''))),
+  ];
+
+  if (validMp4s.length === 0 && validM3u8s.length > 0) {
+    for (const m3u8 of validM3u8s) {
+      const converted = m3u8
+        .replace(/\/videos\/(?:iht\/)?hls\//i, '/videos/mc/720p/')
+        .replace(/\.m3u8.*$/i, '.mp4');
+      if (converted !== m3u8 && !validMp4s.includes(converted)) {
+        validMp4s.push(converted);
+      }
+    }
+  }
+
+  // 7. Derive Highest-Resolution Image (originals)
+  let originalImage = '';
+  if (thumbnail) {
+    originalImage = thumbnail.replace(/\/(?:236x|474x|564x|736x)\//, '/originals/');
+  }
+
+  const isVideo = validMp4s.length > 0;
+  const qualityOptions: QualityOption[] = [];
+
+  if (isVideo) {
+    const primaryVideo = validMp4s[0];
+
+    // Check if a 1080p Full HD stream is available on Pinterest CDN
+    let hd1080Url = '';
+    if (primaryVideo.includes('/mc/720p/')) {
+      const candidate1080 = primaryVideo.replace('/mc/720p/', '/mc/1080p/');
+      try {
+        const head1080 = await fetchWithTimeout(candidate1080, { method: 'HEAD' }, 2000);
+        if (head1080.ok) {
+          hd1080Url = candidate1080;
+        }
+      } catch {}
+    }
+
+    if (hd1080Url) {
+      qualityOptions.push({
+        label: 'Full HD Video (1080p MP4)',
+        url: hd1080Url,
+        type: 'video',
+        quality: '1080p Full HD',
+        fileExtension: '.mp4',
+      });
+    }
+
+    qualityOptions.push({
+      label: 'HD Video (720p MP4)',
+      url: primaryVideo,
+      type: 'video',
+      quality: '720p HD',
+      fileExtension: '.mp4',
+    });
+
+    if (originalImage) {
+      qualityOptions.push({
+        label: 'Cover Thumbnail (HD)',
+        url: originalImage,
+        type: 'video',
+        quality: 'Original Image',
+        fileExtension: originalImage.endsWith('.png') ? '.png' : '.jpg',
+      });
+    }
+  } else if (originalImage) {
+    const ext = originalImage.endsWith('.png') ? '.png' : '.jpg';
+    qualityOptions.push({
+      label: 'Original Master Photo (4K / 2K / HD)',
+      url: originalImage,
+      type: 'video',
+      quality: 'Original Master (4K/2K/HD)',
+      fileExtension: ext,
+    });
+
+    if (thumbnail && thumbnail !== originalImage) {
+      qualityOptions.push({
+        label: 'Standard Preview Photo',
+        url: thumbnail,
+        type: 'video',
+        quality: '736x Preview',
+        fileExtension: ext,
+      });
+    }
+  }
+
+  if (qualityOptions.length === 0) {
+    throw new Error('No downloadable media (video or photo) found on this Pinterest pin.');
+  }
+
+  return {
+    id: pinId,
+    platform: 'pinterest',
+    title: title || 'Pinterest Pin',
+    author,
+    thumbnail: thumbnail || originalImage || qualityOptions[0]?.url || '',
+    videoUrl: qualityOptions[0]?.url || '',
+    originalUrl: url,
+    qualityOptions,
+  };
+}
+
+// ==========================================
 // UNIFIED EXTRACTOR
 // ==========================================
 export async function extractMedia(url: string): Promise<MediaMetadata> {
@@ -640,11 +853,13 @@ export async function extractMedia(url: string): Promise<MediaMetadata> {
       return await extractYouTube(trimmed);
     case 'instagram':
       return await extractInstagram(trimmed);
+    case 'pinterest':
+      return await extractPinterest(trimmed);
     default:
       // Try YouTube fallback if URL has watch or youtu.be
       if (trimmed.includes('youtu')) {
         return await extractYouTube(trimmed);
       }
-      throw new Error('Unsupported link. Please paste a link from TikTok, Instagram, or YouTube.');
+      throw new Error('Unsupported link. Please paste a link from TikTok, Instagram, YouTube, or Pinterest.');
   }
 }

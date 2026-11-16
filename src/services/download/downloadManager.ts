@@ -52,16 +52,21 @@ export async function requestGalleryPermissions(): Promise<boolean> {
 export function sanitizeMediaFilename(
   filename: string,
   isAudio = false,
-  explicitExt?: '.mp4' | '.mp3' | '.m4a'
+  explicitExt?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif'
 ): string {
   const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
   const extension = explicitExt || (isAudio ? '.mp3' : '.mp4');
   if (
     cleanName.toLowerCase().endsWith('.mp4') ||
     cleanName.toLowerCase().endsWith('.mp3') ||
-    cleanName.toLowerCase().endsWith('.m4a')
+    cleanName.toLowerCase().endsWith('.m4a') ||
+    cleanName.toLowerCase().endsWith('.jpg') ||
+    cleanName.toLowerCase().endsWith('.jpeg') ||
+    cleanName.toLowerCase().endsWith('.png') ||
+    cleanName.toLowerCase().endsWith('.webp') ||
+    cleanName.toLowerCase().endsWith('.gif')
   ) {
-    return cleanName.replace(/\.(mp4|mp3|m4a)$/i, extension);
+    return cleanName.replace(/\.(mp4|mp3|m4a|jpg|jpeg|png|webp|gif)$/i, extension);
   }
   return `${cleanName}${extension}`;
 }
@@ -93,9 +98,9 @@ export function decodeBase64Prefix(b64: string): Uint8Array {
  */
 export function inspectMediaHeaderBytes(
   bytes: Uint8Array,
-  expectedExt?: '.mp4' | '.mp3' | '.m4a',
+  expectedExt?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif',
   isAudio = false
-): { valid: boolean; detectedExt?: '.mp4' | '.mp3' | '.m4a'; reason?: string } {
+): { valid: boolean; detectedExt?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif'; reason?: string } {
   if (!bytes || bytes.length < 12) {
     return { valid: false, reason: 'Downloaded file header is empty or too short.' };
   }
@@ -117,6 +122,36 @@ export function inspectMediaHeaderBytes(
     lowerTrimmed.startsWith('{"error')
   ) {
     return { valid: false, reason: 'Server returned an HTML/JSON error page instead of playable media.' };
+  }
+
+  // JPEG image (0xFF 0xD8 0xFF)
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return { valid: true, detectedExt: '.jpg' };
+  }
+
+  // PNG image (0x89 0x50 0x4E 0x47)
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return { valid: true, detectedExt: '.png' };
+  }
+
+  // GIF image ('GIF8')
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+    return { valid: true, detectedExt: '.gif' };
+  }
+
+  // WebP image ('RIFF....WEBP')
+  if (
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes.length >= 12 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return { valid: true, detectedExt: '.webp' };
   }
 
   // ISO BMFF (MP4 / M4A): 'ftyp' at bytes 4..7 (or within first 16 bytes)
@@ -252,6 +287,11 @@ export function buildDownloadHeaders(
     finalDirectUrl.includes('affadaffa.com')
   ) {
     downloadHeaders['Referer'] = 'https://loader.to/';
+  } else if (
+    finalDirectUrl.includes('pinimg.com') ||
+    finalDirectUrl.includes('pinterest.com')
+  ) {
+    downloadHeaders['Referer'] = 'https://www.pinterest.com/';
   }
 
   return downloadHeaders;
@@ -292,7 +332,7 @@ export async function validateAndFinalizeNativeFile(
   fileUri: string,
   isAudio: boolean,
   options?: {
-    expectedExt?: '.mp4' | '.mp3' | '.m4a';
+    expectedExt?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif';
     estimatedBytes?: number;
   }
 ): Promise<{ localUri: string; savedToGallery: boolean; fileSize: number }> {

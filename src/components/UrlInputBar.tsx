@@ -80,6 +80,12 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
             <FontAwesome5 name="youtube" size={13} color="#FF0000" />
           </View>
         );
+      case 'pinterest':
+        return (
+          <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(230, 0, 35, 0.12)' }]}>
+            <FontAwesome5 name="pinterest" size={13} color="#E60023" />
+          </View>
+        );
       default:
         return (
           <View style={[styles.platformIconFrame, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
@@ -106,7 +112,7 @@ export const UrlInputBar: React.FC<UrlInputBarProps> = ({
         <TextInput
           testID="url-input"
           style={styles.input}
-          placeholder="Paste YouTube, TikTok, or Instagram link..."
+          placeholder="Paste YouTube, TikTok, Instagram, or Pinterest link..."
           placeholderTextColor={COLORS.textMuted}
           value={url}
           onChangeText={onChangeUrl}

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const country = req.headers.get("cf-ipcountry") || "Global";
     const city = req.headers.get("cf-ipcity") || "Visitor City";
     const userAgent = req.headers.get("user-agent") || "";
-    const { device, browser } = parseDevice(userAgent);
+    const parsed = parseDevice(userAgent);
 
     let body: any = {};
     try {
@@ -25,9 +25,13 @@ export async function POST(req: NextRequest) {
       // Body may be empty on simple beacon
     }
 
-    const userName = body.name || (city && city !== "Visitor City" ? `Visitor from ${city}` : `Guest (${ip.slice(0, 7)}...)`);
+    const device = body.device || parsed.device;
+    const browser = body.browser || (body.appVersion ? `OmniSaver App v${body.appVersion}` : parsed.browser);
+    const platform = body.platform || (body.isApp ? "mobile-app" : "web");
+    const action = (body.action as any) || "visit";
+    const details = body.details || `Visited: ${body.path || "/"}`;
+    const userName = body.name || (city && city !== "Visitor City" ? `User from ${city}` : `App User (${ip.slice(0, 7)}...)`);
     const userEmail = body.email || undefined;
-    const path = body.path || "/";
 
     logActivity({
       ip,
@@ -37,9 +41,9 @@ export async function POST(req: NextRequest) {
       userEmail,
       device,
       browser,
-      platform: "web",
-      action: "visit",
-      details: `Visited page: ${path}`,
+      platform,
+      action,
+      details,
       status: "SUCCESS",
     });
 

@@ -23,7 +23,20 @@ function detectPlatform(url) {
     return 'instagram';
   }
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) return 'youtube';
+  if (
+    cleanUrl.includes('pinterest.') ||
+    cleanUrl.includes('pin.it') ||
+    cleanUrl.includes('pinimg.com')
+  ) {
+    return 'pinterest';
+  }
   return 'unknown';
+}
+
+function extractPinterestPinId(url) {
+  const clean = cleanInputUrl(url);
+  const match = clean.match(/(?:pinterest\.[a-z.]+|pinimg\.com)\/pin\/(\d+)/i);
+  return match ? match[1] : null;
 }
 
 function extractInstagramShortcode(url) {
@@ -100,6 +113,27 @@ function runDetectionTests() {
     assert.strictEqual(platform, 'youtube', `Failed YouTube detection for: ${sample.label}`);
     assert.strictEqual(id, sample.expectedId, `Failed YouTube ID extraction for: ${sample.label}`);
     console.log(`  ✅ YouTube ${sample.label} -> id: ${id}`);
+  }
+
+  // 4. Pinterest variations
+  const pinterestSamples = [
+    { url: 'https://www.pinterest.com/pin/39617671718303098/', expectedId: '39617671718303098', label: 'Canonical Video Pin' },
+    { url: 'https://pin.it/7w4uK6l', expectedId: null, label: 'pin.it Shortlink' },
+    { url: 'https://in.pinterest.com/pin/1148418092497645166/', expectedId: '1148418092497645166', label: 'International Subdomain (in.)' },
+    { url: 'https://pinterest.co.uk/pin/603623156291195332/', expectedId: '603623156291195332', label: 'ccTLD Domain (pinterest.co.uk)' },
+    { url: 'Save this idea https://www.pinterest.com/pin/39617671718303098/ from Pinterest app', expectedId: '39617671718303098', label: 'Text with Pinterest Link' },
+  ];
+
+  for (const sample of pinterestSamples) {
+    const platform = detectPlatform(sample.url);
+    const id = extractPinterestPinId(sample.url);
+    assert.strictEqual(platform, 'pinterest', `Failed Pinterest detection for: ${sample.label}`);
+    if (sample.expectedId) {
+      assert.strictEqual(id, sample.expectedId, `Failed Pinterest ID extraction for: ${sample.label}`);
+      console.log(`  ✅ Pinterest ${sample.label} -> id: ${id}`);
+    } else {
+      console.log(`  ✅ Pinterest ${sample.label} -> detected: pinterest`);
+    }
   }
 
   console.log('\n🎉 ALL URL DETECTION & SHORTCODE TESTS PASSED!\n');

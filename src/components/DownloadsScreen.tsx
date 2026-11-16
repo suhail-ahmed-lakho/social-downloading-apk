@@ -63,6 +63,8 @@ export const DownloadsScreen: React.FC<DownloadsScreenProps> = ({
       case 'youtube':
       case 'youtube_music':
         return <FontAwesome5 name="youtube" size={11} color="#FF0000" />;
+      case 'pinterest':
+        return <FontAwesome5 name="pinterest" size={11} color={COLORS.pinterest || '#E60023'} />;
       default:
         return <Ionicons name="videocam" size={12} color={COLORS.textSecondary} />;
     }
