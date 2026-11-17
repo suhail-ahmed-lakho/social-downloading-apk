@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { getAppConfig } from "@/app/lib/db";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 interface VersionResponse {
@@ -16,10 +16,9 @@ interface VersionResponse {
   changelog: string[];
 }
 
-// In-memory cache for fast edge and server responses
 let cachedVersionData: VersionResponse | null = null;
 let lastFetchTimestamp = 0;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const CACHE_TTL_MS = 60 * 1000;
 
 export async function GET() {
   const now = Date.now();
@@ -33,38 +32,24 @@ export async function GET() {
     });
   }
 
-  // Baseline fallback data
-  let version = "1.0.4";
-  let versionCode = 10004;
-  let releaseTitle = "OmniSaver v1.0.4 Official Release";
-  let releaseDate = "2026-10-28";
-  let fileSize = "70.8 MB";
-  let fileSizeBytes = 74262740;
-  let changelog: string[] = [
-    "OmniSaver v1.0.4 - Official Release by Lakho's Team",
-    "Streaming downloads directly via local proxy (no 404s or broken redirects)",
-    "Synchronized exact 70.8 MB release APK size across app & website",
-    "Ultra HD 4K (2160p) and 2K (1440p) direct stream extractor optimizations",
-    "Lossless 320kbps MP3 audio extractor engine enhancements",
-    "Autonomous multi-tier update delivery channel"
+  // 1. Read base config from Cloudflare D1 / store
+  const appConfig = await getAppConfig();
+  const vCfg = appConfig.versionConfig;
+
+  let version = vCfg.latestVersion || "1.0.16";
+  let versionCode = vCfg.versionCode || 10016;
+  let releaseTitle = `OmniSaver v${version} - Lakho's Team Official Release`;
+  let releaseDate = "2026-11-17";
+  let fileSize = "33.7 MB";
+  let fileSizeBytes = 35338561;
+  let changelog: string[] = vCfg.releaseNotes || [
+    "OmniSaver v1.0.16 Official Release",
+    "Instagram DOM Media Interceptor & In-App Browser",
+    "Pinterest 1080p MP4 & Master HD Photo Downloads",
+    "Cloudflare D1 Native Edge Database Support",
   ];
 
-  // 1. Try reading local public/version.json if filesystem is available
-  try {
-    const localVersionPath = path.join(process.cwd(), "public", "version.json");
-    if (fs.existsSync(localVersionPath)) {
-      const raw = JSON.parse(fs.readFileSync(localVersionPath, "utf8"));
-      if (raw.version) version = raw.version;
-      if (raw.versionCode) versionCode = raw.versionCode;
-      if (raw.releaseTitle) releaseTitle = raw.releaseTitle;
-      if (raw.releaseDate) releaseDate = raw.releaseDate;
-      if (raw.fileSize) fileSize = raw.fileSize;
-      if (raw.fileSizeBytes) fileSizeBytes = raw.fileSizeBytes;
-      if (Array.isArray(raw.changelog) && raw.changelog.length > 0) changelog = raw.changelog;
-    }
-  } catch (_) {}
-
-  // 2. Query GitHub Releases API to auto-fetch the newest released APK
+  // 2. Query GitHub Releases API to auto-fetch the newest released APK assets
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4000);
@@ -74,7 +59,7 @@ export async function GET() {
       {
         signal: controller.signal,
         headers: {
-          "User-Agent": "LookNow-Version-Engine",
+          "User-Agent": "OmniSaver-Version-Engine",
           Accept: "application/vnd.github.v3+json",
           ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
         },
@@ -83,19 +68,15 @@ export async function GET() {
     clearTimeout(timer);
 
     if (ghRes.ok) {
-      const ghData = await ghRes.json();
+      const ghData: any = await ghRes.json();
       if (ghData && ghData.tag_name) {
         const tagVer = ghData.tag_name.replace(/^v/, "");
         version = tagVer;
         const parts = tagVer.split(".").map((n: string) => parseInt(n, 10) || 0);
         versionCode = (parts[0] || 1) * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0);
 
-        if (ghData.name) {
-          releaseTitle = ghData.name;
-        }
-        if (ghData.published_at) {
-          releaseDate = ghData.published_at.split("T")[0];
-        }
+        if (ghData.name) releaseTitle = ghData.name;
+        if (ghData.published_at) releaseDate = ghData.published_at.split("T")[0];
 
         const apkAsset = ghData.assets?.find((a: any) => typeof a.name === "string" && a.name.endsWith(".apk"));
         if (apkAsset && typeof apkAsset.size === "number" && apkAsset.size > 0) {
@@ -115,8 +96,7 @@ export async function GET() {
       }
     }
   } catch (err) {
-    // Non-fatal: fallback to bundled version
-    console.warn("GitHub release check skipped/failed, using fallback version:", err);
+    // Non-fatal, uses D1 configuration
   }
 
   const result: VersionResponse = {
@@ -126,8 +106,8 @@ export async function GET() {
     releaseDate,
     fileSize,
     fileSizeBytes,
-    mandatory: false,
-    downloadUrl: "https://looknow.cyou/api/download/apk",
+    mandatory: vCfg.forceUpdate || false,
+    downloadUrl: vCfg.apkDownloadUrl || "https://looknow.cyou/api/download/apk",
     changelog,
   };
 

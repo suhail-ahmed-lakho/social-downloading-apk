@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logActivity, parseDevice, isIPBlocked } from "@/app/lib/analytics";
+import { recordEvent, EventSource, EventAction } from "@/app/lib/db";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,13 +29,15 @@ export async function POST(req: NextRequest) {
       // Body may be empty on simple beacon
     }
 
+    const source: EventSource = body.source === "mobile_app" || body.isApp ? "mobile_app" : "website";
     const device = body.device || parsed.device;
     const browser = body.browser || (body.appVersion ? `OmniSaver App v${body.appVersion}` : parsed.browser);
-    const platform = body.platform || (body.isApp ? "mobile-app" : "web");
-    const action = (body.action as any) || "visit";
+    const platform = body.platform || (source === "mobile_app" ? "mobile-app" : "web");
+    const action: EventAction = (body.action as any) || "visit";
     const details = body.details || `Visited: ${body.path || "/"}`;
     const userName = body.name || (city && city !== "Visitor City" ? `User from ${city}` : `App User (${ip.slice(0, 7)}...)`);
     const userEmail = body.email || undefined;
+    const deviceId = body.deviceId || undefined;
 
     logActivity({
       ip,
@@ -42,12 +48,28 @@ export async function POST(req: NextRequest) {
       device,
       browser,
       platform,
-      action,
+      action: action === "visit" || action === "extract" || action === "download" ? action : "visit",
       details,
       status: "SUCCESS",
     });
 
-    return NextResponse.json({ success: true, ip, country, city, device, browser });
+    await recordEvent({
+      source,
+      action,
+      platform,
+      deviceId,
+      isPro: Boolean(body.isPro),
+      ip,
+      country,
+      city,
+      device,
+      browser,
+      status: "SUCCESS",
+      details,
+      metadata: body,
+    });
+
+    return NextResponse.json({ success: true, ip, country, city, device, browser, source });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Tracking failed";
     return NextResponse.json({ error: message }, { status: 500 });

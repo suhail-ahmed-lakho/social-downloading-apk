@@ -8,17 +8,21 @@ import {
   ActivityIndicator,
   Platform,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 import { cleanInstagramMediaUrl, extractInstagramViaSnapSave } from '../services/api/extractor';
+import { useProStore } from '../store/useProStore';
+import { requestRewardedUnlock } from '../services/ads/adManager';
 
 interface InstagramBrowserModalProps {
   visible: boolean;
   initialUrl: string;
   onClose: () => void;
   onVideoCaptured: (videoUrl: string, title?: string, poster?: string) => void;
+  onOpenProUpgrade?: () => void;
 }
 
 const MOBILE_CHROME_USER_AGENT =
@@ -29,7 +33,9 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   initialUrl,
   onClose,
   onVideoCaptured,
+  onOpenProUpgrade,
 }) => {
+  const pro = useProStore();
   const webViewRef = useRef<any>(null);
   const quickFetchTimeoutRef = useRef<any>(null);
 
@@ -41,6 +47,38 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   );
   const [isQuickFetching, setIsQuickFetching] = useState(false);
   const [statusPrompt, setStatusPrompt] = useState('⚡ Download This Reel (Instant)');
+
+  const attemptDeliverMedia = async (url: string, title?: string, poster?: string) => {
+    const captureCheck = await pro.recordCapture();
+    if (!captureCheck.allowed) {
+      Alert.alert(
+        'Daily Free Limit Reached',
+        'Free users can capture 2 private videos per day in the in-app browser.\n\nWatch a short ad for an extra capture, or upgrade to OmniSaver PRO for unlimited private captures!',
+        [
+          {
+            text: 'Watch Ad for +1 Capture',
+            onPress: async () => {
+              await requestRewardedUnlock('batch_download');
+              onVideoCaptured(url, title || 'Instagram Media', poster);
+              onClose();
+            },
+          },
+          {
+            text: 'Upgrade to PRO (Rs. 750/mo)',
+            onPress: () => {
+              onClose();
+              if (onOpenProUpgrade) onOpenProUpgrade();
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    onVideoCaptured(url, title || 'Instagram Media', poster);
+    onClose();
+  };
 
   useEffect(() => {
     if (visible) {
@@ -304,8 +342,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
           if (data.poster) setCapturedPoster(data.poster);
           // Automatically deliver captured media to main screen and close modal
           setTimeout(() => {
-            onVideoCaptured(cleaned, 'Instagram Media', data.poster || undefined);
-            onClose();
+            void attemptDeliverMedia(cleaned, 'Instagram Media', data.poster || undefined);
           }, 350);
         }
       }
@@ -320,8 +357,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         clearTimeout(quickFetchTimeoutRef.current);
         quickFetchTimeoutRef.current = null;
       }
-      onVideoCaptured(capturedVideoUrl, 'Instagram Media', capturedPoster || undefined);
-      onClose();
+      void attemptDeliverMedia(capturedVideoUrl, 'Instagram Media', capturedPoster || undefined);
     }
   };
 
@@ -351,8 +387,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
           quickFetchTimeoutRef.current = null;
         }
         setIsQuickFetching(false);
-        onVideoCaptured(media.videoUrl, media.title, media.thumbnail);
-        onClose();
+        void attemptDeliverMedia(media.videoUrl, media.title, media.thumbnail);
         return;
       }
     } catch (err: any) {
@@ -389,10 +424,15 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
           <View style={styles.titleColumn}>
             <View style={styles.titleRow}>
               <FontAwesome5 name="instagram" size={14} color={COLORS.instagram} />
-              <Text style={styles.titleText}>Instagram Downloader Browser</Text>
+              <Text style={styles.titleText}>Instagram Downloader</Text>
+              <View style={[styles.limitBadge, pro.isPro && styles.limitBadgePro]}>
+                <Text style={[styles.limitBadgeText, pro.isPro && styles.limitBadgeTextPro]}>
+                  {pro.isPro ? 'VIP UNLIMITED' : `${Math.max(0, 2 - pro.dailyFreePrivateCaptures)}/2 FREE`}
+                </Text>
+              </View>
             </View>
             <Text style={styles.subText} numberOfLines={1}>
-              Works for all public & private videos (log in if private)
+              {pro.isPro ? 'VIP access • Unlimited in-app captures' : 'Free users get 2 private captures per day'}
             </Text>
           </View>
 
@@ -549,6 +589,26 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '700',
+  },
+  limitBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  limitBadgePro: {
+    backgroundColor: 'rgba(255, 94, 58, 0.15)',
+    borderColor: 'rgba(255, 94, 58, 0.4)',
+  },
+  limitBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+  },
+  limitBadgeTextPro: {
+    color: COLORS.accentPrimary,
   },
   subText: {
     color: COLORS.textMuted,

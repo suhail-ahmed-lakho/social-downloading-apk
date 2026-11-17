@@ -37,6 +37,8 @@ import { AlertsScreen } from './src/components/AlertsScreen';
 import { OpeningSplashScreen } from './src/components/OpeningSplashScreen';
 import { UpdateModal } from './src/components/UpdateModal';
 import { AdBannerSlot } from './src/components/AdBannerSlot';
+import { ProUpgradeModal } from './src/components/ProUpgradeModal';
+import { useProStore } from './src/store/useProStore';
 import { COLORS } from './src/theme/colors';
 import { MediaMetadata, PlatformType, QualityOption, DownloadHistoryItem } from './src/types';
 import {
@@ -93,6 +95,7 @@ export default function App() {
   const [browserInitialUrl, setBrowserInitialUrl] = useState('https://www.instagram.com');
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showProUpgradeModal, setShowProUpgradeModal] = useState(false);
   const [clipboardBanner, setClipboardBanner] = useState<{
     text: string;
     platform: string;
@@ -101,6 +104,7 @@ export default function App() {
 
   const queue = useDownloadQueue();
   const notificationState = useNotifications();
+  const pro = useProStore();
 
   // Load history & subscribe to completed background downloads on mount
   useEffect(() => {
@@ -324,6 +328,8 @@ export default function App() {
           onOpenDownloads={() => setActiveTab('queue')}
           hasUpdate={!!updateInfo?.hasUpdate}
           onOpenUpdate={() => handleCheckForUpdates(true)}
+          isPro={pro.isPro}
+          onOpenProUpgrade={() => setShowProUpgradeModal(true)}
         />
 
         {/* Floating Clipboard Detection Toast */}
@@ -475,6 +481,7 @@ export default function App() {
                 activeQueueCount={queue.activeCount}
                 onOpenDownloads={() => setActiveTab('queue')}
                 defaultFormatTab={selectedPlatform === 'youtube_music' ? 'audio' : 'video'}
+                onOpenProUpgrade={() => setShowProUpgradeModal(true)}
               />
             )}
 
@@ -661,8 +668,15 @@ export default function App() {
             initialUrl={browserInitialUrl}
             onClose={() => setShowInstagramBrowser(false)}
             onVideoCaptured={handleCapturedInstagramVideo}
+            onOpenProUpgrade={() => setShowProUpgradeModal(true)}
           />
         )}
+
+        {/* PRO Upgrade & License Activation Modal */}
+        <ProUpgradeModal
+          visible={showProUpgradeModal}
+          onClose={() => setShowProUpgradeModal(false)}
+        />
 
         {/* Background Headless Instagram Extractor (Native Mobile Only) */}
         {NativeHeadlessInstagramExtractor && (

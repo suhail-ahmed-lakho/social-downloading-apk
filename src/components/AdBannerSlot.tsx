@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, StyleProp, ViewStyle, TouchableOpacity, Linking
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
+import { useProStore } from '../store/useProStore';
+import { getCachedRemoteConfig } from '../services/api/backendClient';
 
 interface AdBannerSlotProps {
   placement: 'home' | 'saved' | 'preview';
@@ -10,6 +12,18 @@ interface AdBannerSlotProps {
 }
 
 export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style }) => {
+  const pro = useProStore();
+
+  // 100% Ad-Free experience for PRO subscribers or if remotely disabled
+  if (pro.isPro) {
+    return null;
+  }
+
+  const remote = getCachedRemoteConfig();
+  if (remote?.adConfig && (remote.adConfig.adsEnabled === false || remote.adConfig.bannerEnabled === false)) {
+    return null;
+  }
+
   return (
     <View style={[styles.container, style]} testID={`ad-slot-${placement}`}>
       <LinearGradient

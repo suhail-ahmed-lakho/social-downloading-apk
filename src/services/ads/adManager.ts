@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getIsPro } from '../../store/useProStore';
+import { getCachedRemoteConfig } from '../api/backendClient';
 
 const STORAGE_AD_DOWNLOADS_COUNT_KEY = '@omnisaver_ad_downloads_count_v1';
 const INTERSTITIAL_DOWNLOAD_INTERVAL = 3; // Trigger ad check every 3 completed downloads
@@ -55,11 +57,22 @@ export async function recordDownloadCompletedForAds(): Promise<{
     await AsyncStorage.setItem(STORAGE_AD_DOWNLOADS_COUNT_KEY, String(count));
   } catch {}
 
+  // 100% Ad-free for PRO subscribers or if remotely disabled
+  if (getIsPro()) {
+    return { shouldShowInterstitial: false, downloadCount: count };
+  }
+
+  const remote = getCachedRemoteConfig();
+  if (remote?.adConfig && remote.adConfig.adsEnabled === false) {
+    return { shouldShowInterstitial: false, downloadCount: count };
+  }
+
   const now = Date.now();
   const timeSinceLastAd = now - adState.lastInterstitialShownAt;
 
-  // Interstitial triggered after every 2nd or 3rd completed download, respecting cooldown
-  const isIntervalReached = count > 0 && count % INTERSTITIAL_DOWNLOAD_INTERVAL === 0;
+  // Interstitial triggered after every N completed downloads (configurable remotely), respecting cooldown
+  const interval = remote?.adConfig?.interstitialInterval || INTERSTITIAL_DOWNLOAD_INTERVAL;
+  const isIntervalReached = count > 0 && count % interval === 0;
   const isCooldownSatisfied = timeSinceLastAd >= INTERSTITIAL_MIN_COOLDOWN_MS;
   const shouldShowInterstitial = isIntervalReached && isCooldownSatisfied;
 
@@ -73,6 +86,7 @@ export async function recordDownloadCompletedForAds(): Promise<{
 
 // Hook to trigger an interstitial ad display when ready
 export async function showInterstitialIfReady(): Promise<boolean> {
+  if (getIsPro()) return false;
   const now = Date.now();
   if (now - adState.lastInterstitialShownAt < INTERSTITIAL_MIN_COOLDOWN_MS) {
     return false;
@@ -85,8 +99,14 @@ export async function showInterstitialIfReady(): Promise<boolean> {
 
 // Rewarded ad unlock hook for premium features (e.g. batch download or 4K streams)
 export async function requestRewardedUnlock(feature: '4k_download' | 'batch_download'): Promise<boolean> {
+  // Free immediate pass for PRO subscribers
+  if (getIsPro()) return true;
   // Plug in RewardedAd.show() here. Defaults to granted in development.
   return true;
+}
+
+export function isAdEnabled(): boolean {
+  return !getIsPro();
 }
 
 // Centralized React hook

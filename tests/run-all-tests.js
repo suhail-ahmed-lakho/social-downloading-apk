@@ -6,6 +6,7 @@ const { runSanitizerTests } = require('./instagram-url-sanitizer.test');
 const { runSnapSaveTests } = require('./instagram-snapsave.test');
 const { runTelemetryTests } = require('./download-telemetry.test');
 const { runPinterestTests } = require('./pinterest.test');
+const { runProEntitlementTests } = require('./pro-entitlements.test');
 
 async function main() {
   console.log('==================================================');
@@ -60,6 +61,13 @@ async function main() {
     runTelemetryTests();
   } catch (err) {
     console.error('❌ Telemetry & Background config tests failed:', err);
+    errors++;
+  }
+
+  try {
+    runProEntitlementTests();
+  } catch (err) {
+    console.error('❌ PRO Entitlement tests failed:', err);
     errors++;
   }
 

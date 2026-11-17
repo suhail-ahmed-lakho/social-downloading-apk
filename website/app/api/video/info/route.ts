@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logActivity, parseDevice, isIPBlocked } from "@/app/lib/analytics";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 // Detect platform from URL with complete coverage of modern domains and short links
 function detectPlatform(url: string): string {
   const clean = url.trim().toLowerCase();
@@ -25,10 +28,17 @@ function detectPlatform(url: string): string {
   ) {
     return "facebook";
   }
+  if (
+    clean.includes("pinterest.") ||
+    clean.includes("pin.it") ||
+    clean.includes("pinimg.com")
+  ) {
+    return "pinterest";
+  }
   return "unknown";
 }
 
-// Unshorten redirect URLs (e.g., vt.tiktok.com, vm.tiktok.com, fb.watch, t.co, share links)
+// Unshorten redirect URLs (e.g., vt.tiktok.com, vm.tiktok.com, fb.watch, t.co, pin.it, share links)
 async function resolveRedirectUrl(rawUrl: string): Promise<string> {
   const isShortened =
     rawUrl.includes("vt.tiktok.com") ||
@@ -36,6 +46,7 @@ async function resolveRedirectUrl(rawUrl: string): Promise<string> {
     rawUrl.includes("tiktok.com/t/") ||
     rawUrl.includes("fb.watch") ||
     rawUrl.includes("facebook.com/share/") ||
+    rawUrl.includes("pin.it/") ||
     rawUrl.includes("t.co/");
 
   if (!isShortened) return rawUrl;
@@ -90,7 +101,7 @@ function calculateSize(durationSec: number, bitrateKbps: number): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body: any = await req.json();
     const url = body?.url;
     const clientUserName = body?.userName;
     const clientUserEmail = body?.userEmail;
@@ -205,7 +216,7 @@ export async function POST(req: NextRequest) {
           { headers: { "User-Agent": "Mozilla/5.0" }, next: { revalidate: 3600 } }
         );
         if (oRes.ok) {
-          const oData = await oRes.json();
+          const oData: any = await oRes.json();
           title = oData.title || title;
           author = oData.author_name || author;
           thumbnail = oData.thumbnail_url || thumbnail;
@@ -231,7 +242,7 @@ export async function POST(req: NextRequest) {
           if (playerMatch) {
             try {
               playerResponse = JSON.parse(playerMatch[1]);
-            } catch (_) {}
+            } catch (_) { }
           }
           if (playerResponse?.videoDetails) {
             title = playerResponse.videoDetails.title || title;
@@ -373,7 +384,7 @@ export async function POST(req: NextRequest) {
         );
 
         if (tikRes.ok) {
-          const resJson = await tikRes.json();
+          const resJson: any = await tikRes.json();
           if (resJson && resJson.code === 0 && resJson.data) {
             const data = resJson.data;
             const qualityOptions = [];
@@ -443,7 +454,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (tmRes.ok) {
-          const tmData = await tmRes.json();
+          const tmData: any = await tmRes.json();
           if (tmData && tmData.token && tmData.id) {
             return respondSuccess({
               platform: "tiktok",
@@ -527,7 +538,7 @@ export async function POST(req: NextRequest) {
               },
               body: `url=${encodeURIComponent(canonical)}`,
             });
-            const verifyData = await verifyRes.json();
+            const verifyData: any = await verifyRes.json();
             if (verifyData?.token) {
               const searchParams = new URLSearchParams({
                 k_exp: expMatch[1],
@@ -549,7 +560,7 @@ export async function POST(req: NextRequest) {
                 },
                 body: searchParams.toString(),
               });
-              const finalData = await searchRes.json();
+              const finalData: any = await searchRes.json();
               if (finalData.status === "ok" && finalData.data) {
                 const videoMatches = [...finalData.data.matchAll(/href="([^"]+)"/g)];
                 const mp4Url = videoMatches
@@ -664,7 +675,7 @@ export async function POST(req: NextRequest) {
             },
           });
           if (fxRes.ok) {
-            const data = await fxRes.json();
+            const data: any = await fxRes.json();
             const tweet = data.tweet;
             if (tweet) {
               const videos = tweet.media?.videos || [];
@@ -854,6 +865,185 @@ export async function POST(req: NextRequest) {
           },
         ],
       });
+    }
+
+    // ──────────────────────────────────────────
+    // 6. PINTEREST EXTRACTOR (Videos & Master High-Res Photos)
+    // ──────────────────────────────────────────
+    if (platform === "pinterest" || trimmed.includes("pinterest.") || trimmed.includes("pin.it") || trimmed.includes("pinimg.com")) {
+      let resolvedUrl = trimmed;
+      if (trimmed.includes("pin.it")) {
+        resolvedUrl = await resolveRedirectUrl(trimmed);
+      }
+
+      const fetchHeaders = [
+        {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        {
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      ];
+
+      let html = "";
+      let finalUrl = resolvedUrl;
+      for (const headers of fetchHeaders) {
+        try {
+          const res = await fetch(resolvedUrl, {
+            headers,
+            redirect: "follow",
+            signal: AbortSignal.timeout(6000),
+          });
+          if (res.ok) {
+            html = await res.text();
+            finalUrl = res.url || resolvedUrl;
+            break;
+          }
+        } catch (_) { }
+      }
+
+      if (html) {
+        // 1. Extract Pin ID
+        const pinIdMatch =
+          finalUrl.match(/\/pin\/(\d+)/i) ||
+          resolvedUrl.match(/\/pin\/(\d+)/i) ||
+          html.match(/pin\/(\d+)/i);
+        const pinId = pinIdMatch ? pinIdMatch[1] : `pin_${Date.now()}`;
+
+        // 2. Extract Title
+        const ogTitleMatch =
+          html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+          html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) ||
+          html.match(/<title>([^<]*)<\/title>/i);
+        let title = ogTitleMatch ? ogTitleMatch[1].trim() : "Pinterest Media";
+        title = title
+          .replace(/&#39;/g, "'")
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, "&")
+          .replace(/\s*\|\s*Pinterest.*$/i, "")
+          .trim();
+
+        // 3. Extract Author
+        const authorMatch =
+          html.match(/<meta[^>]+name=["']author["'][^>]+content=["']([^"']+)["']/i) ||
+          html.match(/<meta[^>]+property=["']og:article:author["'][^>]+content=["']([^"']+)["']/i);
+        const author = authorMatch ? authorMatch[1].trim() : "Pinterest Creator";
+
+        // 4. Extract Thumbnail / Cover
+        const ogImageMatch =
+          html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+          html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+        const thumbnail = ogImageMatch ? ogImageMatch[1].trim() : "";
+
+        // 5. Extract Direct MP4 Videos
+        const rawMp4Matches = html.match(/https?:\/\/[^"'<>\s]+\.mp4[^"'<>\s]*/gi) || [];
+        const validMp4s = [
+          ...new Set(
+            rawMp4Matches
+              .map((u) => u.replace(/\\/g, ""))
+              .filter((u) => u.includes("pinimg.com") || u.includes("pinterest.com"))
+          ),
+        ];
+
+        // 6. Extract M3U8 and convert to 720p MP4
+        const rawM3u8Matches = html.match(/https?:\/\/[^"'<>\s]+\.m3u8[^"'<>\s]*/gi) || [];
+        const validM3u8s = [
+          ...new Set(rawM3u8Matches.map((u) => u.replace(/\\/g, ""))),
+        ];
+
+        if (validMp4s.length === 0 && validM3u8s.length > 0) {
+          for (const m3u8 of validM3u8s) {
+            const converted = m3u8
+              .replace(/\/videos\/(?:iht\/)?hls\//i, "/videos/mc/720p/")
+              .replace(/\.m3u8.*$/i, ".mp4");
+            if (converted !== m3u8 && !validMp4s.includes(converted)) {
+              validMp4s.push(converted);
+            }
+          }
+        }
+
+        // 7. Highest resolution image (originals)
+        let originalImage = "";
+        if (thumbnail) {
+          originalImage = thumbnail.replace(/\/(?:236x|474x|564x|736x)\//, "/originals/");
+        }
+
+        const isVideo = validMp4s.length > 0;
+        const qualityOptions = [];
+
+        if (isVideo) {
+          const primaryVideo = validMp4s[0];
+          let hd1080Url = "";
+          if (primaryVideo.includes("/mc/720p/")) {
+            const candidate1080 = primaryVideo.replace("/mc/720p/", "/mc/1080p/");
+            try {
+              const head1080 = await fetch(candidate1080, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+              if (head1080.ok) {
+                hd1080Url = candidate1080;
+              }
+            } catch (_) { }
+          }
+
+          if (hd1080Url) {
+            qualityOptions.push({
+              label: "Full HD Video (1080p MP4)",
+              quality: "1080p Full HD",
+              type: "video" as const,
+              format: "mp4",
+              directUrl: hd1080Url,
+              approxSize: "1080p HD",
+            });
+          }
+
+          qualityOptions.push({
+            label: "HD Video (720p MP4)",
+            quality: "720p HD",
+            type: "video" as const,
+            format: "mp4",
+            directUrl: primaryVideo,
+            approxSize: "720p HD",
+          });
+
+          if (originalImage) {
+            qualityOptions.push({
+              label: "Cover Thumbnail (Original HD)",
+              quality: "Original HD",
+              type: "image" as const,
+              format: originalImage.endsWith(".png") ? "png" : "jpg",
+              directUrl: originalImage,
+              approxSize: "High-Res Image",
+            });
+          }
+        } else if (originalImage || thumbnail) {
+          const imgUrl = originalImage || thumbnail;
+          qualityOptions.push({
+            label: "High-Resolution Image (Original)",
+            quality: "Original HD",
+            type: "image" as const,
+            format: imgUrl.endsWith(".png") ? "png" : "jpg",
+            directUrl: imgUrl,
+            approxSize: "HD Image",
+          });
+        }
+
+        if (qualityOptions.length > 0) {
+          return respondSuccess({
+            platform: "pinterest",
+            title,
+            author,
+            thumbnail: thumbnail || (qualityOptions[0].type === "image" ? qualityOptions[0].directUrl : ""),
+            duration: "0",
+            qualityOptions,
+            videoId: pinId,
+          });
+        }
+      }
     }
 
     logActivity({

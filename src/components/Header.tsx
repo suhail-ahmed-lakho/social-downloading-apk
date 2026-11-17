@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { AppLogo } from './AppLogo';
 import { COLORS } from '../theme/colors';
@@ -10,6 +11,8 @@ interface HeaderProps {
   onOpenUpdate?: () => void;
   activeDownloadsCount?: number;
   onOpenDownloads?: () => void;
+  isPro?: boolean;
+  onOpenProUpgrade?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenUpdate,
   activeDownloadsCount = 0,
   onOpenDownloads,
+  isPro = false,
+  onOpenProUpgrade,
 }) => {
   return (
     <View style={styles.container}>
@@ -29,9 +34,28 @@ export const Header: React.FC<HeaderProps> = ({
             <View style={styles.titleRow}>
               <Text style={styles.titleMain}>Omni</Text>
               <Text style={styles.titleAccent}>Saver</Text>
-              <View style={styles.versionChip}>
-                <Text style={styles.versionText}>PRO</Text>
-              </View>
+              {isPro ? (
+                <View style={styles.versionChip}>
+                  <Text style={styles.versionText}>PRO VIP</Text>
+                </View>
+              ) : onOpenProUpgrade ? (
+                <TouchableOpacity
+                  testID="header-go-pro-btn"
+                  style={styles.goProBtn}
+                  onPress={onOpenProUpgrade}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={COLORS.gradientPrimary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.goProGradient}
+                  >
+                    <Ionicons name="sparkles" size={10} color="#FFFFFF" />
+                    <Text style={styles.goProText}>GO PRO</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : null}
             </View>
             <Text style={styles.subtitleText}>Universal HD & Audio Downloader</Text>
           </View>
@@ -129,6 +153,23 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: COLORS.accentPrimary,
+    letterSpacing: 0.5,
+  },
+  goProBtn: {
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  goProGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    gap: 4,
+  },
+  goProText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   subtitleText: {

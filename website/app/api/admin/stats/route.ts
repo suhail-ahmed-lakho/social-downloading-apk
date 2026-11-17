@@ -9,6 +9,10 @@ import {
   getAppSettings,
   updateAppSettings,
 } from "@/app/lib/analytics";
+import { getDualChannelStats, listLicenses, getAppConfig, updateAppConfig } from "@/app/lib/db";
+
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,6 +44,14 @@ export async function GET(req: NextRequest) {
         supportedFormats: ["1080p HD MP4"],
       },
       {
+        id: "pinterest",
+        name: "Pinterest Videos & High-Res Engine",
+        status: "operational",
+        latencyMs: 115,
+        uptime: "100.0%",
+        supportedFormats: ["1080p Full HD", "720p MP4", "Original Master Photos"],
+      },
+      {
         id: "twitter",
         name: "Twitter / X Video Stream",
         status: "operational",
@@ -63,6 +75,9 @@ export async function GET(req: NextRequest) {
     const activities = getRealActivities();
     const blockedIPs = getBlockedIPList();
     const appSettings = getAppSettings();
+    const dualStats = await getDualChannelStats();
+    const licenses = await listLicenses();
+    const appConfig = await getAppConfig();
 
     return NextResponse.json({
       success: true,
@@ -73,6 +88,9 @@ export async function GET(req: NextRequest) {
       blockedIPs,
       appSettings,
       engines,
+      dualStats,
+      licenses,
+      appConfig,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to fetch admin stats";
@@ -82,7 +100,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body: any = await req.json();
     const { action } = body;
 
     if (action === "block_ip") {

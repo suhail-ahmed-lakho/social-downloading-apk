@@ -681,7 +681,7 @@ export default function Navbar() {
                   { label: "Supported Networks", href: "/#platforms", icon: Globe },
                   { label: "Performance & Features", href: "/#features", icon: Sliders },
                   { label: "Frequently Asked Questions", href: "/#faq", icon: HelpCircle },
-                  { label: "Download Android APK (15.2 MB)", href: "/#download", icon: Smartphone },
+                  { label: "Download Android APK (v1.0.16)", href: "/#download", icon: Smartphone },
                 ].map((item, idx) => {
                   const LIcon = item.icon;
                   return (

@@ -37,6 +37,14 @@ const wranglerConfig = {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "omnisaver-db",
+      "database_id": "omnisaver-db-placeholder-id",
+      "migrations_dir": "migrations"
+    }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",

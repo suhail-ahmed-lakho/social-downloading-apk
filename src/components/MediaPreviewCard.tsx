@@ -5,12 +5,15 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { MediaMetadata, QualityOption } from '../types';
+import { useProStore } from '../store/useProStore';
+import { requestRewardedUnlock } from '../services/ads/adManager';
 
 interface MediaPreviewCardProps {
   media: MediaMetadata;
@@ -18,6 +21,7 @@ interface MediaPreviewCardProps {
   activeQueueCount?: number;
   onOpenDownloads?: () => void;
   defaultFormatTab?: 'video' | 'audio';
+  onOpenProUpgrade?: () => void;
 }
 
 export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
@@ -26,7 +30,9 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
   activeQueueCount = 0,
   onOpenDownloads,
   defaultFormatTab,
+  onOpenProUpgrade,
 }) => {
+  const pro = useProStore();
   const videoOptions = (media.qualityOptions || []).filter((o) => o.type === 'video');
   const audioOptions = (media.qualityOptions || []).filter((o) => o.type === 'audio');
 
@@ -440,6 +446,16 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
 
                     {/* Right: Extension chip + Selection Check */}
                     <View style={styles.qualityCardRight}>
+                      {(badgeMeta.badge === '4K' ||
+                        badgeMeta.badge === '2K' ||
+                        (opt.label && opt.label.includes('320')) ||
+                        (opt.quality && opt.quality.includes('320'))) &&
+                        !pro.isPro && (
+                          <View style={styles.vipPill}>
+                            <Ionicons name="sparkles" size={9} color="#FFD700" />
+                            <Text style={styles.vipPillText}>VIP</Text>
+                          </View>
+                        )}
                       <View style={styles.extChip}>
                         <Text style={styles.extChipText}>{fileExt}</Text>
                       </View>
@@ -470,6 +486,38 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
             try {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             } catch (_) {}
+
+            const selectedBadge = getQualityBadgeMeta(selectedOption);
+            const isVipStream =
+              selectedBadge.badge === '4K' ||
+              selectedBadge.badge === '2K' ||
+              (selectedOption.label && selectedOption.label.includes('320')) ||
+              (selectedOption.quality && selectedOption.quality.includes('320'));
+
+            if (!pro.isPro && isVipStream) {
+              Alert.alert(
+                '⭐ VIP Stream Selected',
+                `${selectedOption.quality || selectedOption.label} is an Ultra HD / Lossless stream.\n\nFree users can watch a short ad to unlock this download, or upgrade to OmniSaver PRO for instant 1-tap access forever!`,
+                [
+                  {
+                    text: 'Watch Short Ad to Unlock',
+                    onPress: async () => {
+                      await requestRewardedUnlock('4k_download');
+                      onDownload(selectedOption);
+                    },
+                  },
+                  {
+                    text: 'Upgrade to PRO (Rs. 750/mo)',
+                    onPress: () => {
+                      if (onOpenProUpgrade) onOpenProUpgrade();
+                    },
+                  },
+                  { text: 'Cancel', style: 'cancel' },
+                ]
+              );
+              return;
+            }
+
             onDownload(selectedOption);
           }}
           activeOpacity={0.85}
@@ -778,6 +826,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  vipPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+  },
+  vipPillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#F59E0B',
+    letterSpacing: 0.5,
   },
   extChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.06)',

@@ -1,0 +1,10 @@
+name = "webiste-saas-social"
+compatibility_date = "2026-10-19"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare D1 Native Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "omnisaver-db"
+database_id = "bb4c700f-74aa-4537-ba12-7e1263c4083c"
+migrations_dir = "migrations"

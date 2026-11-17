@@ -38,6 +38,8 @@ import {
   Copy,
   Check,
   Laptop,
+  CreditCard,
+  SmartphoneNfc,
 } from "lucide-react";
 import {
   YouTubeIcon,
@@ -45,6 +47,7 @@ import {
   InstagramIcon,
   TwitterXIcon,
   FacebookIcon,
+  PinterestIcon,
 } from "@/app/components/PlatformIcons";
 
 interface EngineHealth {
@@ -114,8 +117,24 @@ export default function AdminDashboardPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "users" | "engines" | "logs" | "apk" | "monetization" | "firewall"
+    "overview" | "licenses" | "config" | "users" | "engines" | "logs" | "apk" | "monetization" | "firewall"
   >("overview");
+  const [channelView, setChannelView] = useState<"all" | "website" | "mobile">("all");
+  const [dualStats, setDualStats] = useState<any>(null);
+  const [licenses, setLicenses] = useState<any[]>([]);
+  const [appRemoteConfig, setAppRemoteConfig] = useState<any>(null);
+
+  // License Generator State
+  const [newLicDeviceId, setNewLicDeviceId] = useState("");
+  const [newLicPlan, setNewLicPlan] = useState<"monthly" | "quarterly" | "yearly">("quarterly");
+  const [newLicNotes, setNewLicNotes] = useState("");
+  const [newLicTid, setNewLicTid] = useState("");
+  const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
+  const [generatedKeyResult, setGeneratedKeyResult] = useState<string | null>(null);
+  const [licenseSearchQuery, setLicenseSearchQuery] = useState("");
+
+  // Config Form State
+  const [savingConfig, setSavingConfig] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +142,7 @@ export default function AdminDashboardPage() {
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedIP, setCopiedIP] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Real backend metrics state (NO DUMMY DATA)
   const [metrics, setMetrics] = useState({
@@ -139,12 +159,12 @@ export default function AdminDashboardPage() {
   const [blockedIPs, setBlockedIPs] = useState<string[]>([]);
   const [engines, setEngines] = useState<EngineHealth[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>({
-    apkVersion: "1.0.4",
-    apkReleaseDate: "2026-10-25",
-    apkFileSizeBytes: "15.2 MB",
-    apkDownloadUrl: "/downloads/omnisaver-latest.apk",
+    apkVersion: "1.0.16",
+    apkReleaseDate: "2026-11-17",
+    apkFileSizeBytes: "33.7 MB",
+    apkDownloadUrl: "/api/download/apk",
     apkForceUpdate: false,
-    apkChangelog: "Added 4K 60fps YouTube extraction, TikTok no-watermark HD, and background download notifications.",
+    apkChangelog: "Added Instagram DOM Media Interceptor, Pinterest 1080p videos & master photos, dynamic format tags, and luxury quality selector.",
     enableGoogleAdSense: false,
     adSensePublisherId: "ca-pub-XXXXXXXXXXXXXXXX",
     enableHeaderSponsorBanner: true,
@@ -181,13 +201,16 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch("/api/admin/stats");
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         if (data.metrics) setMetrics(data.metrics);
         if (data.users) setUsers(data.users);
         if (data.activities) setActivities(data.activities);
         if (data.blockedIPs) setBlockedIPs(data.blockedIPs);
         if (data.engines) setEngines(data.engines);
         if (data.appSettings) setAppSettings(data.appSettings);
+        if (data.dualStats) setDualStats(data.dualStats);
+        if (data.licenses) setLicenses(data.licenses);
+        if (data.appConfig) setAppRemoteConfig(data.appConfig);
         setLastSyncTime(new Date().toLocaleTimeString());
       }
     } catch {
@@ -195,6 +218,100 @@ export default function AdminDashboardPage() {
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const handleCreateLicense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLicDeviceId.trim()) {
+      setToastMessage("Please enter a valid Device ID (e.g. OMNI-A1B2-C3D4)");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+    setIsGeneratingLicense(true);
+    try {
+      const res = await fetch("/api/admin/license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          deviceId: newLicDeviceId.trim(),
+          planType: newLicPlan,
+          notes: newLicNotes.trim(),
+          tid: newLicTid.trim(),
+        }),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setLicenses(data.licenses);
+        setGeneratedKeyResult(data.license.key);
+        setToastMessage(`PRO License Generated: ${data.license.key}`);
+        setTimeout(() => setToastMessage(null), 4000);
+        setNewLicNotes("");
+        setNewLicTid("");
+      } else {
+        setToastMessage(data.error || "Failed to create license");
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch {
+      setToastMessage("Network error creating license");
+      setTimeout(() => setToastMessage(null), 3500);
+    } finally {
+      setIsGeneratingLicense(false);
+    }
+  };
+
+  const handleExtendLicense = async (key: string) => {
+    try {
+      const res = await fetch("/api/admin/license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "extend", key, days: 30 }),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setLicenses(data.licenses);
+        setToastMessage(`License ${key} extended +30 days!`);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (_) {}
+  };
+
+  const handleRevokeLicense = async (key: string) => {
+    try {
+      const res = await fetch("/api/admin/license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revoke", key }),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setLicenses(data.licenses);
+        setToastMessage(`License ${key} revoked.`);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (_) {}
+  };
+
+  const handleSaveRemoteConfig = async (partialConfig: any) => {
+    setSavingConfig(true);
+    try {
+      const res = await fetch("/api/app/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(partialConfig),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setAppRemoteConfig(data.config);
+        setToastMessage("App Remote Config synchronized successfully!");
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (_) {
+      setToastMessage("Failed to save remote config");
+      setTimeout(() => setToastMessage(null), 3500);
+    } finally {
+      setSavingConfig(false);
     }
   };
 
@@ -245,7 +362,7 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "block_ip", ip }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.ok) {
         if (data.blockedIPs) setBlockedIPs(data.blockedIPs);
         if (data.users) setUsers(data.users);
@@ -266,7 +383,7 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "unblock_ip", ip }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.ok) {
         if (data.blockedIPs) setBlockedIPs(data.blockedIPs);
         if (data.users) setUsers(data.users);
@@ -604,12 +721,28 @@ export default function AdminDashboardPage() {
               badge: activities.length > 0 ? String(activities.length) : null,
             },
             {
+              id: "licenses",
+              label: "Mobile PRO Licenses",
+              sub: "Device activation keys",
+              icon: Zap,
+              accent: "#F59E0B",
+              badge: licenses.filter((l) => l.status === "active").length > 0 ? `${licenses.filter((l) => l.status === "active").length} VIP` : null,
+            },
+            {
+              id: "config",
+              label: "Mobile Remote Config",
+              sub: "Payments, ads & OTA",
+              icon: Sliders,
+              accent: "#3B82F6",
+              badge: null,
+            },
+            {
               id: "engines",
               label: "Engines Watchdog",
-              sub: "5 scrapers operational",
+              sub: "6 scrapers operational",
               icon: Server,
               accent: "#06B6D4",
-              badge: "5 OK",
+              badge: "6 OK",
             },
             {
               id: "apk",
@@ -806,7 +939,9 @@ export default function AdminDashboardPage() {
         >
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em", margin: 0 }}>
-              {activeTab === "overview" && "Live Telemetry & Download Overview"}
+              {activeTab === "overview" && "Live Dual-Channel Telemetry & Download Overview"}
+              {activeTab === "licenses" && "OmniSaver PRO License & VIP Subscription Manager"}
+              {activeTab === "config" && "OmniSaver Mobile App Remote Config & OTA"}
               {activeTab === "users" && "Users Intelligence & Visitor Profiles"}
               {activeTab === "engines" && "Media Scraper Engines Watchdog"}
               {activeTab === "logs" && "Live Stream Extraction Activity"}
@@ -878,71 +1013,335 @@ export default function AdminDashboardPage() {
              ═══════════════════════════════════════════════ */}
           {activeTab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {/* KPI Cards Row (NO DUMMY DATA — 100% Real from Metrics) */}
+              {/* Channel Switcher Tabs */}
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  background: "#0E131F",
+                  padding: "10px 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
                 }}
               >
-                {[
-                  {
-                    label: "Total Extractions",
-                    val: metrics.totalExtractions.toLocaleString(),
-                    sub: `${activities.length} total event logs`,
-                    color: "#10B981",
-                  },
-                  {
-                    label: "Bandwidth Streamed",
-                    val: metrics.totalBandwidth,
-                    sub: "Direct edge stream throughput",
-                    color: "#06B6D4",
-                  },
-                  {
-                    label: "Unique Visitors (IPs)",
-                    val: metrics.uniqueVisitors.toLocaleString(),
-                    sub: `${users.length} captured profiles`,
-                    color: "#8B5CF6",
-                  },
-                  {
-                    label: "Firewall Blacklisted",
-                    val: metrics.blockedCount.toLocaleString(),
-                    sub: "Threats neutralized",
-                    color: "#EF4444",
-                  },
-                ].map((kpi, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: "#0E131F",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
-                      borderRadius: 16,
-                      padding: "20px 22px",
-                      position: "relative",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600, marginBottom: 8 }}>
-                      {kpi.label}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4 }}>
+                    Channel Filter:
+                  </span>
+                  {[
+                    { id: "all", label: "⚡ Unified Overview", desc: "All sources" },
+                    { id: "website", label: "🌐 Website Telemetry", desc: "looknow.cyou" },
+                    { id: "mobile", label: "📱 Mobile App & PRO", desc: "OmniSaver APK" },
+                  ].map((ch) => {
+                    const active = channelView === ch.id;
+                    return (
+                      <button
+                        key={ch.id}
+                        onClick={() => setChannelView(ch.id as any)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "7px 14px",
+                          borderRadius: 8,
+                          background: active ? "#FF6B00" : "rgba(255, 255, 255, 0.04)",
+                          border: active ? "1px solid #FF8A3D" : "1px solid rgba(255, 255, 255, 0.06)",
+                          color: active ? "#FFFFFF" : "#94A3B8",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <span>{ch.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ fontSize: 12, color: "#94A3B8" }}>
+                  Active Devices: <strong style={{ color: "#10B981" }}>{dualStats?.mobile?.totalRegisteredDevices || 1}</strong> · Web Visitors: <strong style={{ color: "#06B6D4" }}>{dualStats?.website?.totalVisitors || metrics.uniqueVisitors}</strong>
+                </div>
+              </div>
+
+              {/* WEBSITE SPECIFIC VIEW */}
+              {channelView === "website" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(6, 182, 212, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Web Visitors</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#06B6D4", marginTop: 6, fontFamily: "monospace" }}>
+                        {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique IP addresses on website</div>
                     </div>
-                    <div
-                      style={{
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: "#FFFFFF",
-                        letterSpacing: "-0.02em",
-                        fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {kpi.val}
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Media Fetches</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                        {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Links resolved via web studio</div>
                     </div>
-                    <div style={{ fontSize: 11, color: kpi.color, marginTop: 8, fontWeight: 700 }}>
-                      {kpi.sub}
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Proxy Downloads</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                        {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Streamed directly through server proxy</div>
+                    </div>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(255, 107, 0, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>APK Download Clicks</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#FF6B00", marginTop: 6, fontFamily: "monospace" }}>
+                        {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Visitors converted to mobile app</div>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Web Downloads Breakdown by Platform */}
+                  <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "22px 24px" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginBottom: 16 }}>
+                      Website Downloads by Platform
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+                      {[
+                        { name: "YouTube", count: dualStats?.website?.downloadsByPlatform?.youtube ?? 0, color: "#FF0000" },
+                        { name: "TikTok", count: dualStats?.website?.downloadsByPlatform?.tiktok ?? 0, color: "#00F2FE" },
+                        { name: "Instagram", count: dualStats?.website?.downloadsByPlatform?.instagram ?? 0, color: "#E1306C" },
+                        { name: "Pinterest", count: dualStats?.website?.downloadsByPlatform?.pinterest ?? 0, color: "#E60023" },
+                        { name: "Twitter / X", count: dualStats?.website?.downloadsByPlatform?.twitter ?? 0, color: "#CBD5E1" },
+                        { name: "Facebook", count: dualStats?.website?.downloadsByPlatform?.facebook ?? 0, color: "#1877F2" },
+                      ].map((item, idx) => (
+                        <div key={idx} style={{ background: "rgba(255, 255, 255, 0.03)", padding: "14px 16px", borderRadius: 12, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{item.name}</span>
+                            <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color }} />
+                          </div>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontFamily: "monospace" }}>
+                            {item.count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MOBILE APP SPECIFIC VIEW */}
+              {channelView === "mobile" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(139, 92, 246, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Registered Devices</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#A78BFA", marginTop: 6, fontFamily: "monospace" }}>
+                        {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique device IDs (OMNI-XXXX)</div>
+                    </div>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active Users (DAU / MAU)</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                        {dualStats?.mobile?.dau ?? 1} DAU · {dualStats?.mobile?.mau ?? 1} MAU
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Active in last 24 hours & 30 days</div>
+                    </div>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>PRO VIP Subscribers</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                        {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length} <span style={{ fontSize: 14, color: "#94A3B8" }}>/ {dualStats?.mobile?.freeUsers ?? 0} Free</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#F59E0B", marginTop: 6, fontWeight: 700 }}>
+                        {dualStats?.mobile?.proRatioPct ?? 0}% PRO subscriber conversion
+                      </div>
+                    </div>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total PKR Revenue</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                        Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Direct APK subscription revenue</div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Downloads by Platform */}
+                  <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "22px 24px" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginBottom: 16 }}>
+                      In-App Downloads by Platform (Mobile)
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+                      {[
+                        { name: "YouTube", count: dualStats?.mobile?.downloadsByPlatform?.youtube ?? 0, color: "#FF0000" },
+                        { name: "TikTok", count: dualStats?.mobile?.downloadsByPlatform?.tiktok ?? 0, color: "#00F2FE" },
+                        { name: "Instagram", count: dualStats?.mobile?.downloadsByPlatform?.instagram ?? 0, color: "#E1306C" },
+                        { name: "Pinterest", count: dualStats?.mobile?.downloadsByPlatform?.pinterest ?? 0, color: "#E60023" },
+                        { name: "Twitter / X", count: dualStats?.mobile?.downloadsByPlatform?.twitter ?? 0, color: "#CBD5E1" },
+                        { name: "Facebook", count: dualStats?.mobile?.downloadsByPlatform?.facebook ?? 0, color: "#1877F2" },
+                      ].map((item, idx) => (
+                        <div key={idx} style={{ background: "rgba(255, 255, 255, 0.03)", padding: "14px 16px", borderRadius: 12, border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{item.name}</span>
+                            <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color }} />
+                          </div>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontFamily: "monospace" }}>
+                            {item.count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* UNIFIED ALL CHANNELS VIEW */}
+              {channelView === "all" && (
+                <>
+                  {/* Side-by-Side Dual-Channel Summary Cards */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(6, 182, 212, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "#06B6D4", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span>🌐 Website Channel (looknow.cyou)</span>
+                        </div>
+                        <span style={{ fontSize: 11, background: "rgba(6, 182, 212, 0.15)", color: "#06B6D4", padding: "3px 8px", borderRadius: 6, fontWeight: 700 }}>
+                          Web Traffic
+                        </span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>Unique Visitors</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                            {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>Media Fetches</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                            {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>Proxy Downloads</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontFamily: "monospace" }}>
+                            {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>APK Download Clicks</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B00", fontFamily: "monospace" }}>
+                            {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ background: "#0E131F", border: "1px solid rgba(139, 92, 246, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "#A78BFA", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span>📱 Mobile App Channel (OmniSaver)</span>
+                        </div>
+                        <span style={{ fontSize: 11, background: "rgba(139, 92, 246, 0.15)", color: "#A78BFA", padding: "3px 8px", borderRadius: 6, fontWeight: 700 }}>
+                          Native APK
+                        </span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>Registered Devices</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                            {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>Active (DAU / MAU)</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                            {dualStats?.mobile?.dau ?? 1} / {dualStats?.mobile?.mau ?? 1}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>PRO Subscribers</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#F59E0B", fontFamily: "monospace" }}>
+                            {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#64748B" }}>PKR Revenue</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontFamily: "monospace" }}>
+                            Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KPI Cards Row (NO DUMMY DATA — 100% Real from Metrics) */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Total Extractions",
+                        val: metrics.totalExtractions.toLocaleString(),
+                        sub: `${activities.length} total event logs`,
+                        color: "#10B981",
+                      },
+                      {
+                        label: "Bandwidth Streamed",
+                        val: metrics.totalBandwidth,
+                        sub: "Direct edge stream throughput",
+                        color: "#06B6D4",
+                      },
+                      {
+                        label: "Unique Visitors (IPs)",
+                        val: metrics.uniqueVisitors.toLocaleString(),
+                        sub: `${users.length} captured profiles`,
+                        color: "#8B5CF6",
+                      },
+                      {
+                        label: "Firewall Blacklisted",
+                        val: metrics.blockedCount.toLocaleString(),
+                        sub: "Threats neutralized",
+                        color: "#EF4444",
+                      },
+                    ].map((kpi, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: "#0E131F",
+                          border: "1px solid rgba(255, 255, 255, 0.08)",
+                          borderRadius: 16,
+                          padding: "20px 22px",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600, marginBottom: 8 }}>
+                          {kpi.label}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 28,
+                            fontWeight: 800,
+                            color: "#FFFFFF",
+                            letterSpacing: "-0.02em",
+                            fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {kpi.val}
+                        </div>
+                        <div style={{ fontSize: 11, color: kpi.color, marginTop: 8, fontWeight: 700 }}>
+                          {kpi.sub}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
 
               {/* Platform Share Distribution */}
               <div
@@ -1029,8 +1428,663 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ═══════════════════════════════════════════════
-              TAB 2: USERS & VISITORS MANAGEMENT (REQUESTED)
+              TAB: MOBILE PRO LICENSES & VIP MANAGER
              ═══════════════════════════════════════════════ */}
+          {activeTab === "licenses" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Top Stats Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+                <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active PRO Subscribers</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                    {licenses.filter((l) => l.status === "active").length}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Device-bound active subscriptions</div>
+                </div>
+
+                <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Subscription Revenue</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                    Rs. {licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Direct APK local payments (PKR)</div>
+                </div>
+
+                <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "20px 22px" }}>
+                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Issued Keys</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FFFFFF", marginTop: 6, fontFamily: "monospace" }}>
+                    {licenses.length}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Lifetime generated keys</div>
+                </div>
+
+                <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
+                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Revoked / Expired</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#EF4444", marginTop: 6, fontFamily: "monospace" }}>
+                    {licenses.filter((l) => l.status !== "active").length}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Inactive keys</div>
+                </div>
+              </div>
+
+              {/* Device-Bound Key Generator Form Card */}
+              <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "24px 26px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                  <Zap size={20} style={{ color: "#F59E0B" }} />
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                      Generate Device-Bound PRO License Key
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#94A3B8", margin: "3px 0 0" }}>
+                      Issue a verified PRO activation key strictly locked to the user's unique hardware Device ID.
+                    </p>
+                  </div>
+                </div>
+
+                {generatedKeyResult && (
+                  <div
+                    style={{
+                      background: "rgba(245, 158, 11, 0.12)",
+                      border: "1px solid #F59E0B",
+                      borderRadius: 12,
+                      padding: "16px 20px",
+                      marginBottom: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 11, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase" }}>
+                        Active License Key Generated & Saved:
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace", letterSpacing: "0.05em", marginTop: 4 }}>
+                        {generatedKeyResult}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedKeyResult);
+                        setCopiedKey(generatedKeyResult);
+                        setTimeout(() => setCopiedKey(null), 2500);
+                      }}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: 8,
+                        background: "#F59E0B",
+                        color: "#000000",
+                        fontWeight: 700,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 12,
+                      }}
+                    >
+                      {copiedKey === generatedKeyResult ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedKey === generatedKeyResult ? "Copied!" : "Copy Key for Customer"}</span>
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleCreateLicense} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Customer Device ID (OMNI-XXXX-XXXX) *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. OMNI-8F3E-91B0"
+                      value={newLicDeviceId}
+                      onChange={(e) => setNewLicDeviceId(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        color: "#FFFFFF",
+                        fontFamily: "monospace",
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Select PRO Plan *
+                    </label>
+                    <select
+                      value={newLicPlan}
+                      onChange={(e) => setNewLicPlan(e.target.value as any)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        color: "#FFFFFF",
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    >
+                      <option value="monthly">Monthly Plan — Rs. 750 (30 Days)</option>
+                      <option value="quarterly">3 Months Saver — Rs. 1,800 (90 Days) • POPULAR</option>
+                      <option value="yearly">Yearly VIP — Rs. 4,500 (365 Days)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Payment TID / Reference
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. EP-9238471 or Bank Ref"
+                      value={newLicTid}
+                      onChange={(e) => setNewLicTid(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        color: "#FFFFFF",
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Customer Name or WhatsApp Note
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Asad (WhatsApp 0300...)"
+                      value={newLicNotes}
+                      onChange={(e) => setNewLicNotes(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        color: "#FFFFFF",
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "flex-end" }}>
+                    <button
+                      type="submit"
+                      disabled={isGeneratingLicense}
+                      style={{
+                        width: "100%",
+                        padding: "11px 18px",
+                        borderRadius: 10,
+                        background: "linear-gradient(135deg, #FF6B00 0%, #FF8A3D 100%)",
+                        color: "#FFFFFF",
+                        fontWeight: 800,
+                        fontSize: 13,
+                        border: "none",
+                        cursor: isGeneratingLicense ? "wait" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        boxShadow: "0 4px 14px rgba(255, 107, 0, 0.35)",
+                      }}
+                    >
+                      <Zap size={16} />
+                      <span>{isGeneratingLicense ? "Generating..." : "Generate & Activate Key"}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Licenses List & Management Table */}
+              <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, overflow: "hidden" }}>
+                <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF" }}>
+                    Issued PRO Licenses Database ({licenses.length})
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by Key, Device ID or Notes..."
+                    value={licenseSearchQuery}
+                    onChange={(e) => setLicenseSearchQuery(e.target.value)}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      background: "#080B10",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      color: "#FFFFFF",
+                      fontSize: 12,
+                      width: 260,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", color: "#64748B" }}>
+                        <th style={{ padding: "12px 20px" }}>License Key</th>
+                        <th style={{ padding: "12px 16px" }}>Bound Device ID</th>
+                        <th style={{ padding: "12px 16px" }}>Plan & Price</th>
+                        <th style={{ padding: "12px 16px" }}>Status</th>
+                        <th style={{ padding: "12px 16px" }}>Expires Date</th>
+                        <th style={{ padding: "12px 16px" }}>Customer / TID</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {licenses
+                        .filter((lic) => {
+                          if (!licenseSearchQuery) return true;
+                          const q = licenseSearchQuery.toLowerCase();
+                          return (
+                            lic.key.toLowerCase().includes(q) ||
+                            lic.deviceId.toLowerCase().includes(q) ||
+                            (lic.notes && lic.notes.toLowerCase().includes(q)) ||
+                            (lic.tid && lic.tid.toLowerCase().includes(q))
+                          );
+                        })
+                        .map((lic) => {
+                          const isExpired = Date.now() > lic.expiresAt;
+                          const isActive = lic.status === "active" && !isExpired;
+                          return (
+                            <tr key={lic.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
+                              <td style={{ padding: "14px 20px", fontFamily: "monospace", fontWeight: 700, color: "#FFFFFF" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span>{lic.key}</span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(lic.key);
+                                      setCopiedKey(lic.key);
+                                      setTimeout(() => setCopiedKey(null), 2000);
+                                    }}
+                                    style={{ background: "none", border: "none", color: copiedKey === lic.key ? "#10B981" : "#64748B", cursor: "pointer", padding: 2 }}
+                                    title="Copy License Key"
+                                  >
+                                    {copiedKey === lic.key ? <Check size={13} /> : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </td>
+                              <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "#A78BFA" }}>
+                                {lic.deviceId}
+                              </td>
+                              <td style={{ padding: "14px 16px", color: "#E2E8F0" }}>
+                                <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{lic.planType}</div>
+                                <div style={{ fontSize: 11, color: "#10B981" }}>Rs. {(lic.pricePkr || 0).toLocaleString()}</div>
+                              </td>
+                              <td style={{ padding: "14px 16px" }}>
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    background: isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                    color: isActive ? "#10B981" : "#EF4444",
+                                  }}
+                                >
+                                  {isActive ? "Active" : isExpired ? "Expired" : "Revoked"}
+                                </span>
+                              </td>
+                              <td style={{ padding: "14px 16px", color: "#94A3B8" }}>
+                                {new Date(lic.expiresAt).toLocaleDateString()}
+                              </td>
+                              <td style={{ padding: "14px 16px", color: "#94A3B8" }}>
+                                {lic.notes || lic.tid || "—"}
+                              </td>
+                              <td style={{ padding: "14px 20px", textAlign: "right" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                                  <button
+                                    onClick={() => handleExtendLicense(lic.key)}
+                                    style={{
+                                      padding: "5px 10px",
+                                      borderRadius: 6,
+                                      background: "rgba(16, 185, 129, 0.12)",
+                                      border: "1px solid rgba(16, 185, 129, 0.3)",
+                                      color: "#10B981",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    +30 Days
+                                  </button>
+                                  {isActive && (
+                                    <button
+                                      onClick={() => handleRevokeLicense(lic.key)}
+                                      style={{
+                                        padding: "5px 10px",
+                                        borderRadius: 6,
+                                        background: "rgba(239, 68, 68, 0.12)",
+                                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                                        color: "#EF4444",
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      Revoke
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════
+              TAB: MOBILE APP REMOTE CONFIG & OTA UPDATES
+             ═══════════════════════════════════════════════ */}
+          {activeTab === "config" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Pakistan Local Payment Details Card */}
+              <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "24px 26px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                  <CreditCard size={20} style={{ color: "#10B981" }} />
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                      Local Payment Accounts (Direct APK Upgrades)
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#94A3B8", margin: "3px 0 0" }}>
+                      Accounts displayed inside OmniSaver mobile app upgrade modal for EasyPaisa, NayaPay and Bank transfer.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      EasyPaisa Account Title
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.paymentDetails?.easypaisa?.title || "Suhail Ahmed"}
+                      id="cfg_ep_title"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      EasyPaisa Mobile Number
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.paymentDetails?.easypaisa?.accountNo || "03001234567"}
+                      id="cfg_ep_no"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      NayaPay Account Title & ID
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.paymentDetails?.nayapay?.accountId || "03001234567@nayapay"}
+                      id="cfg_np_id"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Bank Name & IBAN
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.paymentDetails?.bankIban?.iban || "PK36MEZN0001234567890123"}
+                      id="cfg_bank_iban"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      WhatsApp Customer Support Number
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.paymentDetails?.whatsappNumber || "+923001234567"}
+                      id="cfg_whatsapp"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 20 }}>
+                  <button
+                    onClick={() => {
+                      const epTitle = (document.getElementById("cfg_ep_title") as HTMLInputElement)?.value;
+                      const epNo = (document.getElementById("cfg_ep_no") as HTMLInputElement)?.value;
+                      const npId = (document.getElementById("cfg_np_id") as HTMLInputElement)?.value;
+                      const iban = (document.getElementById("cfg_bank_iban") as HTMLInputElement)?.value;
+                      const whatsapp = (document.getElementById("cfg_whatsapp") as HTMLInputElement)?.value;
+
+                      handleSaveRemoteConfig({
+                        paymentDetails: {
+                          easypaisa: { title: epTitle, accountNo: epNo },
+                          nayapay: { title: epTitle, accountId: npId },
+                          bankIban: { bank: "Meezan Bank", title: epTitle, iban },
+                          whatsappNumber: whatsapp,
+                        },
+                      });
+                    }}
+                    disabled={savingConfig}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 10,
+                      background: "#10B981",
+                      color: "#FFFFFF",
+                      fontWeight: 800,
+                      fontSize: 13,
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Save Live Payment Accounts
+                  </button>
+                </div>
+              </div>
+
+              {/* Remote Ad Monetization Controls */}
+              <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "24px 26px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                  <DollarSign size={20} style={{ color: "#FBBF24" }} />
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                      Remote In-App Ad Monetization Controls
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#94A3B8", margin: "3px 0 0" }}>
+                      Remotely toggle ads, adjust interstitial frequency, or bypass ads without an app update.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>Master Ad Switch</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>Enable or disable all in-app ads</div>
+                    <button
+                      onClick={() => {
+                        const cur = appRemoteConfig?.adConfig?.adsEnabled ?? true;
+                        handleSaveRemoteConfig({ adConfig: { ...appRemoteConfig?.adConfig, adsEnabled: !cur } });
+                      }}
+                      style={{
+                        marginTop: 12,
+                        padding: "6px 14px",
+                        borderRadius: 8,
+                        background: (appRemoteConfig?.adConfig?.adsEnabled ?? true) ? "#10B981" : "#EF4444",
+                        color: "#FFFFFF",
+                        border: "none",
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {(appRemoteConfig?.adConfig?.adsEnabled ?? true) ? "ADS ENABLED (ON)" : "ALL ADS DISABLED (OFF)"}
+                    </button>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>Interstitial Frequency</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>Show full-screen ad every N downloads</div>
+                    <select
+                      defaultValue={appRemoteConfig?.adConfig?.interstitialInterval ?? 2}
+                      id="cfg_ad_interval"
+                      onChange={(e) => {
+                        handleSaveRemoteConfig({ adConfig: { ...appRemoteConfig?.adConfig, interstitialInterval: Number(e.target.value) } });
+                      }}
+                      style={{ marginTop: 12, padding: "8px 12px", borderRadius: 8, background: "#080B10", border: "1px solid rgba(255,255,255,0.12)", color: "#FFFFFF", fontSize: 12, width: "100%" }}
+                    >
+                      <option value="1">Every 1 Download (Aggressive)</option>
+                      <option value="2">Every 2 Downloads (Standard)</option>
+                      <option value="3">Every 3 Downloads (Relaxed)</option>
+                      <option value="5">Every 5 Downloads (Light)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>Banner Slots</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>AdBannerSlot on Home & Saved tabs</div>
+                    <button
+                      onClick={() => {
+                        const cur = appRemoteConfig?.adConfig?.bannerEnabled ?? true;
+                        handleSaveRemoteConfig({ adConfig: { ...appRemoteConfig?.adConfig, bannerEnabled: !cur } });
+                      }}
+                      style={{
+                        marginTop: 12,
+                        padding: "6px 14px",
+                        borderRadius: 8,
+                        background: (appRemoteConfig?.adConfig?.bannerEnabled ?? true) ? "#10B981" : "#64748B",
+                        color: "#FFFFFF",
+                        border: "none",
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {(appRemoteConfig?.adConfig?.bannerEnabled ?? true) ? "BANNERS ON" : "BANNERS OFF"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* OTA Release & Update Manager */}
+              <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "24px 26px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                  <Smartphone size={20} style={{ color: "#84CC16" }} />
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                      OTA Update Delivery & Version Controls
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#94A3B8", margin: "3px 0 0" }}>
+                      Publish update prompts to all active OmniSaver APK installations over the air.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Target Release Version
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.versionConfig?.latestVersion || "1.0.16"}
+                      id="cfg_ver_num"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontFamily: "monospace", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      Version Code (Integer)
+                    </label>
+                    <input
+                      type="number"
+                      defaultValue={appRemoteConfig?.versionConfig?.versionCode || 10016}
+                      id="cfg_ver_code"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontFamily: "monospace", fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
+                      APK Download Destination
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={appRemoteConfig?.versionConfig?.apkDownloadUrl || "https://looknow.cyou/api/download/apk"}
+                      id="cfg_apk_url"
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 20 }}>
+                  <button
+                    onClick={() => {
+                      const ver = (document.getElementById("cfg_ver_num") as HTMLInputElement)?.value;
+                      const code = Number((document.getElementById("cfg_ver_code") as HTMLInputElement)?.value) || 10016;
+                      const url = (document.getElementById("cfg_apk_url") as HTMLInputElement)?.value;
+
+                      handleSaveRemoteConfig({
+                        versionConfig: {
+                          latestVersion: ver,
+                          versionCode: code,
+                          apkDownloadUrl: url,
+                          forceUpdate: false,
+                          releaseNotes: [
+                            `OmniSaver v${ver} Official Release`,
+                            "Performance and stability enhancements",
+                          ],
+                        },
+                      });
+                    }}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 10,
+                      background: "#84CC16",
+                      color: "#000000",
+                      fontWeight: 800,
+                      fontSize: 13,
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Publish OTA Release Info
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {activeTab === "users" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Users Header Summary */}

@@ -29,7 +29,7 @@ export default function DownloadSection() {
     // Fetch dynamic APK file details directly from server
     fetch("/api/version")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: any) => {
         if (data?.fileSize || data?.version) {
           setApkDetails({
             version: data.version || "1.0.4",
@@ -141,6 +141,20 @@ export default function DownloadSection() {
                   rel="noopener noreferrer"
                   className="btn-primary"
                   style={{ padding: "14px 28px", fontSize: "15px" }}
+                  onClick={() => {
+                    try {
+                      fetch("/api/track/visit", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          source: "website",
+                          action: "download",
+                          platform: "android-apk",
+                          details: `APK Download Click v${apkDetails.version}`,
+                        }),
+                      }).catch(() => {});
+                    } catch (_) {}
+                  }}
                 >
                   <Download size={16} strokeWidth={2.5} />
                   <span>Download APK (v{apkDetails.version})</span>

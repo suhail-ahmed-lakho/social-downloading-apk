@@ -1,32 +1,10 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const localApkPath = path.join(process.cwd(), "public", "downloads", "omnisaver-latest.apk");
-
-  // 1. If locally hosted APK exists in public/downloads (e.g. Docker / VPS), serve directly
-  if (fs.existsSync(localApkPath)) {
-    try {
-      const fileBuffer = fs.readFileSync(localApkPath);
-      if (fileBuffer.length > 0) {
-        return new NextResponse(fileBuffer, {
-          headers: {
-            "Content-Type": "application/vnd.android.package-archive",
-            "Content-Disposition": 'attachment; filename="OmniSaver-latest.apk"',
-            "Content-Length": fileBuffer.length.toString(),
-            "Cache-Control": "public, max-age=86400, s-maxage=86400",
-          },
-        });
-      }
-    } catch (e) {
-      console.error("Error reading local APK:", e);
-    }
-  }
-
-  // 2. Dynamically resolve upstream URL from latest GitHub Release
+  // 1. Dynamically resolve upstream URL from latest GitHub Release
   let upstreamUrl = process.env.APK_DOWNLOAD_MIRROR;
   let filename = "OmniSaver-latest.apk";
 
@@ -40,7 +18,7 @@ export async function GET() {
         {
           signal: controller.signal,
           headers: {
-            "User-Agent": "LookNow-Downloader",
+            "User-Agent": "OmniSaver-Downloader",
             Accept: "application/vnd.github.v3+json",
             ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
           },
@@ -49,7 +27,7 @@ export async function GET() {
       clearTimeout(timer);
 
       if (ghRes.ok) {
-        const ghData = await ghRes.json();
+        const ghData: any = await ghRes.json();
         const apkAsset = ghData.assets?.find((a: any) => typeof a.name === "string" && a.name.endsWith(".apk"));
         if (apkAsset?.browser_download_url) {
           upstreamUrl = apkAsset.browser_download_url;
@@ -66,7 +44,7 @@ export async function GET() {
     upstreamUrl = "https://github.com/suhail-ahmed-lakho/social-downloading-apk/releases/latest/download/OmniSaver-latest.apk";
   }
 
-  // 3. Stream upstream APK to client as direct download
+  // 2. Stream upstream APK to client as direct download
   try {
     const upstreamRes = await fetch(upstreamUrl, {
       headers: {
@@ -93,6 +71,6 @@ export async function GET() {
     console.error("Error streaming APK from upstream, falling back to redirect:", err);
   }
 
-  // 4. Redirect fallback if streaming encountered issues
+  // 3. Redirect fallback if streaming encountered issues
   return NextResponse.redirect(upstreamUrl, 302);
 }

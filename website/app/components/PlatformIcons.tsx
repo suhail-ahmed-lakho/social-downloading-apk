@@ -99,6 +99,24 @@ export function FacebookIcon({ size = 24, style = {} }: { size?: number; style?:
   );
 }
 
+export function PinterestIcon({ size = 24, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+      <defs>
+        <linearGradient id="pin-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#E60023" />
+          <stop offset="100%" stopColor="#BD081C" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#pin-grad)" />
+      <path
+        d="M12 4C7.58 4 4 7.58 4 12C4 15.39 6.11 18.29 9.1 19.46C9.02 18.82 8.95 17.84 9.11 17.15C9.25 16.53 10.05 13.15 10.05 13.15C10.05 13.15 9.81 12.67 9.81 11.96C9.81 10.85 10.45 10.02 11.25 10.02C11.93 10.02 12.26 10.53 12.26 11.14C12.26 11.82 11.83 12.85 11.6 13.81C11.41 14.61 12 15.26 12.79 15.26C14.22 15.26 15.32 13.75 15.32 11.59C15.32 9.68 13.95 8.35 12 8.35C9.74 8.35 8.42 10.05 8.42 11.77C8.42 12.45 8.68 13.18 9.01 13.58C9.08 13.66 9.09 13.73 9.07 13.81C9.01 14.06 8.87 14.63 8.84 14.76C8.8 14.93 8.69 14.97 8.52 14.89C7.4 14.37 6.69 12.75 6.69 11.73C6.69 9.24 8.5 6.98 12.18 6.98C15.14 6.98 17.44 9.09 17.44 11.87C17.44 14.8 15.59 17.16 13.03 17.16C12.17 17.16 11.36 16.71 11.08 16.18L10.55 18.2C10.36 18.93 9.84 19.82 9.48 20.39C10.28 20.64 11.13 20.78 12 20.78C16.85 20.78 20.78 16.85 20.78 12C20.78 7.58 16.85 4 12 4Z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
 export function PlatformChip({
   platform,
   size = 28,
@@ -123,6 +141,8 @@ export function PlatformChip({
         return <TwitterXIcon size={size} />;
       case "facebook":
         return <FacebookIcon size={size} />;
+      case "pinterest":
+        return <PinterestIcon size={size} />;
       default:
         return <YouTubeIcon size={size} />;
     }
@@ -141,6 +161,8 @@ export function PlatformChip({
         return "Twitter / X";
       case "facebook":
         return "Facebook";
+      case "pinterest":
+        return "Pinterest";
       default:
         return platform;
     }

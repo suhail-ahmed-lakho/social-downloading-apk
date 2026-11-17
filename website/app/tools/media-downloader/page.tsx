@@ -41,7 +41,7 @@ import TiltCard3D from "@/app/components/TiltCard3D";
 interface QualityOption {
   label: string;
   quality: string;
-  type: "video" | "audio";
+  type: "video" | "audio" | "image";
   format?: string;
   itag?: number;
   directUrl?: string;
@@ -74,7 +74,7 @@ export interface DownloadedItem {
   thumbnail: string;
   downloadUrl: string;
   filename: string;
-  format: "mp4" | "mp3";
+  format: "mp4" | "mp3" | "jpg" | "png";
   quality: string;
   timestamp: number;
 }
@@ -85,6 +85,7 @@ function detectPlatformClient(url: string): string {
   if (/instagram\.com|instagr\.am/i.test(url)) return "instagram";
   if (/twitter\.com|x\.com/i.test(url)) return "twitter";
   if (/facebook\.com|fb\.watch/i.test(url)) return "facebook";
+  if (/pinterest\.[a-z.]+|pin\.it|pinimg\.com/i.test(url)) return "pinterest";
   return "unknown";
 }
 
@@ -127,7 +128,7 @@ export default function VideoDownloaderTool() {
 
     fetch("/api/version")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: any) => {
         if (data?.fileSize) setApkSize(data.fileSize);
       })
       .catch(() => {});
@@ -171,7 +172,7 @@ export default function VideoDownloaderTool() {
           userEmail: typeof window !== "undefined" ? localStorage.getItem("looknow_user_email") || undefined : undefined,
         }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch video details");
       setVideoInfo(data);
     } catch (err: unknown) {
@@ -198,7 +199,10 @@ export default function VideoDownloaderTool() {
       window.location.assign(downloadUrl);
     }
 
-    const isAudio = opt?.type === "audio" || filename.endsWith(".mp3");
+    const isAudio = opt?.type === "audio" || filename.endsWith(".mp3") || filename.endsWith(".m4a");
+    const isImage = opt?.type === "image" || filename.endsWith(".jpg") || filename.endsWith(".png") || filename.endsWith(".jpeg");
+    const formatType: "mp4" | "mp3" | "jpg" | "png" = isAudio ? "mp3" : isImage ? (filename.endsWith(".png") ? "png" : "jpg") : "mp4";
+
     const newItem: DownloadedItem = {
       id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       title: videoInfo?.title || filename.replace(/\.[^/.]+$/, ""),
@@ -206,10 +210,25 @@ export default function VideoDownloaderTool() {
       thumbnail: videoInfo?.thumbnail || "",
       downloadUrl,
       filename,
-      format: isAudio ? "mp3" : "mp4",
-      quality: opt?.quality || opt?.label || (isAudio ? "320kbps MP3" : "HD Video"),
+      format: formatType,
+      quality: opt?.quality || opt?.label || (isAudio ? "320kbps MP3" : isImage ? "Original Photo" : "HD Video"),
       timestamp: Date.now(),
     };
+
+    // Track download event with source: website
+    try {
+      fetch("/api/track/visit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "website",
+          action: "download",
+          platform: videoInfo?.platform || detectPlatformClient(url),
+          details: `${newItem.title} (${newItem.quality})`,
+          format: formatType,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
 
     setLastDownloadedItem(newItem);
     setDownloadsHistory((prev) => {
@@ -264,11 +283,19 @@ export default function VideoDownloaderTool() {
   };
 
   const handleDownload = async (opt: QualityOption, index: number) => {
-    const rawTitle = videoInfo?.title || "OmniSaver_Video";
-    const fileExt = opt.type === "audio" ? "mp3" : "mp4";
+    const rawTitle = videoInfo?.title || "OmniSaver_Media";
+    const fileExt =
+      opt.format ||
+      (opt.type === "image"
+        ? opt.directUrl?.includes(".png")
+          ? "png"
+          : "jpg"
+        : opt.type === "audio"
+        ? "mp3"
+        : "mp4");
     const filename = `${rawTitle}.${fileExt}`;
 
-    // 1. Direct URLs (TikTok, Instagram, Twitter, Facebook) -> Stream through local proxy
+    // 1. Direct URLs (TikTok, Instagram, Twitter, Facebook, Pinterest) -> Stream through local proxy
     if (opt.directUrl) {
       const proxyUrl = `/api/video/stream?url=${encodeURIComponent(opt.directUrl)}&title=${encodeURIComponent(rawTitle)}&format=${fileExt}`;
       setDownloadStates((prev) => ({
@@ -303,7 +330,7 @@ export default function VideoDownloaderTool() {
           }),
         });
 
-        const initData = await initRes.json();
+        const initData: any = await initRes.json();
 
         if (initData.status === "done" && initData.downloadUrl) {
           const proxyUrl = `/api/video/stream?url=${encodeURIComponent(initData.downloadUrl)}&title=${encodeURIComponent(rawTitle)}&format=${fileExt}`;
@@ -337,7 +364,7 @@ export default function VideoDownloaderTool() {
             });
 
             if (pollRes.ok) {
-              const pollData = await pollRes.json();
+              const pollData: any = await pollRes.json();
 
               if (pollData.status === "done" && pollData.downloadUrl) {
                 downloadReadyUrl = pollData.downloadUrl;

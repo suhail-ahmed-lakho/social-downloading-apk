@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 function sanitizeFilename(name: string): string {
@@ -37,6 +38,8 @@ export async function GET(req: NextRequest) {
       headers["Referer"] = "https://www.instagram.com/";
     } else if (mediaUrl.includes("twimg.com") || mediaUrl.includes("twitter.com") || mediaUrl.includes("x.com")) {
       headers["Referer"] = "https://twitter.com/";
+    } else if (mediaUrl.includes("pinimg.com") || mediaUrl.includes("pinterest.com")) {
+      headers["Referer"] = "https://www.pinterest.com/";
     }
 
     const rangeHeader = req.headers.get("range");
@@ -54,10 +57,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(mediaUrl);
     }
 
-    // Strict mobile-compatible MIME types so Android MediaStore scans files directly into Gallery
-    let contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : "video/mp4";
+    // Strict media-compatible MIME types
+    let contentType = "video/mp4";
+    const lowerExt = ext.toLowerCase();
+    if (lowerExt === "mp3") {
+      contentType = "audio/mpeg";
+    } else if (lowerExt === "m4a") {
+      contentType = "audio/mp4";
+    } else if (lowerExt === "jpg" || lowerExt === "jpeg") {
+      contentType = "image/jpeg";
+    } else if (lowerExt === "png") {
+      contentType = "image/png";
+    } else if (lowerExt === "webp") {
+      contentType = "image/webp";
+    }
+
     const rawContentType = upstreamRes.headers.get("content-type");
-    if (rawContentType && (rawContentType.startsWith("video/") || rawContentType.startsWith("audio/"))) {
+    if (rawContentType && (rawContentType.startsWith("video/") || rawContentType.startsWith("audio/") || rawContentType.startsWith("image/"))) {
       contentType = rawContentType;
     }
 

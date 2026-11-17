@@ -43,7 +43,7 @@ export default function HeroSection() {
   useEffect(() => {
     fetch("/api/version")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: any) => {
         if (data?.fileSize) setApkSize(data.fileSize);
       })
       .catch(() => {});

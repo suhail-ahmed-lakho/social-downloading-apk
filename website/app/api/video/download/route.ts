@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 // POST endpoint for interactive step-by-step progress polling
 export async function POST(req: NextRequest) {
   try {
-    const { videoId, format = "mp3", action = "init", progressUrl } = await req.json();
+    const { videoId, format = "mp3", action = "init", progressUrl }: any = await req.json();
 
     if (action === "init") {
       if (!videoId || typeof videoId !== "string" || !/^[\w-]{11}$/.test(videoId)) {
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (data.download_url && data.download_url.startsWith("http")) {
         return NextResponse.json({
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ status: "processing", progress: 50, text: "Converting..." });
       }
 
-      const pollData = await pollRes.json();
+      const pollData: any = await pollRes.json();
 
       if (pollData.download_url && pollData.download_url.startsWith("http")) {
         return NextResponse.json({
@@ -157,7 +160,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (initRes.ok) {
-      const initData = await initRes.json();
+      const initData: any = await initRes.json();
       if (initData.download_url && initData.download_url.startsWith("http")) {
         return NextResponse.redirect(initData.download_url);
       }
@@ -177,17 +180,17 @@ export async function GET(req: NextRequest) {
               },
             });
             if (pollRes.ok) {
-              const pollData = await pollRes.json();
+              const pollData: any = await pollRes.json();
               if (pollData.download_url && pollData.download_url.startsWith("http")) {
                 const proxyStreamUrl = `/api/video/stream?url=${encodeURIComponent(pollData.download_url)}&title=${encodeURIComponent(videoId)}&format=${targetFormat}`;
                 return NextResponse.redirect(new URL(proxyStreamUrl, req.url));
               }
             }
-          } catch {}
+          } catch { }
         }
       }
     }
-  } catch {}
+  } catch { }
 
   return NextResponse.json({ error: "Conversion busy, please retry in a few moments" }, { status: 504 });
 }

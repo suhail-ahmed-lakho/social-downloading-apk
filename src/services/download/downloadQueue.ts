@@ -8,6 +8,8 @@ import { DownloadHistoryItem, PlatformType } from '../../types';
 import { addDownloadToHistory } from '../storage/history';
 import { notifyDownloadComplete, notifyDownloadFailed } from '../notifications/notificationService';
 import { recordDownloadCompletedForAds } from '../ads/adManager';
+import { sendMobileTelemetry } from '../api/backendClient';
+import { getIsPro } from '../../store/useProStore';
 import {
   buildDownloadHeaders,
   extractDirectUrlFromRapidCdn,
@@ -281,6 +283,12 @@ async function recordSavedHistoryAndNotify(
       downloadId: item.id,
     });
     void recordDownloadCompletedForAds();
+    void sendMobileTelemetry({
+      action: 'download',
+      platform: item.platform,
+      details: `${item.title} (${item.qualityLabel || 'HD'})`,
+      isPro: getIsPro(),
+    });
   }
 
   const latestItem = queueItems.find((i) => i.id === item.id) || item;
