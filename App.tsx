@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -36,6 +36,7 @@ import { DownloadsScreen } from './src/components/DownloadsScreen';
 import { AlertsScreen } from './src/components/AlertsScreen';
 import { OpeningSplashScreen } from './src/components/OpeningSplashScreen';
 import { UpdateModal } from './src/components/UpdateModal';
+import { AdBannerSlot } from './src/components/AdBannerSlot';
 import { COLORS } from './src/theme/colors';
 import { MediaMetadata, PlatformType, QualityOption, DownloadHistoryItem } from './src/types';
 import {
@@ -96,6 +97,7 @@ export default function App() {
     text: string;
     platform: string;
   } | null>(null);
+  const lastHandledClipboardUrl = useRef<string>('');
 
   const queue = useDownloadQueue();
   const notificationState = useNotifications();
@@ -132,7 +134,12 @@ export default function App() {
 
   const checkClipboard = async () => {
     const clip = await getClipboardUrl();
-    if (clip && clip.isValidMedia && clip.text !== url) {
+    if (
+      clip &&
+      clip.isValidMedia &&
+      clip.text !== url &&
+      clip.text !== lastHandledClipboardUrl.current
+    ) {
       setClipboardBanner({ text: clip.text, platform: clip.platform });
     }
   };
@@ -140,9 +147,17 @@ export default function App() {
   const handleApplyClipboard = () => {
     if (clipboardBanner) {
       const target = clipboardBanner.text;
+      lastHandledClipboardUrl.current = target;
       setUrl(target);
       setClipboardBanner(null);
       handleFetchMedia(target);
+    }
+  };
+
+  const handleDismissClipboard = () => {
+    if (clipboardBanner) {
+      lastHandledClipboardUrl.current = clipboardBanner.text;
+      setClipboardBanner(null);
     }
   };
 
@@ -154,6 +169,8 @@ export default function App() {
       return;
     }
 
+    lastHandledClipboardUrl.current = trimmed;
+    setClipboardBanner(null);
     setIsAnalyzing(true);
     setCurrentMedia(null);
 
@@ -311,38 +328,48 @@ export default function App() {
 
         {/* Floating Clipboard Detection Toast */}
         {clipboardBanner && activeTab === 'download' && (
-          <TouchableOpacity
-            style={styles.clipboardBanner}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleApplyClipboard();
-            }}
-            activeOpacity={0.88}
-          >
-            <View style={styles.clipLeft}>
-              <View style={styles.clipIconCircle}>
-                <Ionicons name="link-outline" size={16} color={COLORS.accentPrimary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.clipTagRow}>
-                  <Text style={styles.clipTag}>{clipboardBanner.platform.toUpperCase()}</Text>
-                  <Text style={styles.clipTitle}>Link Detected</Text>
-                </View>
-                <Text style={styles.clipSub} numberOfLines={1}>
-                  {clipboardBanner.text}
-                </Text>
-              </View>
-            </View>
-            <LinearGradient
-              colors={COLORS.gradientPrimary}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.clipActionGradient}
+          <View style={styles.clipboardBanner}>
+            <TouchableOpacity
+              style={styles.clipBannerTouch}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleApplyClipboard();
+              }}
+              activeOpacity={0.88}
             >
-              <Ionicons name="arrow-down-circle-outline" size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
-              <Text style={styles.clipActionText}>Paste & Fetch</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <View style={styles.clipLeft}>
+                <View style={styles.clipIconCircle}>
+                  <Ionicons name="link-outline" size={16} color={COLORS.accentPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.clipTagRow}>
+                    <Text style={styles.clipTag}>{clipboardBanner.platform.toUpperCase()}</Text>
+                    <Text style={styles.clipTitle}>Link Detected</Text>
+                  </View>
+                  <Text style={styles.clipSub} numberOfLines={1}>
+                    {clipboardBanner.text}
+                  </Text>
+                </View>
+              </View>
+              <LinearGradient
+                colors={COLORS.gradientPrimary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.clipActionGradient}
+              >
+                <Ionicons name="arrow-down-circle-outline" size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
+                <Text style={styles.clipActionText}>Paste & Fetch</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.clipDismissBtn}
+              onPress={handleDismissClipboard}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          </View>
         )}
 
         {activeTab === 'download' ? (
@@ -361,7 +388,12 @@ export default function App() {
             {/* URL Input Bar & Instant Paste */}
             <UrlInputBar
               url={url}
-              onChangeUrl={setUrl}
+              onChangeUrl={(newUrl) => {
+                setUrl(newUrl);
+                if (!newUrl) {
+                  setCurrentMedia(null);
+                }
+              }}
               onSubmit={handleFetchMedia}
               isLoading={isAnalyzing}
             />
@@ -573,6 +605,9 @@ export default function App() {
                 </View>
               </View>
             )}
+
+            {/* Ad Placement Slot */}
+            <AdBannerSlot placement="home" style={{ paddingHorizontal: 20, marginTop: 10 }} />
           </ScrollView>
         ) : activeTab === 'queue' ? (
           <DownloadsScreen
@@ -668,6 +703,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  clipBannerTouch: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  clipDismissBtn: {
+    padding: 6,
+    marginLeft: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   clipLeft: {
     flexDirection: 'row',

@@ -3,7 +3,7 @@ export type PlatformType = 'tiktok' | 'instagram' | 'youtube' | 'youtube_music' 
 export interface QualityOption {
   label: string;
   url: string;
-  type: 'video' | 'audio';
+  type: 'video' | 'audio' | 'image';
   quality?: string;
   estimatedBytes?: number;
   fileExtension?: '.mp4' | '.mp3' | '.m4a' | '.jpg' | '.jpeg' | '.png' | '.webp' | '.gif';

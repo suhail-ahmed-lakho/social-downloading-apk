@@ -79,3 +79,4 @@ export async function trackAppDownload(platform: string, quality: string, format
     }).catch(() => {});
   } catch {}
 }
+

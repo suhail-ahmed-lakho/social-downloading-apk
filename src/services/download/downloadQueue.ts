@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DownloadHistoryItem, PlatformType } from '../../types';
 import { addDownloadToHistory } from '../storage/history';
 import { notifyDownloadComplete, notifyDownloadFailed } from '../notifications/notificationService';
+import { recordDownloadCompletedForAds } from '../ads/adManager';
 import {
   buildDownloadHeaders,
   extractDirectUrlFromRapidCdn,
@@ -240,12 +241,17 @@ function ensureBgConfigured() {
   }
 }
 
+const notifiedCompletedItemIds = new Set<string>();
+
 async function recordSavedHistoryAndNotify(
   item: DownloadQueueItem,
   localUri: string,
   savedToGallery: boolean,
   fileSize: number
 ) {
+  const isDuplicate = notifiedCompletedItemIds.has(item.id);
+  notifiedCompletedItemIds.add(item.id);
+
   const historyItem: DownloadHistoryItem = {
     id: item.id,
     platform: item.platform,
@@ -259,14 +265,23 @@ async function recordSavedHistoryAndNotify(
   };
 
   await addDownloadToHistory(historyItem);
-  completedCallbacks.forEach((cb) => {
-    try {
-      cb(historyItem);
-    } catch {}
-  });
 
-  const sizeMB = fileSize > 0 ? formatBytesToMB(fileSize) : undefined;
-  await notifyDownloadComplete(item.title, item.isAudio, sizeMB);
+  if (!isDuplicate) {
+    completedCallbacks.forEach((cb) => {
+      try {
+        cb(historyItem);
+      } catch {}
+    });
+
+    const sizeMB = fileSize > 0 ? formatBytesToMB(fileSize) : undefined;
+    await notifyDownloadComplete(item.title, {
+      isAudio: item.isAudio,
+      fileExtension: item.fileExtension,
+      sizeMB,
+      downloadId: item.id,
+    });
+    void recordDownloadCompletedForAds();
+  }
 
   const latestItem = queueItems.find((i) => i.id === item.id) || item;
   const finalBytes =

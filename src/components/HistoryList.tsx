@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,12 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { DownloadHistoryItem } from '../types';
+import { AdBannerSlot } from './AdBannerSlot';
+
+type MediaFilterType = 'all' | 'videos' | 'audio' | 'images';
 
 interface HistoryListProps {
   items: DownloadHistoryItem[];
@@ -25,6 +29,8 @@ export const HistoryList: React.FC<HistoryListProps> = ({
   onDelete,
   onClearAll,
 }) => {
+  const [activeFilter, setActiveFilter] = useState<MediaFilterType>('all');
+
   const confirmClearAll = () => {
     Alert.alert(
       'Clear History',
@@ -35,6 +41,46 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       ]
     );
   };
+
+  const isItemAudio = (item: DownloadHistoryItem): boolean => {
+    const uri = (item.localUri || '').toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    return (
+      uri.endsWith('.mp3') ||
+      uri.endsWith('.m4a') ||
+      item.platform === 'youtube_music' ||
+      title.includes('song') ||
+      title.includes('audio') ||
+      title.includes('mp3')
+    );
+  };
+
+  const isItemImage = (item: DownloadHistoryItem): boolean => {
+    const uri = (item.localUri || '').toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    return (
+      uri.endsWith('.jpg') ||
+      uri.endsWith('.jpeg') ||
+      uri.endsWith('.png') ||
+      uri.endsWith('.webp') ||
+      title.includes('photo') ||
+      title.includes('image') ||
+      title.includes('pin')
+    );
+  };
+
+  const isItemVideo = (item: DownloadHistoryItem): boolean => !isItemAudio(item) && !isItemImage(item);
+
+  const videoCount = items.filter(isItemVideo).length;
+  const audioCount = items.filter(isItemAudio).length;
+  const imageCount = items.filter(isItemImage).length;
+
+  const filteredItems = items.filter((item) => {
+    if (activeFilter === 'videos') return isItemVideo(item);
+    if (activeFilter === 'audio') return isItemAudio(item);
+    if (activeFilter === 'images') return isItemImage(item);
+    return true;
+  });
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -60,6 +106,9 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       minute: '2-digit',
     });
 
+    const isAudio = isItemAudio(item);
+    const isImage = isItemImage(item);
+
     const sizeMb = item.fileSize
       ? `${(item.fileSize / 1024 / 1024).toFixed(1)} MB`
       : 'Saved in Gallery';
@@ -71,7 +120,11 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             <Image source={{ uri: item.thumbnail }} style={styles.thumb} />
           ) : (
             <View style={[styles.thumb, styles.thumbFallback]}>
-              <Ionicons name="film" size={18} color={COLORS.textMuted} />
+              <Ionicons
+                name={isAudio ? 'musical-notes' : isImage ? 'image' : 'film'}
+                size={18}
+                color={COLORS.textMuted}
+              />
             </View>
           )}
           <View style={styles.platformBadge}>{getPlatformIcon(item.platform)}</View>
@@ -82,7 +135,9 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             {item.title}
           </Text>
           <Text style={styles.itemMeta} numberOfLines={1}>
-            {item.author} • {sizeMb}
+            {item.author ? `${item.author} • ` : ''}
+            {isAudio ? 'Audio • ' : isImage ? 'Image • ' : 'Video • '}
+            {sizeMb}
           </Text>
           <Text style={styles.itemDate}>{formattedDate}</Text>
         </View>
@@ -116,14 +171,23 @@ export const HistoryList: React.FC<HistoryListProps> = ({
         </View>
         <Text style={styles.emptyTitle}>No Downloaded Media Yet</Text>
         <Text style={styles.emptyText}>
-          Paste a TikTok, Instagram Reel, or YouTube link to save high quality videos straight to your gallery!
+          Paste a TikTok, Instagram Reel, YouTube, or Pinterest link to save high quality media straight to your gallery!
         </Text>
+        <AdBannerSlot placement="saved" style={{ marginTop: 24 }} />
       </View>
     );
   }
 
+  const filterChips: { id: MediaFilterType; label: string; count: number; icon: any }[] = [
+    { id: 'all', label: 'All', count: items.length, icon: 'layers-outline' },
+    { id: 'videos', label: 'Videos', count: videoCount, icon: 'film-outline' },
+    { id: 'audio', label: 'Audio', count: audioCount, icon: 'musical-notes-outline' },
+    { id: 'images', label: 'Images', count: imageCount, icon: 'images-outline' },
+  ];
+
   return (
     <View style={styles.container} testID="screen-history">
+      {/* Top Header with Action */}
       <View style={styles.listHeader}>
         <Text style={styles.headerTitle}>Saved Media ({items.length})</Text>
         <TouchableOpacity onPress={confirmClearAll} activeOpacity={0.7}>
@@ -131,13 +195,52 @@ export const HistoryList: React.FC<HistoryListProps> = ({
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* Filter Chips Bar */}
+      <View style={styles.filtersBar}>
+        {filterChips.map((chip) => {
+          const isSelected = activeFilter === chip.id;
+          return (
+            <TouchableOpacity
+              key={chip.id}
+              style={[styles.filterChip, isSelected && styles.filterChipActive]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setActiveFilter(chip.id);
+              }}
+              activeOpacity={0.75}
+            >
+              <Ionicons
+                name={chip.icon}
+                size={12}
+                color={isSelected ? '#FFFFFF' : COLORS.textMuted}
+              />
+              <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                {chip.label} ({chip.count})
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Ad Placement Hook */}
+      <AdBannerSlot placement="saved" style={{ marginBottom: 12 }} />
+
+      {filteredItems.length === 0 ? (
+        <View style={styles.filterEmptyBox}>
+          <Ionicons name="funnel-outline" size={26} color={COLORS.textMuted} />
+          <Text style={styles.filterEmptyText}>
+            No {activeFilter} found in your downloaded media.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 };
@@ -151,7 +254,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   headerTitle: {
     fontSize: 15,
@@ -162,6 +265,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.danger,
     fontWeight: '600',
+  },
+  filtersBar: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.accentPrimary,
+    borderColor: COLORS.accentPrimary,
+  },
+  filterChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  filterEmptyBox: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  filterEmptyText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   listContent: {
     gap: 12,
@@ -223,46 +365,44 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
   itemActions: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     backgroundColor: COLORS.cardBgLight,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 44,
-    paddingTop: 60,
+    paddingHorizontal: 40,
   },
   emptyIconCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: COLORS.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptyText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     textAlign: 'center',
     lineHeight: 20,
   },

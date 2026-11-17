@@ -430,8 +430,50 @@ export async function dispatchLocalNotification(params: {
   }
 }
 
-export async function notifyDownloadComplete(title: string, isAudio: boolean, sizeMB?: string): Promise<void> {
-  const mediaLabel = isAudio ? 'MP3 Audio' : 'HD Video';
+const handledDownloadAlerts = new Set<string>();
+
+export async function notifyDownloadComplete(
+  title: string,
+  isAudioOrOptions?: boolean | { isAudio?: boolean; fileExtension?: string; sizeMB?: string; downloadId?: string },
+  legacySizeMB?: string
+): Promise<void> {
+  let isAudio = false;
+  let fileExtension = '';
+  let sizeMB = legacySizeMB;
+  let downloadId: string | undefined;
+
+  if (typeof isAudioOrOptions === 'object' && isAudioOrOptions !== null) {
+    isAudio = Boolean(isAudioOrOptions.isAudio);
+    fileExtension = isAudioOrOptions.fileExtension || '';
+    sizeMB = isAudioOrOptions.sizeMB;
+    downloadId = isAudioOrOptions.downloadId;
+  } else if (typeof isAudioOrOptions === 'boolean') {
+    isAudio = isAudioOrOptions;
+  }
+
+  // Deduplicate by downloadId to guarantee single alert per download
+  if (downloadId) {
+    if (handledDownloadAlerts.has(downloadId)) {
+      return;
+    }
+    handledDownloadAlerts.add(downloadId);
+  }
+
+  const ext = fileExtension.toLowerCase();
+  let mediaLabel = 'HD Video';
+
+  if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.webp' || ext === '.gif') {
+    mediaLabel = 'Image';
+  } else if (isAudio || ext === '.mp3' || ext === '.m4a') {
+    if (ext === '.m4a' || ext.includes('m4a')) {
+      mediaLabel = 'M4A Audio';
+    } else {
+      mediaLabel = 'MP3 Audio';
+    }
+  } else {
+    mediaLabel = 'HD Video';
+  }
+
   const sizeNote = sizeMB ? ` (${sizeMB})` : '';
   await dispatchLocalNotification({
     title: `${mediaLabel} Saved!`,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ interface InstagramBrowserModalProps {
   onVideoCaptured: (videoUrl: string, title?: string, poster?: string) => void;
 }
 
+const MOBILE_CHROME_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+
 export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   visible,
   initialUrl,
@@ -28,6 +31,8 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   onVideoCaptured,
 }) => {
   const webViewRef = useRef<any>(null);
+  const quickFetchTimeoutRef = useRef<any>(null);
+
   const [capturedVideoUrl, setCapturedVideoUrl] = useState<string | null>(null);
   const [capturedPoster, setCapturedPoster] = useState<string | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
@@ -35,6 +40,32 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
     initialUrl.trim().startsWith('http') ? initialUrl.trim() : 'https://www.instagram.com'
   );
   const [isQuickFetching, setIsQuickFetching] = useState(false);
+  const [statusPrompt, setStatusPrompt] = useState('⚡ Download This Reel (Instant)');
+
+  useEffect(() => {
+    if (visible) {
+      setCapturedVideoUrl(null);
+      setCapturedPoster(null);
+      setIsQuickFetching(false);
+      setStatusPrompt('⚡ Download This Reel (Instant)');
+      if (initialUrl.trim().startsWith('http')) {
+        setCurrentBrowserUrl(initialUrl.trim());
+      }
+    } else {
+      if (quickFetchTimeoutRef.current) {
+        clearTimeout(quickFetchTimeoutRef.current);
+        quickFetchTimeoutRef.current = null;
+      }
+    }
+  }, [visible, initialUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (quickFetchTimeoutRef.current) {
+        clearTimeout(quickFetchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const injectedBeforeContent = `
     (function() {
@@ -49,30 +80,31 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         return u;
       }
 
-      function report(url, poster) {
+      function report(url, poster, type) {
         if (!url) return;
         var finalUrl = cleanUrl(url);
         if (!finalUrl || window.__captured_url === finalUrl) return;
         if (finalUrl.indexOf('blob:') === 0 || finalUrl.indexOf('http') !== 0) return;
-        if (finalUrl.indexOf('.mp4') === -1) return;
         window.__captured_url = finalUrl;
         try {
           window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'VIDEO_FOUND',
+            type: type || 'VIDEO_FOUND',
             url: finalUrl,
             poster: poster || ''
           }));
         } catch(e) {}
       }
 
-      // 1. Intercept fetch (both request URLs for direct media chunks & JSON responses)
+      // 1. Intercept fetch for both video and high-res image requests
       var origFetch = window.fetch;
       if (origFetch) {
         window.fetch = async function(input, init) {
           try {
             var reqUrl = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-            if (reqUrl && reqUrl.indexOf('.mp4') !== -1 && (reqUrl.indexOf('cdninstagram.com') !== -1 || reqUrl.indexOf('fbcdn.net') !== -1 || reqUrl.indexOf('instagram') !== -1)) {
-              report(reqUrl, '');
+            if (reqUrl && (reqUrl.indexOf('cdninstagram.com') !== -1 || reqUrl.indexOf('fbcdn.net') !== -1 || reqUrl.indexOf('instagram') !== -1)) {
+              if (reqUrl.indexOf('.mp4') !== -1) {
+                report(reqUrl, '', 'VIDEO_FOUND');
+              }
             }
           } catch(e) {}
 
@@ -87,7 +119,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
                 for (var m = 0; m < matches.length; m++) {
                   var candidate = cleanUrl(matches[m]);
                   if (candidate && candidate.indexOf('http') === 0 && candidate.indexOf('blob:') === -1) {
-                    report(candidate, '');
+                    report(candidate, '', 'VIDEO_FOUND');
                     break;
                   }
                 }
@@ -98,13 +130,15 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         };
       }
 
-      // 2. Intercept XMLHttpRequest (both open URL & text responses)
+      // 2. Intercept XMLHttpRequest
       var origOpen = XMLHttpRequest.prototype.open;
       var origSend = XMLHttpRequest.prototype.send;
       XMLHttpRequest.prototype.open = function(method, url) {
         try {
-          if (url && typeof url === 'string' && url.indexOf('.mp4') !== -1 && (url.indexOf('cdninstagram.com') !== -1 || url.indexOf('fbcdn.net') !== -1 || url.indexOf('instagram') !== -1)) {
-            report(url, '');
+          if (url && typeof url === 'string' && (url.indexOf('cdninstagram.com') !== -1 || url.indexOf('fbcdn.net') !== -1 || url.indexOf('instagram') !== -1)) {
+            if (url.indexOf('.mp4') !== -1) {
+              report(url, '', 'VIDEO_FOUND');
+            }
           }
         } catch(e) {}
         return origOpen.apply(this, arguments);
@@ -121,7 +155,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
                   for (var m = 0; m < matches.length; m++) {
                     var candidate = cleanUrl(matches[m]);
                     if (candidate && candidate.indexOf('http') === 0 && candidate.indexOf('blob:') === -1) {
-                      report(candidate, '');
+                      report(candidate, '', 'VIDEO_FOUND');
                       break;
                     }
                   }
@@ -136,7 +170,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
     true;
   `;
 
-  // Injected JavaScript that detects HTML5 video playback & auto-dismisses login prompts
+  // Injected JavaScript that detects HTML5 video playback, images, and auto-dismisses login prompts
   const injectedJS = `
     (function() {
       function cleanUrl(raw) {
@@ -149,28 +183,28 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         return u;
       }
 
-      function report(url, poster) {
+      function report(url, poster, type) {
         if (!url) return;
         var finalUrl = cleanUrl(url);
-        if (!finalUrl || finalUrl.indexOf('.mp4') === -1) return;
+        if (!finalUrl) return;
         try {
           window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'VIDEO_FOUND',
+            type: type || 'VIDEO_FOUND',
             url: finalUrl,
             poster: poster || ''
           }));
         } catch(e) {}
       }
 
-      function scanForVideos() {
-        // 1. Performance Resource Timing API (Captures all video requests made by browser/MSE)
+      function scanForMedia() {
+        // 1. Performance Resource Timing API
         try {
           if (window.performance && typeof window.performance.getEntriesByType === 'function') {
             var entries = window.performance.getEntriesByType('resource');
             for (var p = entries.length - 1; p >= 0; p--) {
               var entryName = entries[p].name;
               if (entryName && entryName.indexOf('.mp4') !== -1 && (entryName.indexOf('cdninstagram.com') !== -1 || entryName.indexOf('fbcdn.net') !== -1 || entryName.indexOf('instagram') !== -1)) {
-                report(entryName, '');
+                report(entryName, '', 'VIDEO_FOUND');
                 return;
               }
             }
@@ -181,7 +215,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         var meta = document.querySelector('meta[property="og:video"]') ||
                    document.querySelector('meta[property="og:video:secure_url"]');
         if (meta && meta.content && meta.content.indexOf('http') === 0) {
-          report(meta.content, '');
+          report(meta.content, '', 'VIDEO_FOUND');
           return;
         }
 
@@ -194,7 +228,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             src = v.querySelector('source').src;
           }
           if (src && src.indexOf('http') === 0 && src.indexOf('blob:') === -1) {
-            report(src, v.poster || '');
+            report(src, v.poster || '', 'VIDEO_FOUND');
             return;
           }
         }
@@ -207,38 +241,51 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             for (var h = 0; h < htmlMatches.length; h++) {
               var candidate = cleanUrl(htmlMatches[h]);
               if (candidate && candidate.indexOf('http') === 0 && candidate.indexOf('blob:') === -1) {
-                report(candidate, '');
+                report(candidate, '', 'VIDEO_FOUND');
                 return;
               }
             }
           }
         }
 
-        // 5. Force play HTML5 videos
+        // 5. If no video found, scan for main post image (photo posts)
+        var postImgs = document.querySelectorAll('article img[src*="cdninstagram"], [role="presentation"] img[src*="cdninstagram"], img[src*="fbcdn"]');
+        for (var pi = 0; pi < postImgs.length; pi++) {
+          var imgUrl = postImgs[pi].src || postImgs[pi].currentSrc;
+          if (imgUrl && imgUrl.indexOf('http') === 0 && imgUrl.indexOf('blob:') === -1 && postImgs[pi].naturalWidth > 300) {
+            report(imgUrl, imgUrl, 'IMAGE_FOUND');
+            return;
+          }
+        }
+
+        // 6. Force play HTML5 videos
         for (var vi = 0; vi < videos.length; vi++) {
           try {
             videos[vi].muted = true;
+            videos[vi].setAttribute('playsinline', '');
             videos[vi].play().catch(function(){});
           } catch(e) {}
         }
 
-        // 6. Auto-click play buttons
+        // 7. Auto-click play buttons
         var clickables = document.querySelectorAll('[aria-label="Play"], [aria-label="play"], button[type="button"], .EmbeddedMedia, [role="button"]');
         for (var j = 0; j < clickables.length; j++) {
           try { clickables[j].click(); } catch(e) {}
         }
 
-        // 7. Auto-dismiss login popups or overlays if present
+        // 8. Auto-dismiss login popups or overlays if present
         var dialogs = document.querySelectorAll('div[role="dialog"]');
         for (var k = 0; k < dialogs.length; k++) {
           try { dialogs[k].remove(); } catch(e) {}
         }
       }
 
-      document.addEventListener('play', scanForVideos, true);
-      document.addEventListener('loadeddata', scanForVideos, true);
-      setInterval(scanForVideos, 350);
-      scanForVideos();
+      document.addEventListener('play', scanForMedia, true);
+      document.addEventListener('playing', scanForMedia, true);
+      document.addEventListener('loadeddata', scanForMedia, true);
+      document.addEventListener('timeupdate', scanForMedia, true);
+      setInterval(scanForMedia, 400);
+      scanForMedia();
     })();
     true;
   `;
@@ -246,14 +293,18 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   const handleMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'VIDEO_FOUND' && data.url) {
+      if ((data.type === 'VIDEO_FOUND' || data.type === 'IMAGE_FOUND') && data.url) {
         const cleaned = cleanInstagramMediaUrl(data.url);
         if (cleaned && cleaned.startsWith('http')) {
+          if (quickFetchTimeoutRef.current) {
+            clearTimeout(quickFetchTimeoutRef.current);
+            quickFetchTimeoutRef.current = null;
+          }
           setCapturedVideoUrl(cleaned);
           if (data.poster) setCapturedPoster(data.poster);
-          // Automatically deliver captured video to main screen and close modal
+          // Automatically deliver captured media to main screen and close modal
           setTimeout(() => {
-            onVideoCaptured(cleaned, 'Instagram Video', data.poster || undefined);
+            onVideoCaptured(cleaned, 'Instagram Media', data.poster || undefined);
             onClose();
           }, 350);
         }
@@ -265,7 +316,11 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
 
   const handleDownload = () => {
     if (capturedVideoUrl) {
-      onVideoCaptured(capturedVideoUrl, 'Instagram Video', capturedPoster || undefined);
+      if (quickFetchTimeoutRef.current) {
+        clearTimeout(quickFetchTimeoutRef.current);
+        quickFetchTimeoutRef.current = null;
+      }
+      onVideoCaptured(capturedVideoUrl, 'Instagram Media', capturedPoster || undefined);
       onClose();
     }
   };
@@ -273,18 +328,44 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
   const handleQuickDownload = async () => {
     const target = currentBrowserUrl || initialUrl;
     setIsQuickFetching(true);
+    setStatusPrompt('Resolving Video...');
+
+    if (quickFetchTimeoutRef.current) {
+      clearTimeout(quickFetchTimeoutRef.current);
+    }
+    // 15-second fallback timeout to prevent infinite hang
+    quickFetchTimeoutRef.current = setTimeout(() => {
+      setIsQuickFetching(false);
+      setStatusPrompt('Tap Play on Video to Capture');
+    }, 15000);
+
     try {
-      const media = await extractInstagramViaSnapSave(target);
+      const snapPromise = extractInstagramViaSnapSave(target);
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 10000)
+      );
+      const media = await Promise.race([snapPromise, timeoutPromise]);
       if (media && media.videoUrl) {
+        if (quickFetchTimeoutRef.current) {
+          clearTimeout(quickFetchTimeoutRef.current);
+          quickFetchTimeoutRef.current = null;
+        }
+        setIsQuickFetching(false);
         onVideoCaptured(media.videoUrl, media.title, media.thumbnail);
         onClose();
         return;
       }
     } catch (err: any) {
       console.warn('Quick extract in browser failed:', err?.message);
-    } finally {
-      setIsQuickFetching(false);
     }
+
+    // Reset cleanly if resolution did not yield within quick timeout
+    if (quickFetchTimeoutRef.current) {
+      clearTimeout(quickFetchTimeoutRef.current);
+      quickFetchTimeoutRef.current = null;
+    }
+    setIsQuickFetching(false);
+    setStatusPrompt('Tap Play on Video to Capture');
   };
 
   const cleanUrl = initialUrl.trim().startsWith('http')
@@ -364,8 +445,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             domStorageEnabled: true,
             sharedCookiesEnabled: true,
             thirdPartyCookiesEnabled: true,
-            userAgent:
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            userAgent: MOBILE_CHROME_USER_AGENT,
             style: styles.webView,
           })}
         </View>
@@ -376,7 +456,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             <View style={styles.captureInfo}>
               <Ionicons name="checkmark-circle" size={22} color={COLORS.accentPrimary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.captureTitle}>Video Detected!</Text>
+                <Text style={styles.captureTitle}>Media Detected!</Text>
                 <Text style={styles.captureSubtitle}>
                   Ready to download in HD to your Gallery
                 </Text>
@@ -395,7 +475,10 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
         ) : (
           <View style={styles.bottomBarContainer}>
             <TouchableOpacity
-              style={styles.quickExtractBtn}
+              style={[
+                styles.quickExtractBtn,
+                statusPrompt === 'Tap Play on Video to Capture' && styles.quickExtractBtnHint,
+              ]}
               onPress={handleQuickDownload}
               disabled={isQuickFetching}
               activeOpacity={0.85}
@@ -407,15 +490,21 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
                 </View>
               ) : (
                 <View style={styles.btnRow}>
-                  <Ionicons name="flash" size={16} color="#FFD700" />
-                  <Text style={styles.quickExtractText}>⚡ Download This Reel (Instant)</Text>
+                  <Ionicons
+                    name={statusPrompt.includes('Play') ? 'play-circle' : 'flash'}
+                    size={16}
+                    color={statusPrompt.includes('Play') ? '#38BDF8' : '#FFD700'}
+                  />
+                  <Text style={styles.quickExtractText}>{statusPrompt}</Text>
                 </View>
               )}
             </TouchableOpacity>
             <View style={styles.hintBar}>
               <Ionicons name="information-circle-outline" size={16} color={COLORS.textMuted} />
               <Text style={styles.hintText}>
-                Or play the video once for in-browser capture.
+                {statusPrompt === 'Tap Play on Video to Capture'
+                  ? 'Video is loading. Tap on the video to start playback.'
+                  : 'Or play the video once for in-browser capture.'}
               </Text>
             </View>
           </View>
@@ -449,7 +538,7 @@ const styles = StyleSheet.create({
   },
   titleColumn: {
     flex: 1,
-    marginHorizontal: 8,
+    paddingHorizontal: 10,
   },
   titleRow: {
     flexDirection: 'row',
@@ -457,124 +546,113 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   titleText: {
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   subText: {
-    fontSize: 11,
     color: COLORS.textMuted,
-    marginTop: 1,
+    fontSize: 11,
+    marginTop: 2,
   },
   pageLoader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#1A1423',
+    paddingVertical: 6,
+    backgroundColor: COLORS.cardBgLight,
     gap: 8,
   },
   loaderText: {
-    fontSize: 12,
     color: COLORS.textSecondary,
+    fontSize: 12,
   },
   webViewContainer: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.bg,
   },
   webView: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.bg,
   },
   captureBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: COLORS.cardBg,
     borderTopWidth: 1,
     borderTopColor: COLORS.cardBorder,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   captureInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    flex: 1,
   },
   captureTitle: {
-    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#34D399',
   },
   captureSubtitle: {
-    fontSize: 11,
     color: COLORS.textSecondary,
+    fontSize: 11,
   },
   downloadCaptureBtn: {
-    backgroundColor: COLORS.accentPrimary,
-    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    backgroundColor: COLORS.accentPrimary,
     paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
     gap: 6,
   },
   downloadCaptureText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
+  },
+  bottomBarContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: COLORS.cardBg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.cardBorder,
+    gap: 6,
+  },
+  quickExtractBtn: {
+    backgroundColor: '#202637',
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quickExtractBtnHint: {
+    borderColor: 'rgba(56, 189, 248, 0.4)',
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+  },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  quickExtractText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   hintBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    gap: 8,
+    gap: 5,
   },
   hintText: {
-    fontSize: 12,
     color: COLORS.textMuted,
-    textAlign: 'center',
-  },
-  bottomBarContainer: {
-    backgroundColor: COLORS.cardBg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.cardBorder,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  quickExtractBtn: {
-    backgroundColor: '#E1306C',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-    shadowColor: '#E1306C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  quickExtractText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 6,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 11,
   },
 });

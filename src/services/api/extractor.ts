@@ -521,7 +521,7 @@ export async function extractInstagramViaSnapSave(url: string): Promise<MediaMet
       },
       body: formData.toString(),
     },
-    25000
+    8000
   );
 
   if (!res.ok) {
@@ -590,43 +590,73 @@ async function extractInstagram(url: string): Promise<MediaMetadata> {
   // Tier 2: Embed captioned fallback
   const shortcode = extractInstagramShortcode(url);
   if (shortcode) {
-    try {
-      const res = await fetchWithTimeout(
-        `https://www.instagram.com/reel/${shortcode}/embed/captioned/`,
-        {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    const endpoints = [
+      `https://www.instagram.com/reel/${shortcode}/embed/captioned/`,
+      `https://www.instagram.com/p/${shortcode}/embed/captioned/`,
+    ];
+    for (const endpoint of endpoints) {
+      try {
+        const res = await fetchWithTimeout(
+          endpoint,
+          {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9',
+            },
           },
-        },
-        5000
-      );
-      if (res.ok) {
-        const html = await res.text();
-        const mp4Matches = html.match(/https:\/\/[^"'\s\\]+?\.mp4[^"'\s\\]*/g);
-        if (mp4Matches && mp4Matches.length > 0) {
-          const directVideoUrl = cleanInstagramMediaUrl(mp4Matches[0]);
-          return {
-            id: shortcode,
-            platform: 'instagram',
-            title: 'Instagram Video (HD)',
-            author: 'Instagram Creator',
-            thumbnail: '',
-            videoUrl: directVideoUrl,
-            originalUrl: url,
-            qualityOptions: [
-              {
-                label: 'HD Video (No Watermark)',
-                url: directVideoUrl,
-                type: 'video',
-                quality: '1080p HD',
-              },
-            ],
-          };
+          4500
+        );
+        if (res.ok) {
+          const html = await res.text();
+          const mp4Matches = html.match(/https:\/\/[^"'\s\\]+?\.mp4[^"'\s\\]*/g);
+          if (mp4Matches && mp4Matches.length > 0) {
+            const directVideoUrl = cleanInstagramMediaUrl(mp4Matches[0]);
+            return {
+              id: shortcode,
+              platform: 'instagram',
+              title: 'Instagram Video (HD)',
+              author: 'Instagram Creator',
+              thumbnail: '',
+              videoUrl: directVideoUrl,
+              originalUrl: url,
+              qualityOptions: [
+                {
+                  label: 'HD Video (No Watermark)',
+                  url: directVideoUrl,
+                  type: 'video',
+                  quality: '1080p HD',
+                },
+              ],
+            };
+          }
+          const imgMatches = html.match(/https:\/\/[^"'\s\\]+?cdninstagram\.com\/[^"'\s\\]+?\.(?:jpg|webp|jpeg)[^"'\s\\]*/g);
+          if (imgMatches && imgMatches.length > 0) {
+            const directImgUrl = cleanInstagramMediaUrl(imgMatches[0]);
+            return {
+              id: shortcode,
+              platform: 'instagram',
+              title: 'Instagram Photo (HD)',
+              author: 'Instagram Creator',
+              thumbnail: directImgUrl,
+              videoUrl: directImgUrl,
+              originalUrl: url,
+              qualityOptions: [
+                {
+                  label: 'HD Photo',
+                  url: directImgUrl,
+                  type: 'image',
+                  quality: 'Original HD',
+                  fileExtension: '.jpg',
+                },
+              ],
+            };
+          }
         }
+      } catch {
+        // Continue to next endpoint
       }
-    } catch {
-      // Fallback
     }
   }
 

@@ -61,12 +61,14 @@ const versionManifest = {
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
     `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'Pinterest Videos & Photos Support: Direct 1080p/720p MP4 video downloads and uncompressed 4K/2K original master photo saving with shortlink (pin.it) auto-resolution',
-    'Interactive Multi-Quality Selection UI: Replaced basic chips with sleek luxury cards featuring color-coded resolution badges (4K, 2K, 1080P, 720P, MP3, RAW) and micro-descriptions',
-    'Cinematic Opening Splash Experience: Glowing ambient pulse aura, bouncy 3D spring logo entry, floating platform chips, and neon micro-loader status bar',
-    'LookNow Admin Telemetry Integration: Real-time active user telemetry and live download activity stream connected to looknow.cyou/admin',
-    'YouTube Playback & Song Integrity: Universally compatible 1080p/4K H.264 streams and clean faststart M4A audio',
-    'True Background Downloading: Native Android Foreground Service transfers continue in background without interruptions'
+    'Instagram Browser & Reel Interceptor: Fixed infinite loading with Android Mobile Chrome user agent, DOM media event listeners, and 15s fallback timeout',
+    'Dynamic Stream & Format Badges: Correctly labeled M4A/MP3 songs (AUDIO), standard video (480P/360P), and photos (IMAGE/JPG)',
+    'Saved Media Library Filters: Instant category filter chips (All, Videos, Audio, Images) at the top of the Saved tab',
+    'Smart Clipboard & Input UX: Stale clipboard banner dismiss tracking and persistent URL input bar across all platforms',
+    'Alerts & Notification Reliability: Deduplicated download completion alerts, real-time unread badges, and production-clean alert feeds',
+    'Ad-Monetization Architecture: Centralized AdManager with download-count cooldown and modular AdBannerSlot components',
+    'Pinterest Videos & Photos Support: Direct 1080p/720p MP4 video downloads and uncompressed original master photo saving',
+    'Interactive Multi-Quality Selection UI: Luxury selection cards with color-coded badges and accurate file size estimation'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');

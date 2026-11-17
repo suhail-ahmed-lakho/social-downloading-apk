@@ -83,12 +83,21 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
           icon: <FontAwesome5 name="instagram" size={11} color={COLORS.accentPrimary} />,
         };
       case 'youtube':
-      case 'youtube_music':
+      case 'youtube_music': {
+        const isShorts =
+          (media.originalUrl && media.originalUrl.includes('/shorts/')) ||
+          (typeof media.duration === 'number' && media.duration > 0 && media.duration <= 60);
         return {
           name: 'YouTube',
-          badgeText: selectedOption.type === 'audio' ? 'SONG / AUDIO' : 'SHORTS / HD',
+          badgeText:
+            selectedOption.type === 'audio'
+              ? 'SONG / AUDIO'
+              : isShorts
+                ? 'SHORTS / HD'
+                : 'VIDEO / HD',
           icon: <FontAwesome5 name="youtube" size={11} color={COLORS.accentPrimary} />,
         };
+      }
       case 'pinterest':
         const isPhoto =
           selectedOption.fileExtension === '.jpg' ||
@@ -111,17 +120,51 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
 
   const getQualityBadgeMeta = (opt: QualityOption) => {
     const text = `${opt.quality || ''} ${opt.label || ''}`.toLowerCase();
+    const ext = (opt.fileExtension || '').toLowerCase();
     const isAudio =
       opt.type === 'audio' ||
+      ext === '.mp3' ||
+      ext === '.m4a' ||
       text.includes('mp3') ||
+      text.includes('m4a') ||
       text.includes('audio') ||
       text.includes('song');
     const isPhoto =
-      opt.fileExtension === '.jpg' ||
-      opt.fileExtension === '.png' ||
-      opt.fileExtension === '.webp' ||
+      opt.type === 'image' ||
+      ext === '.jpg' ||
+      ext === '.jpeg' ||
+      ext === '.png' ||
+      ext === '.webp' ||
       text.includes('photo') ||
-      text.includes('image');
+      text.includes('image') ||
+      text.includes('pin');
+
+    if (isAudio) {
+      return {
+        badge: 'AUDIO',
+        color: '#FF5E3A',
+        bg: 'rgba(255, 94, 58, 0.16)',
+        borderColor: 'rgba(255, 94, 58, 0.45)',
+        icon: 'musical-notes' as const,
+        desc: text.includes('320')
+          ? '320kbps Studio MP3 Audio'
+          : ext === '.m4a' || text.includes('m4a')
+            ? 'Lossless M4A AAC Audio'
+            : 'High Quality Audio Track',
+      };
+    }
+
+    if (isPhoto) {
+      const imgBadge = ext === '.png' ? 'PNG' : ext === '.webp' ? 'WEBP' : 'IMAGE';
+      return {
+        badge: imgBadge,
+        color: '#EC4899',
+        bg: 'rgba(236, 72, 153, 0.16)',
+        borderColor: 'rgba(236, 72, 153, 0.45)',
+        icon: 'image' as const,
+        desc: 'Original Full-Resolution Master Photo',
+      };
+    }
 
     if (text.includes('4k') || text.includes('2160')) {
       return {
@@ -150,37 +193,43 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
         bg: 'rgba(59, 130, 246, 0.16)',
         borderColor: 'rgba(59, 130, 246, 0.45)',
         icon: 'videocam' as const,
-        desc: 'Cinema 1080p • Most Popular',
+        desc:
+          media.platform === 'tiktok'
+            ? 'Original Quality • No Watermark'
+            : 'Cinema 1080p • Most Popular',
       };
     }
-    if (text.includes('720') || text.includes('hd') || text.includes('standard')) {
+    if (text.includes('480') || text.includes('480p')) {
+      return {
+        badge: '480P',
+        color: '#38BDF8',
+        bg: 'rgba(56, 189, 248, 0.16)',
+        borderColor: 'rgba(56, 189, 248, 0.45)',
+        icon: 'videocam-outline' as const,
+        desc: 'Standard 480p • Fast & Light',
+      };
+    }
+    if (text.includes('360') || text.includes('360p')) {
+      return {
+        badge: '360P',
+        color: '#94A3B8',
+        bg: 'rgba(148, 163, 184, 0.12)',
+        borderColor: 'rgba(148, 163, 184, 0.3)',
+        icon: 'videocam-outline' as const,
+        desc: 'Fast 360p • Data Saver',
+      };
+    }
+    if (text.includes('720') || text.includes('hd')) {
       return {
         badge: '720P',
         color: '#10B981',
         bg: 'rgba(16, 185, 129, 0.16)',
         borderColor: 'rgba(16, 185, 129, 0.45)',
         icon: 'videocam-outline' as const,
-        desc: 'Fast Download • Smooth Playback',
-      };
-    }
-    if (isAudio) {
-      return {
-        badge: 'AUDIO',
-        color: '#FF5E3A',
-        bg: 'rgba(255, 94, 58, 0.16)',
-        borderColor: 'rgba(255, 94, 58, 0.45)',
-        icon: 'musical-notes' as const,
-        desc: text.includes('320') ? '320kbps Studio MP3 Audio' : 'High Quality Audio Track',
-      };
-    }
-    if (isPhoto) {
-      return {
-        badge: 'RAW',
-        color: '#EC4899',
-        bg: 'rgba(236, 72, 153, 0.16)',
-        borderColor: 'rgba(236, 72, 153, 0.45)',
-        icon: 'image' as const,
-        desc: 'Original Full-Resolution Master Photo',
+        desc:
+          media.platform === 'tiktok'
+            ? 'Original Quality • No Watermark'
+            : 'Fast Download • Smooth Playback',
       };
     }
     return {
@@ -434,19 +483,47 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
             <View style={styles.btnRow}>
               <Ionicons
                 name={
-                  selectedOption.type === 'audio'
+                  selectedOption.type === 'audio' ||
+                  selectedOption.fileExtension === '.m4a' ||
+                  selectedOption.fileExtension === '.mp3'
                     ? 'musical-notes'
-                    : 'arrow-down-circle'
+                    : selectedOption.type === 'image' ||
+                        selectedOption.fileExtension === '.jpg' ||
+                        selectedOption.fileExtension === '.png' ||
+                        selectedOption.fileExtension === '.webp'
+                      ? 'image'
+                      : 'arrow-down-circle'
                 }
                 size={18}
                 color="#FFFFFF"
               />
               <Text style={styles.btnText}>
-                {selectedOption.type === 'audio'
-                  ? 'Download Song (MP3 Audio)'
-                  : media.platform === 'tiktok'
-                  ? 'Download No Watermark'
-                  : `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video`}
+                {(() => {
+                  const isAudio =
+                    selectedOption.type === 'audio' ||
+                    selectedOption.fileExtension === '.m4a' ||
+                    selectedOption.fileExtension === '.mp3';
+                  const isM4a =
+                    selectedOption.fileExtension === '.m4a' ||
+                    selectedOption.url.includes('.m4a') ||
+                    (selectedOption.label && selectedOption.label.toLowerCase().includes('m4a'));
+                  const isImage =
+                    selectedOption.type === 'image' ||
+                    selectedOption.fileExtension === '.jpg' ||
+                    selectedOption.fileExtension === '.png' ||
+                    selectedOption.fileExtension === '.webp';
+
+                  if (isAudio) {
+                    return isM4a ? 'Download Song (M4A Audio)' : 'Download Song (MP3 Audio)';
+                  }
+                  if (isImage) {
+                    return 'Download Image (HD Photo)';
+                  }
+                  if (media.platform === 'tiktok') {
+                    return 'Download No Watermark';
+                  }
+                  return `Download ${selectedOption.quality ? selectedOption.quality + ' ' : ''}Video`;
+                })()}
               </Text>
             </View>
           </LinearGradient>

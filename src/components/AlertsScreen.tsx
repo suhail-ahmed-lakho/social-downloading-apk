@@ -56,27 +56,29 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ notificationState })
               </Text>
             </View>
           </View>
-          <View style={styles.statusActionsRow}>
-            <TouchableOpacity
-              testID="alerts-test-btn"
-              style={styles.testBtn}
-              onPress={() => void sendTestNotification()}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="paper-plane" size={13} color={COLORS.textPrimary} />
-              <Text style={styles.testBtnText}>Send Test Alert</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="alerts-push-info-btn"
-              style={styles.pushSetupToggle}
-              onPress={() => setShowPushSetup((prev) => !prev)}
-            >
-              <Ionicons name="key-outline" size={13} color={COLORS.textSecondary} />
-              <Text style={styles.pushSetupToggleText}>
-                {showPushSetup ? 'Hide Push Setup' : 'Broadcast Setup'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {__DEV__ && (
+            <View style={styles.statusActionsRow}>
+              <TouchableOpacity
+                testID="alerts-test-btn"
+                style={styles.testBtn}
+                onPress={() => void sendTestNotification()}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="paper-plane" size={13} color={COLORS.textPrimary} />
+                <Text style={styles.testBtnText}>Send Test Alert</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="alerts-push-info-btn"
+                style={styles.pushSetupToggle}
+                onPress={() => setShowPushSetup((prev) => !prev)}
+              >
+                <Ionicons name="key-outline" size={13} color={COLORS.textSecondary} />
+                <Text style={styles.pushSetupToggleText}>
+                  {showPushSetup ? 'Hide Push Setup' : 'Broadcast Setup'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       );
     }
@@ -106,22 +108,26 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ notificationState })
               <Ionicons name="settings-outline" size={14} color="#FFFFFF" />
               <Text style={styles.enableBtnText}>Open App Settings</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              testID="alerts-test-btn"
-              style={styles.testBtn}
-              onPress={() => void sendTestNotification()}
-            >
-              <Text style={styles.testBtnText}>Add In-App Alert</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="alerts-push-info-btn"
-              style={styles.pushSetupToggle}
-              onPress={() => setShowPushSetup((prev) => !prev)}
-            >
-              <Text style={styles.pushSetupToggleText}>
-                {showPushSetup ? 'Hide Setup' : 'Push Setup'}
-              </Text>
-            </TouchableOpacity>
+            {__DEV__ && (
+              <>
+                <TouchableOpacity
+                  testID="alerts-test-btn"
+                  style={styles.testBtn}
+                  onPress={() => void sendTestNotification()}
+                >
+                  <Text style={styles.testBtnText}>Add In-App Alert</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="alerts-push-info-btn"
+                  style={styles.pushSetupToggle}
+                  onPress={() => setShowPushSetup((prev) => !prev)}
+                >
+                  <Text style={styles.pushSetupToggleText}>
+                    {showPushSetup ? 'Hide Setup' : 'Push Setup'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       );
@@ -150,15 +156,17 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ notificationState })
             <Ionicons name="checkmark-circle" size={15} color="#FFFFFF" />
             <Text style={styles.enableBtnText}>Allow Notifications</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            testID="alerts-push-info-btn"
-            style={styles.pushSetupToggle}
-            onPress={() => setShowPushSetup((prev) => !prev)}
-          >
-            <Text style={styles.pushSetupToggleText}>
-              {showPushSetup ? 'Hide Setup' : 'Push Setup'}
-            </Text>
-          </TouchableOpacity>
+          {__DEV__ && (
+            <TouchableOpacity
+              testID="alerts-push-info-btn"
+              style={styles.pushSetupToggle}
+              onPress={() => setShowPushSetup((prev) => !prev)}
+            >
+              <Text style={styles.pushSetupToggleText}>
+                {showPushSetup ? 'Hide Setup' : 'Push Setup'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -246,7 +254,7 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ notificationState })
 
         {renderStatusCard()}
 
-        {showPushSetup ? (
+        {__DEV__ && showPushSetup ? (
           <View style={styles.pushInfoBox} testID="alerts-push-setup-panel">
             <Text style={styles.pushInfoTitle}>Push & Remote Broadcast Readiness</Text>
             <Text style={styles.pushInfoText}>
