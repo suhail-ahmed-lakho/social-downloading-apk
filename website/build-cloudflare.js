@@ -41,7 +41,7 @@ const wranglerConfig = {
     {
       "binding": "DB",
       "database_name": "omnisaver-db",
-      "database_id": "omnisaver-db-placeholder-id",
+      "database_id": "bb4c700f-74aa-4537-ba12-7e1263c4083c",
       "migrations_dir": "migrations"
     }
   ],
