@@ -87,7 +87,40 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
     }
   };
 
-  const handleSubmitProof = async () => {
+  const handleInstantTidActivation = async () => {
+    if (!tidInput.trim()) {
+      Alert.alert(
+        'Transaction ID Required',
+        'Please enter your 6-12 digit EasyPaisa, JazzCash, or NayaPay Transaction ID (TID) to activate PRO instantly.'
+      );
+      return;
+    }
+
+    setIsActivating(true);
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const res = await activateLicenseKey(tidInput.trim(), pro.deviceId, selectedPlan);
+      if (res.success) {
+        Alert.alert('PRO Activated! 🎉', res.message, [
+          {
+            text: 'Start Using PRO',
+            onPress: () => {
+              setTidInput('');
+              onClose();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Activation Failed', res.message);
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not verify transaction.');
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  const handleOpenWhatsAppSupport = async () => {
     const liveChannels = getLivePaymentChannels();
     const channelObj = liveChannels.find((c) => c.id === selectedChannel);
     const channelName = channelObj ? channelObj.name : selectedChannel;
@@ -573,18 +606,34 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
 
                 <TouchableOpacity
                   style={[styles.ctaBtn, { marginTop: 16 }]}
-                  onPress={handleSubmitProof}
+                  onPress={handleInstantTidActivation}
                   activeOpacity={0.88}
                 >
                   <LinearGradient
-                    colors={['#25D366', '#128C7E']}
+                    colors={COLORS.gradientPrimary}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.ctaGradient}
                   >
-                    <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
-                    <Text style={styles.ctaText}>Submit Proof on WhatsApp</Text>
+                    {isActivating ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Ionicons name="flash" size={18} color="#FFFFFF" />
+                    )}
+                    <Text style={styles.ctaText}>
+                      {isActivating ? 'Verifying Transaction...' : '⚡ Verify & Activate PRO Instantly'}
+                    </Text>
                   </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ marginTop: 14, alignItems: 'center' }}
+                  onPress={handleOpenWhatsAppSupport}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: '#25D366', fontSize: 13, fontWeight: '600' }}>
+                    Need help with payment? Chat with WhatsApp Support ›
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

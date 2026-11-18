@@ -29,7 +29,7 @@ console.log('==============================================\n');
 // 1. Ensure wrangler.jsonc has the exact correct matching worker name
 const wranglerConfig = {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "webiste-saas-social",
+  "name": "social-downloading-apk",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-19",
   "compatibility_flags": ["nodejs_compat"],
@@ -48,7 +48,7 @@ const wranglerConfig = {
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "webiste-saas-social"
+      "service": "social-downloading-apk"
     }
   ],
   "observability": {
@@ -56,7 +56,7 @@ const wranglerConfig = {
   }
 };
 fs.writeFileSync(wranglerPath, JSON.stringify(wranglerConfig, null, 2), 'utf8');
-console.log('✅ Synchronized wrangler.jsonc with worker name: webiste-saas-social');
+console.log('✅ Synchronized wrangler.jsonc with worker name: social-downloading-apk');
 
 // 2. Ensure open-next.config.ts exists with defineCloudflareConfig
 const openNextConfigPath = path.join(websiteDir, 'open-next.config.ts');

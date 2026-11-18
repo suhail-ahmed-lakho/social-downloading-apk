@@ -9,12 +9,11 @@
     "dev": "next dev",
     "build": "node build-cloudflare.js",
     "build:next": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:build": "node build-cloudflare.js",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
     "@distube/ytdl-core": "^4.16.12",
     "@types/qrcode": "^1.5.6",
     "@types/three": "^0.186.0",
@@ -26,6 +25,7 @@
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "three": "^0.186.1"
   },
   "devDependencies": {

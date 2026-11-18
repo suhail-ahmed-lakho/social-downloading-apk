@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyLicense, recordEvent } from "@/app/lib/db";
+import { activateByTidOrKey, recordEvent } from "@/app/lib/db";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -13,11 +13,12 @@ export async function POST(req: NextRequest) {
       "127.0.0.1";
 
     const body: any = await req.json();
-    const { key, deviceId } = body;
+    const { key, tid, code, deviceId, planType, senderPhone } = body;
+    const activationInput = (code || tid || key || "").trim();
 
-    if (!key || typeof key !== "string" || !deviceId || typeof deviceId !== "string") {
+    if (!activationInput || !deviceId || typeof deviceId !== "string") {
       return NextResponse.json(
-        { valid: false, error: "License key and Device ID are both required" },
+        { valid: false, error: "Transaction ID / License Key and Device ID are both required" },
         {
           status: 400,
           headers: {
@@ -28,9 +29,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await verifyLicense(key, deviceId);
+    const result = await activateByTidOrKey({
+      code: activationInput,
+      deviceId,
+      planType,
+      senderPhone,
+    });
 
-    // Record telemetry event asynchronously
+    // Record telemetry event
     await recordEvent({
       source: "mobile_app",
       action: "login",
@@ -43,9 +49,9 @@ export async function POST(req: NextRequest) {
       browser: "OmniSaver Mobile",
       status: result.valid ? "SUCCESS" : "FAILED",
       details: result.valid
-        ? `Activated PRO License (${result.planType})`
-        : `License verification failed: ${result.error}`,
-      metadata: { key, deviceId },
+        ? `Activated PRO License (${result.planType}): ${result.message}`
+        : `License activation failed: ${result.error}`,
+      metadata: { code: activationInput, deviceId, planType },
     });
 
     return NextResponse.json(
@@ -53,6 +59,7 @@ export async function POST(req: NextRequest) {
         valid: result.valid,
         planType: result.planType,
         expiresAt: result.expiresAt,
+        message: result.message,
         error: result.error,
       },
       {

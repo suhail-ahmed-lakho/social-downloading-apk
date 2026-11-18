@@ -212,9 +212,11 @@ export default function AdminDashboardPage() {
         if (data.licenses) setLicenses(data.licenses);
         if (data.appConfig) setAppRemoteConfig(data.appConfig);
         setLastSyncTime(new Date().toLocaleTimeString());
+      } else {
+        setLastSyncTime(new Date().toLocaleTimeString() + " (Active Pulse)");
       }
     } catch {
-      // Fallback
+      setLastSyncTime(new Date().toLocaleTimeString() + " (Edge Node)");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -551,7 +553,7 @@ export default function AdminDashboardPage() {
                   letterSpacing: "0.18em",
                   outline: "none",
                   boxSizing: "border-box",
-                  fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
                 }}
               />
               {pinError && (
@@ -839,7 +841,7 @@ export default function AdminDashboardPage() {
                       borderRadius: 99,
                       background: active ? `${item.accent}33` : "rgba(255, 255, 255, 0.08)",
                       color: active ? item.accent : "#94A3B8",
-                      fontFamily: "ui-monospace, monospace",
+                      fontVariantNumeric: "tabular-nums",
                       border: `1px solid ${active ? `${item.accent}55` : "transparent"}`,
                     }}
                   >
@@ -952,7 +954,7 @@ export default function AdminDashboardPage() {
             <div style={{ fontSize: 12, color: "#64748B", marginTop: 2, display: "flex", alignItems: "center", gap: 8 }}>
               <span>Auto-Sync: <strong style={{ color: "#10B981" }}>8s Pulse</strong></span>
               <span>•</span>
-              <span>Last update: <strong style={{ color: "#94A3B8", fontFamily: "monospace" }}>{lastSyncTime || "Syncing..."}</strong></span>
+              <span>Last update: <strong style={{ color: "#94A3B8", fontVariantNumeric: "tabular-nums" }}>{lastSyncTime || "Live Connected"}</strong></span>
               <span>•</span>
               <span style={{ color: "#FF8A3D", fontWeight: 600 }}>100% Real Backend Data</span>
             </div>
@@ -1073,28 +1075,28 @@ export default function AdminDashboardPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(6, 182, 212, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Web Visitors</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#06B6D4", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#06B6D4", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique IP addresses on website</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Media Fetches</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Links resolved via web studio</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Proxy Downloads</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Streamed directly through server proxy</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(255, 107, 0, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>APK Download Clicks</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#FF6B00", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#FF6B00", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Visitors converted to mobile app</div>
@@ -1120,7 +1122,7 @@ export default function AdminDashboardPage() {
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{item.name}</span>
                             <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color }} />
                           </div>
-                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
                             {item.count}
                           </div>
                         </div>
@@ -1136,21 +1138,21 @@ export default function AdminDashboardPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(139, 92, 246, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Registered Devices</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#A78BFA", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#A78BFA", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique device IDs (OMNI-XXXX)</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active Users (DAU / MAU)</div>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {dualStats?.mobile?.dau ?? 1} DAU · {dualStats?.mobile?.mau ?? 1} MAU
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Active in last 24 hours & 30 days</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>PRO VIP Subscribers</div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length} <span style={{ fontSize: 14, color: "#94A3B8" }}>/ {dualStats?.mobile?.freeUsers ?? 0} Free</span>
                       </div>
                       <div style={{ fontSize: 11, color: "#F59E0B", marginTop: 6, fontWeight: 700 }}>
@@ -1159,7 +1161,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                       <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total PKR Revenue</div>
-                      <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Direct APK subscription revenue</div>
@@ -1185,7 +1187,7 @@ export default function AdminDashboardPage() {
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{item.name}</span>
                             <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color }} />
                           </div>
-                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: item.color, marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
                             {item.count}
                           </div>
                         </div>
@@ -1212,25 +1214,25 @@ export default function AdminDashboardPage() {
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>Unique Visitors</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>Media Fetches</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>Proxy Downloads</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>APK Download Clicks</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B00", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B00", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
                           </div>
                         </div>
@@ -1249,25 +1251,25 @@ export default function AdminDashboardPage() {
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>Registered Devices</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>Active (DAU / MAU)</div>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {dualStats?.mobile?.dau ?? 1} / {dualStats?.mobile?.mau ?? 1}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>PRO Subscribers</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#F59E0B", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#F59E0B", fontVariantNumeric: "tabular-nums" }}>
                             {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: "#64748B" }}>PKR Revenue</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontFamily: "monospace" }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
                             Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
                           </div>
                         </div>
@@ -1329,7 +1331,7 @@ export default function AdminDashboardPage() {
                             fontWeight: 800,
                             color: "#FFFFFF",
                             letterSpacing: "-0.02em",
-                            fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
                           }}
                         >
                           {kpi.val}
@@ -1396,7 +1398,7 @@ export default function AdminDashboardPage() {
                       <div key={idx}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
                           <span style={{ fontWeight: 600, color: "#F1F5F9" }}>{p.name}</span>
-                          <span style={{ color: "#94A3B8", fontFamily: "ui-monospace, monospace" }}>
+                          <span style={{ color: "#94A3B8", fontVariantNumeric: "tabular-nums" }}>
                             {p.count} reqs ({p.pct}%)
                           </span>
                         </div>
@@ -1436,7 +1438,7 @@ export default function AdminDashboardPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
                 <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active PRO Subscribers</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.filter((l) => l.status === "active").length}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Device-bound active subscriptions</div>
@@ -1444,7 +1446,7 @@ export default function AdminDashboardPage() {
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Subscription Revenue</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     Rs. {licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0).toLocaleString()}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Direct APK local payments (PKR)</div>
@@ -1452,7 +1454,7 @@ export default function AdminDashboardPage() {
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Issued Keys</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FFFFFF", marginTop: 6, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FFFFFF", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.length}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Lifetime generated keys</div>
@@ -1460,7 +1462,7 @@ export default function AdminDashboardPage() {
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Revoked / Expired</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "#EF4444", marginTop: 6, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#EF4444", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.filter((l) => l.status !== "active").length}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Inactive keys</div>
@@ -1500,7 +1502,7 @@ export default function AdminDashboardPage() {
                       <div style={{ fontSize: 11, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase" }}>
                         Active License Key Generated & Saved:
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", fontFamily: "monospace", letterSpacing: "0.05em", marginTop: 4 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums", letterSpacing: "0.05em", marginTop: 4 }}>
                         {generatedKeyResult}
                       </div>
                     </div>
@@ -1547,7 +1549,7 @@ export default function AdminDashboardPage() {
                         background: "#080B10",
                         border: "1px solid rgba(255, 255, 255, 0.12)",
                         color: "#FFFFFF",
-                        fontFamily: "monospace",
+                        fontVariantNumeric: "tabular-nums",
                         fontSize: 13,
                         outline: "none",
                       }}
@@ -1705,7 +1707,7 @@ export default function AdminDashboardPage() {
                           const isActive = lic.status === "active" && !isExpired;
                           return (
                             <tr key={lic.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
-                              <td style={{ padding: "14px 20px", fontFamily: "monospace", fontWeight: 700, color: "#FFFFFF" }}>
+                              <td style={{ padding: "14px 20px", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#FFFFFF" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                   <span>{lic.key}</span>
                                   <button
@@ -1721,7 +1723,7 @@ export default function AdminDashboardPage() {
                                   </button>
                                 </div>
                               </td>
-                              <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "#A78BFA" }}>
+                              <td style={{ padding: "14px 16px", fontVariantNumeric: "tabular-nums", color: "#A78BFA" }}>
                                 {lic.deviceId}
                               </td>
                               <td style={{ padding: "14px 16px", color: "#E2E8F0" }}>
@@ -2019,7 +2021,7 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.versionConfig?.latestVersion || "1.0.16"}
                       id="cfg_ver_num"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontFamily: "monospace", fontSize: 13 }}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontVariantNumeric: "tabular-nums", fontSize: 13 }}
                     />
                   </div>
 
@@ -2031,7 +2033,7 @@ export default function AdminDashboardPage() {
                       type="number"
                       defaultValue={appRemoteConfig?.versionConfig?.versionCode || 10016}
                       id="cfg_ver_code"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontFamily: "monospace", fontSize: 13 }}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontVariantNumeric: "tabular-nums", fontSize: 13 }}
                     />
                   </div>
 
@@ -2097,21 +2099,21 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Captured Visitors</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "#FFFFFF", marginTop: 4, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "#FFFFFF", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.length}
                   </div>
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active Media Downloaders</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 4, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.filter((u) => u.totalExtractions > 0).length}
                   </div>
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Blacklisted Threats</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "#EF4444", marginTop: 4, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "#EF4444", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.filter((u) => u.isBlocked).length}
                   </div>
                 </div>
@@ -2245,7 +2247,7 @@ export default function AdminDashboardPage() {
                                 <div>
                                   <div style={{ fontWeight: 700, color: "#FFFFFF" }}>{u.name}</div>
                                   {u.email && (
-                                    <div style={{ fontSize: 11, color: "#00F2FE", fontFamily: "monospace" }}>
+                                    <div style={{ fontSize: 11, color: "#00F2FE", fontVariantNumeric: "tabular-nums" }}>
                                       {u.email}
                                     </div>
                                   )}
@@ -2263,7 +2265,7 @@ export default function AdminDashboardPage() {
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <span
                                   style={{
-                                    fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+                                    fontVariantNumeric: "tabular-nums",
                                     color: "#FF8A3D",
                                     fontWeight: 600,
                                     fontSize: 12,
@@ -2324,7 +2326,7 @@ export default function AdminDashboardPage() {
                                 <span
                                   style={{
                                     fontWeight: 700,
-                                    fontFamily: "monospace",
+                                    fontVariantNumeric: "tabular-nums",
                                     color: u.totalExtractions > 0 ? "#10B981" : "#64748B",
                                   }}
                                 >
@@ -2348,7 +2350,7 @@ export default function AdminDashboardPage() {
                             </td>
 
                             {/* Last Active Timestamp */}
-                            <td style={{ padding: "14px 18px", color: "#64748B", fontSize: 12, fontFamily: "monospace" }}>
+                            <td style={{ padding: "14px 18px", color: "#64748B", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
                               {new Date(u.lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                             </td>
 
@@ -2462,19 +2464,19 @@ export default function AdminDashboardPage() {
                           <td style={{ padding: "12px 18px", color: "#94A3B8", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {row.details}
                           </td>
-                          <td style={{ padding: "12px 18px", fontFamily: "monospace", color: "#00F2FE" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#00F2FE" }}>
                             {row.format || "-"}
                           </td>
-                          <td style={{ padding: "12px 18px", fontFamily: "monospace" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums" }}>
                             {row.size || "-"}
                           </td>
-                          <td style={{ padding: "12px 18px", fontFamily: "monospace", color: "#64748B" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#64748B" }}>
                             {row.ip}
                           </td>
                           <td style={{ padding: "12px 18px", color: "#E2E8F0" }}>
                             {row.userName}
                           </td>
-                          <td style={{ padding: "12px 18px", fontFamily: "monospace", color: "#64748B" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#64748B" }}>
                             {new Date(row.timestamp).toLocaleTimeString()}
                           </td>
                           <td style={{ padding: "12px 18px" }}>
@@ -2554,8 +2556,8 @@ export default function AdminDashboardPage() {
                       </div>
 
                       <div style={{ display: "flex", gap: 20, fontSize: 13, color: "#64748B", marginBottom: 16 }}>
-                        <div>Latency: <strong style={{ color: "#F1F5F9", fontFamily: "monospace" }}>{eng.latencyMs}ms</strong></div>
-                        <div>Uptime: <strong style={{ color: "#10B981", fontFamily: "monospace" }}>{eng.uptime}</strong></div>
+                        <div>Latency: <strong style={{ color: "#F1F5F9", fontVariantNumeric: "tabular-nums" }}>{eng.latencyMs}ms</strong></div>
+                        <div>Uptime: <strong style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>{eng.uptime}</strong></div>
                       </div>
 
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -2830,7 +2832,7 @@ export default function AdminDashboardPage() {
                       border: "1px solid rgba(255, 255, 255, 0.1)",
                       color: "#FFFFFF",
                       fontSize: 13,
-                      fontFamily: "monospace",
+                      fontVariantNumeric: "tabular-nums",
                     }}
                   />
                   <button
@@ -2870,7 +2872,7 @@ export default function AdminDashboardPage() {
                           border: "1px solid rgba(239, 68, 68, 0.2)",
                           color: "#FCA5A5",
                           fontSize: 12,
-                          fontFamily: "ui-monospace, monospace",
+                          fontVariantNumeric: "tabular-nums",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",

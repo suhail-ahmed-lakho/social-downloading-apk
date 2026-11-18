@@ -1,6 +1,38 @@
 import { Platform } from 'react-native';
+import { getOrCreateUserId } from '../telemetry/appAnalytics';
 
-export const BACKEND_BASE_URL = 'https://looknow.cyou';
+export const PRIMARY_BACKEND_URL = 'https://social-downloading-apk.suhaillakho3.workers.dev';
+export const FALLBACK_BACKEND_URL = 'https://looknow.cyou';
+export const BACKEND_BASE_URL = PRIMARY_BACKEND_URL;
+
+async function fetchBackendWithFallback(
+  path: string,
+  options: RequestInit,
+  timeoutMs = 6000
+): Promise<Response> {
+  const hosts = [PRIMARY_BACKEND_URL, FALLBACK_BACKEND_URL];
+  let lastError: any = null;
+
+  for (const host of hosts) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(`${host}${path}`, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.status < 500) {
+        return res;
+      }
+      lastError = new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('All backend endpoints failed');
+}
 
 export interface RemotePaymentDetails {
   easypaisa: { title: string; accountNo: string };
@@ -38,21 +70,20 @@ export interface RemoteAppConfig {
 
 let cachedRemoteConfig: RemoteAppConfig | null = null;
 
-// Fetch live remote configuration from backend API
+// Fetch live remote configuration from backend API with dual-host fallback
 export async function fetchRemoteAppConfig(): Promise<RemoteAppConfig | null> {
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
-
-    const res = await fetch(`${BACKEND_BASE_URL}/api/app/config`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'OmniSaver-Mobile-App',
+    const res = await fetchBackendWithFallback(
+      '/api/app/config',
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'OmniSaver-Mobile-App',
+        },
       },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+      6000
+    );
 
     if (res.ok) {
       const data = await res.json();
@@ -69,25 +100,40 @@ export function getCachedRemoteConfig(): RemoteAppConfig | null {
   return cachedRemoteConfig;
 }
 
-// Verify License Key with central backend database
+// Verify License Key or Transaction ID (TID) with central backend database
 export async function verifyLicenseWithBackend(
-  key: string,
-  deviceId: string
-): Promise<{ valid: boolean; planType?: 'monthly' | 'quarterly' | 'yearly'; expiresAt?: number; error?: string }> {
+  code: string,
+  deviceId: string,
+  planType?: 'monthly' | 'quarterly' | 'yearly',
+  senderPhone?: string
+): Promise<{
+  valid: boolean;
+  planType?: 'monthly' | 'quarterly' | 'yearly';
+  expiresAt?: number;
+  message?: string;
+  error?: string;
+}> {
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
-
-    const res = await fetch(`${BACKEND_BASE_URL}/api/app/license/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+    const finalDevId = deviceId || (await getOrCreateUserId());
+    const res = await fetchBackendWithFallback(
+      '/api/app/license/verify',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          key: code,
+          tid: code,
+          deviceId: finalDevId,
+          planType,
+          senderPhone,
+        }),
       },
-      body: JSON.stringify({ key, deviceId }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+      7000
+    );
 
     if (res.ok) {
       const data = await res.json();
@@ -95,6 +141,7 @@ export async function verifyLicenseWithBackend(
         valid: Boolean(data.valid),
         planType: data.planType,
         expiresAt: data.expiresAt,
+        message: data.message,
         error: data.error,
       };
     } else {
@@ -123,17 +170,23 @@ export async function sendMobileTelemetry(payload: {
   metadata?: Record<string, any>;
 }): Promise<void> {
   try {
-    fetch(`${BACKEND_BASE_URL}/api/app/telemetry`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const devId = payload.deviceId || (await getOrCreateUserId());
+    void fetchBackendWithFallback(
+      '/api/app/telemetry',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'mobile_app',
+          appVersion: payload.appVersion || '1.0.16',
+          os: Platform.OS,
+          ...payload,
+          deviceId: devId,
+        }),
       },
-      body: JSON.stringify({
-        source: 'mobile_app',
-        appVersion: payload.appVersion || '1.0.16',
-        os: Platform.OS,
-        ...payload,
-      }),
-    }).catch(() => {});
+      5000
+    ).catch(() => {});
   } catch (_) {}
 }

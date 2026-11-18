@@ -255,21 +255,26 @@ export async function initializeProStore(): Promise<ProState> {
   }
 }
 
-// Verify and activate a license key
+// Verify and activate a license key or Transaction ID (TID)
 export async function activateLicenseKey(
   rawKey: string,
-  targetDeviceId?: string
+  targetDeviceId?: string,
+  targetPlan?: ProPlanType
 ): Promise<{ success: boolean; message: string; expiry?: number }> {
   const key = (rawKey || '').trim().toUpperCase();
   const devId = targetDeviceId || proState.deviceId;
 
   if (!key) {
-    return { success: false, message: 'Please enter a valid license key.' };
+    return { success: false, message: 'Please enter a valid Transaction ID or license key.' };
   }
 
   // 1. Try Live Verification with Backend API first
   try {
-    const backendResult = await verifyLicenseWithBackend(key, devId);
+    const backendResult = await verifyLicenseWithBackend(
+      key,
+      devId,
+      targetPlan && targetPlan !== 'free' ? targetPlan : undefined
+    );
     if (backendResult.valid && backendResult.planType) {
       const finalExpiry =
         backendResult.expiresAt ||
