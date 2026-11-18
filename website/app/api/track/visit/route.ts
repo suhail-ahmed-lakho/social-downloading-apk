@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { logActivity, parseDevice, isIPBlocked } from "@/app/lib/analytics";
 import { recordEvent, EventSource, EventAction } from "@/app/lib/db";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {

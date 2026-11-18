@@ -11,7 +11,6 @@ import {
 } from "@/app/lib/analytics";
 import { getDualChannelStats, listLicenses, getAppConfig, updateAppConfig } from "@/app/lib/db";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {

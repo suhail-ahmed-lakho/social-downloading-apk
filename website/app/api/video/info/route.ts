@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logActivity, parseDevice, isIPBlocked } from "@/app/lib/analytics";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 // Detect platform from URL with complete coverage of modern domains and short links

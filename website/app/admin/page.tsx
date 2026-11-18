@@ -160,12 +160,12 @@ export default function AdminDashboardPage() {
   const [blockedIPs, setBlockedIPs] = useState<string[]>([]);
   const [engines, setEngines] = useState<EngineHealth[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>({
-    apkVersion: "1.0.16",
-    apkReleaseDate: "2026-11-17",
-    apkFileSizeBytes: "33.7 MB",
+    apkVersion: "1.0.18",
+    apkReleaseDate: "2026-11-18",
+    apkFileSizeBytes: "35.3 MB",
     apkDownloadUrl: "/api/download/apk",
     apkForceUpdate: false,
-    apkChangelog: "Added Instagram DOM Media Interceptor, Pinterest 1080p videos & master photos, dynamic format tags, and luxury quality selector.",
+    apkChangelog: "OmniSaver v1.0.18 Luxury Edition: Obsidian Gold PRO badge, Vector icons, 24h grace TID PRO, and Cloudflare D1 dual-channel sync.",
     enableGoogleAdSense: false,
     adSensePublisherId: "ca-pub-XXXXXXXXXXXXXXXX",
     enableHeaderSponsorBanner: true,
@@ -797,7 +797,7 @@ export default function AdminDashboardPage() {
               sub: "OmniSaver Android APK",
               icon: Smartphone,
               accent: "#84CC16",
-              badge: `v${appSettings.apkVersion}`,
+              badge: `v${appRemoteConfig?.versionConfig?.latestVersion || appSettings.apkVersion || "1.0.18"}`,
             },
             {
               id: "monetization",

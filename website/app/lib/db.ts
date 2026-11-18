@@ -70,18 +70,18 @@ const DEFAULT_CONFIG: AppRemoteConfig = {
   paymentDetails: {
     easypaisa: {
       title: "Suhail Ahmed",
-      accountNo: "03001234567",
+      accountNo: "03078235748",
     },
     nayapay: {
       title: "Suhail Ahmed",
-      accountId: "03001234567@nayapay",
+      accountId: "03078235748",
     },
     bankIban: {
       bank: "Meezan Bank Limited",
       title: "Suhail Ahmed",
       iban: "PK36MEZN0001234567890123",
     },
-    whatsappNumber: "+923001234567",
+    whatsappNumber: "03078235748",
   },
   adConfig: {
     adsEnabled: true,
@@ -94,15 +94,17 @@ const DEFAULT_CONFIG: AppRemoteConfig = {
     admobRewardedId: "ca-app-pub-3940256099942544/5224354917",
   },
   versionConfig: {
-    latestVersion: "1.0.16",
-    versionCode: 10016,
+    latestVersion: "1.0.18",
+    versionCode: 10018,
     apkDownloadUrl: "https://looknow.cyou/api/download/apk",
     forceUpdate: false,
     releaseNotes: [
-      "OmniSaver v1.0.16 - Official Release by Lakho's Team",
-      "Instagram Browser & Reel Interceptor: Fixed infinite loading with Android Mobile Chrome user agent and DOM media events",
-      "Pinterest Videos & Photos Support: Direct 1080p/720p MP4 downloads and uncompressed original master photo saving",
-      "Cloudflare D1 Native Edge Database Migration: Zero-disk, sub-millisecond serverless SQLite queries",
+      "OmniSaver v1.0.18 Luxury Edition by Lakho's Team",
+      "Luxury Obsidian Gold PRO Header Badge with metallic VIP styling",
+      "Crisp Vector Iconography across all screens (zero Unicode emojis)",
+      "Secure In-App TID Activation with 24-hour instant grace period",
+      "Dual-Host Edge Telemetry & Real-Time Device Tracking (Cloudflare D1)",
+      "Optimized Pro Comparison Table formatting & PRO BOOST card design",
     ],
   },
   proPricing: {
