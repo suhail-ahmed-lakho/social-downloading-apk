@@ -60,16 +60,14 @@ const versionManifest = {
   mandatory: false,
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
-    `OmniSaver v${newVersion} - Official Release by Lakho's Team`,
-    'OmniSaver PRO & VIP Entitlement Engine: Ad-free experience, unlimited 4K/1080p, lossless 320kbps MP3 audio, and unlimited private Instagram Reel captures',
-    'Direct APK License Activation: Device-bound license verification with EasyPaisa, NayaPay, and bank transfer support',
-    'Instagram Browser & Reel Interceptor: Fixed infinite loading with Android Mobile Chrome user agent, DOM media event listeners, and 15s fallback timeout',
-    'Dynamic Stream & Format Badges: Correctly labeled M4A/MP3 songs (AUDIO), standard video (480P/360P), and photos (IMAGE/JPG)',
-    'Pinterest Videos & Photos Support: Direct 1080p/720p MP4 video downloads and uncompressed original master photo saving',
-    'Saved Media Library Filters: Instant category filter chips (All, Videos, Audio, Images) at the top of the Saved tab',
-    'Smart Clipboard & Input UX: Stale clipboard banner dismiss tracking and persistent URL input bar across all platforms',
-    'Alerts & Notification Reliability: Deduplicated download completion alerts, real-time unread badges, and production-clean alert feeds',
-    'Cloudflare D1 & Edge Runtime: High-performance serverless backend with dual-channel mobile & web telemetry'
+    `OmniSaver v${newVersion} - Luxury Edition by Lakho's Team`,
+    'Luxury Obsidian Gold PRO Header Badge with metallic VIP styling',
+    'Crisp Vector Iconography across all screens (zero Unicode emojis)',
+    'Secure In-App TID Activation: 24-hour instant grace period and anti-duplicate protection',
+    'Real-Time Dual-Host Telemetry & Active Device Tracking (Cloudflare D1)',
+    'Enhanced In-App Browser & Instagram Private Reel Interceptor',
+    'Optimized Pro Comparison Table formatting & PRO BOOST card design',
+    'Self-Healing In-App APK Updater with one-tap installation'
   ]
 };
 fs.writeFileSync(versionJsonPath, JSON.stringify(versionManifest, null, 2) + '\n', 'utf8');
