@@ -3,18 +3,24 @@
  * Tests:
  * 1. Database layer (recordEvent, activateByTidOrKey, getDualChannelStats, listLicenses)
  * 2. Mobile Telemetry (visit, heartbeat, downloads by platform)
- * 3. Instant In-App TID Activation (EasyPaisa/JazzCash TID -> PRO VIP)
- * 4. Remote App Config
- * 5. Admin Stats aggregation
+ * 3. Secure In-App TID Activation:
+ *    - 24-hour Grace PRO for new valid TIDs (status = 'pending')
+ *    - Strict rejection of duplicate TIDs
+ *    - VIP Promo codes stored in database (no hardcoding)
+ *    - Admin 1-click Approve (Full Plan duration) and Reject (Revoke)
+ * 4. Dual-Channel Stats Aggregation (Mobile DAU, downloads by platform, revenue)
+ * 5. Remote App Config
  */
 
 const {
   recordEvent,
   activateByTidOrKey,
+  approveLicense,
+  revokeLicense,
+  verifyLicense,
   getDualChannelStats,
   listLicenses,
   getAppConfig,
-  updateAppConfig,
 } = require("../app/lib/db.ts");
 
 async function runTests() {
@@ -101,27 +107,64 @@ async function runTests() {
     assert(false, "Multi-platform download tracking failed", err.message);
   }
 
-  // --- TEST SUITE 3: Instant Automated In-App TID Activation ---
-  console.log("\n👉 [Suite 3] Instant In-App TID Activation (Zero Manual WhatsApp)");
+  // --- TEST SUITE 3: Secure In-App TID Activation & 24h Grace Period ---
+  console.log("\n👉 [Suite 3] Secure In-App TID Activation & Anti-Bypass System");
+  let testLicenseKey = "";
   try {
-    // 3.1: Valid JazzCash/EasyPaisa 10-digit TID
+    const now = Date.now();
+    // 3.1: Valid JazzCash/EasyPaisa TID -> 24-hour temporary grace PRO
     const tidResult = await activateByTidOrKey({
       code: "TID-9823487192",
       deviceId: "OMNI-TEST-DEVICE-01",
       planType: "monthly",
+      senderPhone: "03001234567",
     });
-    assert(tidResult.valid === true, "Valid EasyPaisa/JazzCash TID auto-activated PRO", `Plan: ${tidResult.planType}`);
-    assert(tidResult.expiresAt > Date.now(), "Valid expiration timestamp assigned (> 30 days)");
+    assert(tidResult.valid === true, "Valid TID granted instant PRO access", `Status: ${tidResult.status}`);
+    assert(tidResult.status === "pending", "New TID flagged as pending admin verification");
+    
+    // Check grace duration is approximately 24 hours (within 1 minute delta)
+    const hoursGrace = (tidResult.expiresAt - now) / (1000 * 60 * 60);
+    assert(hoursGrace >= 23.9 && hoursGrace <= 24.1, "Exact 24-hour temporary grace assigned", `${hoursGrace.toFixed(1)} hrs`);
 
-    // 3.2: VIP Promo Code
+    // Find the generated license key
+    const allLics = await listLicenses();
+    const createdLic = allLics.find((l) => l.notes && l.notes.includes("TID-9823487192"));
+    assert(createdLic && createdLic.key, "TID license persisted in database", `Key: ${createdLic?.key}`);
+    testLicenseKey = createdLic ? createdLic.key : "";
+
+    // 3.2: Duplicate TID rejection on another device
+    const duplicateResult = await activateByTidOrKey({
+      code: "TID-9823487192",
+      deviceId: "OMNI-ATTACKER-DEVICE",
+      planType: "monthly",
+    });
+    assert(duplicateResult.valid === false, "Strictly rejected duplicate TID on different device", duplicateResult.error);
+
+    // 3.3: Admin 1-Click Approve (Full Plan: 30 days)
+    if (testLicenseKey) {
+      const approved = await approveLicense(testLicenseKey);
+      assert(approved && approved.status === "active", "Admin approved pending TID", `New Status: ${approved?.status}`);
+      const approvedDays = (approved.expiresAt - now) / (1000 * 60 * 60 * 24);
+      assert(approvedDays >= 29 && approvedDays <= 31, "Approved license upgraded to full 30-day duration", `${approvedDays.toFixed(0)} days`);
+    }
+
+    // 3.4: VIP Promo Code from Database (No Hardcoding)
     const vipResult = await activateByTidOrKey({
       code: "OMNI-PRO-VIP",
       deviceId: "OMNI-TEST-DEVICE-02",
       planType: "yearly",
     });
-    assert(vipResult.valid === true, "VIP Master Promo Code auto-activated PRO", `Plan: ${vipResult.planType}`);
+    assert(vipResult.valid === true, "VIP Promo code verified from database", `Plan: ${vipResult.planType}`);
 
-    // 3.3: Invalid / Empty input rejection
+    // 3.5: Admin 1-Click Reject / Revoke
+    if (testLicenseKey) {
+      const revoked = await revokeLicense(testLicenseKey);
+      assert(revoked && revoked.status === "revoked", "Admin rejected / revoked license successfully");
+      const reVerify = await verifyLicense(testLicenseKey, "OMNI-TEST-DEVICE-01");
+      assert(reVerify.valid === false, "Revoked license immediately blocks PRO access");
+    }
+
+    // 3.6: Invalid / Malformed TID rejection
     const invalidResult = await activateByTidOrKey({
       code: "123", // too short
       deviceId: "OMNI-TEST-DEVICE-03",

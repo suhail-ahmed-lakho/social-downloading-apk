@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listLicenses, createLicense, extendLicense, revokeLicense } from "@/app/lib/db";
+import { listLicenses, createLicense, extendLicense, revokeLicense, approveLicense } from "@/app/lib/db";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -37,6 +37,28 @@ export async function POST(req: NextRequest) {
       if (!key) return NextResponse.json({ error: "License key is required" }, { status: 400 });
 
       const updated = await extendLicense(key, Number(days) || 30);
+      if (!updated) return NextResponse.json({ error: "License not found" }, { status: 404 });
+
+      const allLicenses = await listLicenses();
+      return NextResponse.json({ success: true, license: updated, licenses: allLicenses });
+    }
+
+    if (action === "approve") {
+      const { key } = body;
+      if (!key) return NextResponse.json({ error: "License key is required" }, { status: 400 });
+
+      const updated = await approveLicense(key);
+      if (!updated) return NextResponse.json({ error: "License not found" }, { status: 404 });
+
+      const allLicenses = await listLicenses();
+      return NextResponse.json({ success: true, license: updated, licenses: allLicenses });
+    }
+
+    if (action === "reject") {
+      const { key } = body;
+      if (!key) return NextResponse.json({ error: "License key is required" }, { status: 400 });
+
+      const updated = await revokeLicense(key);
       if (!updated) return NextResponse.json({ error: "License not found" }, { status: 404 });
 
       const allLicenses = await listLicenses();

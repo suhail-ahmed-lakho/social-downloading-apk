@@ -68,7 +68,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const res = await activateLicenseKey(licenseKeyInput.trim(), pro.deviceId);
       if (res.success) {
-        Alert.alert('PRO Activated! 🎉', res.message, [
+        Alert.alert('PRO Activated', res.message, [
           {
             text: 'Enjoy PRO',
             onPress: () => {
@@ -101,7 +101,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const res = await activateLicenseKey(tidInput.trim(), pro.deviceId, selectedPlan);
       if (res.success) {
-        Alert.alert('PRO Activated! 🎉', res.message, [
+        Alert.alert('PRO Activated', res.message, [
           {
             text: 'Start Using PRO',
             onPress: () => {
@@ -621,7 +621,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
                       <Ionicons name="flash" size={18} color="#FFFFFF" />
                     )}
                     <Text style={styles.ctaText}>
-                      {isActivating ? 'Verifying Transaction...' : '⚡ Verify & Activate PRO Instantly'}
+                      {isActivating ? 'Verifying Transaction...' : 'Verify & Activate PRO Instantly'}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -762,14 +762,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   compHeaderFree: {
-    width: 90,
+    width: 98,
     fontSize: 11,
     fontWeight: '700',
     color: COLORS.textMuted,
     textAlign: 'center',
   },
   compHeaderPro: {
-    width: 90,
+    width: 106,
     fontSize: 11,
     fontWeight: '800',
     color: COLORS.accentPrimary,
@@ -778,29 +778,33 @@ const styles = StyleSheet.create({
   compRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    gap: 8,
+    paddingVertical: 5,
   },
   compFeature: {
     flex: 1,
     fontSize: 12,
     color: COLORS.textSecondary,
+    paddingRight: 4,
   },
   compFeatureAccent: {
     color: COLORS.textPrimary,
     fontWeight: '600',
   },
   compFree: {
-    width: 90,
+    width: 98,
     fontSize: 10,
     color: COLORS.textMuted,
     textAlign: 'center',
+    paddingHorizontal: 4,
   },
   compProWrap: {
-    width: 90,
+    width: 106,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
+    paddingLeft: 4,
   },
   compPro: {
     fontSize: 11,

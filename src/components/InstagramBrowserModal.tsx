@@ -46,7 +46,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
     initialUrl.trim().startsWith('http') ? initialUrl.trim() : 'https://www.instagram.com'
   );
   const [isQuickFetching, setIsQuickFetching] = useState(false);
-  const [statusPrompt, setStatusPrompt] = useState('⚡ Download This Reel (Instant)');
+  const [statusPrompt, setStatusPrompt] = useState('Download This Reel (Instant)');
 
   const attemptDeliverMedia = async (url: string, title?: string, poster?: string) => {
     const captureCheck = await pro.recordCapture();
@@ -85,7 +85,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
       setCapturedVideoUrl(null);
       setCapturedPoster(null);
       setIsQuickFetching(false);
-      setStatusPrompt('⚡ Download This Reel (Instant)');
+      setStatusPrompt('Download This Reel (Instant)');
       if (initialUrl.trim().startsWith('http')) {
         setCurrentBrowserUrl(initialUrl.trim());
       }

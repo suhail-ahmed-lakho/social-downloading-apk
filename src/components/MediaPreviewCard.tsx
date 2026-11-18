@@ -496,7 +496,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
 
             if (!pro.isPro && isVipStream) {
               Alert.alert(
-                '⭐ VIP Stream Selected',
+                'VIP Stream Selected',
                 `${selectedOption.quality || selectedOption.label} is an Ultra HD / Lossless stream.\n\nFree users can watch a short ad to unlock this download, or upgrade to OmniSaver PRO for instant 1-tap access forever!`,
                 [
                   {

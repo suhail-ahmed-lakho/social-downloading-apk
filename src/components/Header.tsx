@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from './AppLogo';
 import { COLORS } from '../theme/colors';
 
@@ -35,25 +35,31 @@ export const Header: React.FC<HeaderProps> = ({
               <Text style={styles.titleMain}>Omni</Text>
               <Text style={styles.titleAccent}>Saver</Text>
               {isPro ? (
-                <View style={styles.versionChip}>
-                  <Text style={styles.versionText}>PRO VIP</Text>
-                </View>
-              ) : onOpenProUpgrade ? (
                 <TouchableOpacity
-                  testID="header-go-pro-btn"
-                  style={styles.goProBtn}
+                  testID="header-vip-pro-badge"
+                  style={styles.activeVipBtn}
                   onPress={onOpenProUpgrade}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={COLORS.gradientPrimary}
+                    colors={['#F59E0B', '#D97706', '#92400E']}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.goProGradient}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.activeVipGradient}
                   >
-                    <Ionicons name="sparkles" size={10} color="#FFFFFF" />
-                    <Text style={styles.goProText}>GO PRO</Text>
+                    <MaterialCommunityIcons name="crown" size={11} color="#FFFBEB" />
+                    <Text style={styles.activeVipText}>VIP PRO</Text>
                   </LinearGradient>
+                </TouchableOpacity>
+              ) : onOpenProUpgrade ? (
+                <TouchableOpacity
+                  testID="header-go-pro-btn"
+                  style={styles.obsidianProPill}
+                  onPress={onOpenProUpgrade}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="crown" size={12} color="#FBBF24" />
+                  <Text style={styles.obsidianProText}>PRO</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -141,36 +147,49 @@ const styles = StyleSheet.create({
     color: COLORS.accentPrimary,
     letterSpacing: -0.4,
   },
-  versionChip: {
-    backgroundColor: 'rgba(255, 94, 58, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 94, 58, 0.3)',
-  },
-  versionText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: COLORS.accentPrimary,
-    letterSpacing: 0.5,
-  },
-  goProBtn: {
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  goProGradient: {
+  obsidianProPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
     gap: 4,
+    backgroundColor: '#18140E',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.55)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  goProText: {
-    fontSize: 9,
+  obsidianProText: {
+    fontSize: 10,
     fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+    color: '#FDE68A',
+    letterSpacing: 0.6,
+  },
+  activeVipBtn: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  activeVipGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  activeVipText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#FFFBEB',
+    letterSpacing: 0.6,
   },
   subtitleText: {
     fontSize: 11,

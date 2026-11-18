@@ -28,7 +28,7 @@ export interface ProLicense {
   deviceId: string; // e.g. OMNI-XXXX-XXXX
   planType: ProPlanType;
   pricePkr: number;
-  status: "active" | "revoked";
+  status: "active" | "pending" | "revoked" | "expired";
   issuedAt: string;
   expiresAt: number; // Unix timestamp ms
   notes?: string;
@@ -137,6 +137,30 @@ const fallbackStore: MemoryStore =
         expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
         notes: "Demo Starter VIP Key",
         tid: "EP-98234710",
+      },
+      {
+        id: "lic_vip_promo_1",
+        key: "OMNI-PRO-VIP",
+        deviceId: "",
+        planType: "yearly",
+        pricePkr: 4500,
+        status: "active",
+        issuedAt: new Date().toISOString(),
+        expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        notes: "VIP Master Promo Code in Database",
+        tid: "PROMO-VIP-1",
+      },
+      {
+        id: "lic_vip_promo_2",
+        key: "LOOKNOW-VIP",
+        deviceId: "",
+        planType: "yearly",
+        pricePkr: 4500,
+        status: "active",
+        issuedAt: new Date().toISOString(),
+        expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        notes: "LookNow VIP Promo Code in Database",
+        tid: "PROMO-VIP-2",
       },
     ],
     config: DEFAULT_CONFIG,
@@ -475,6 +499,9 @@ export async function createLicense(params: {
   pricePkr?: number;
   notes?: string;
   tid?: string;
+  key?: string;
+  status?: "active" | "pending" | "revoked";
+  expiresAt?: number;
 }): Promise<ProLicense> {
   const cleanDevice = params.deviceId.trim().toUpperCase();
   const pricing = DEFAULT_CONFIG.proPricing;
@@ -488,12 +515,13 @@ export async function createLicense(params: {
   const durationDays =
     params.planType === "monthly" ? 30 : params.planType === "quarterly" ? 90 : 365;
 
-  const key = generateLicenseKey();
+  const key = params.key ? params.key.trim().toUpperCase() : generateLicenseKey();
   const id = generateId("lic");
   const now = Date.now();
-  const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
+  const expiresAt = params.expiresAt ?? (now + durationDays * 24 * 60 * 60 * 1000);
   const pricePkr = params.pricePkr ?? defaultPrice;
   const tidNotes = [params.tid, params.notes].filter(Boolean).join(" - ") || undefined;
+  const initialStatus = params.status || "active";
 
   const license: ProLicense = {
     id,
@@ -501,7 +529,7 @@ export async function createLicense(params: {
     deviceId: cleanDevice,
     planType: params.planType,
     pricePkr,
-    status: "active",
+    status: initialStatus,
     issuedAt: new Date(now).toISOString(),
     expiresAt,
     notes: tidNotes,
@@ -516,7 +544,7 @@ export async function createLicense(params: {
           `INSERT INTO omnisaver_licenses (id, license_key, device_id, plan_type, amount_pkr, status, tid_notes, created_at, expires_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
-        .bind(id, key, cleanDevice, params.planType, pricePkr, "active", tidNotes || null, now, expiresAt)
+        .bind(id, key, cleanDevice, params.planType, pricePkr, initialStatus, tidNotes || null, now, expiresAt)
         .run();
       return license;
     } catch (err) {
@@ -526,6 +554,54 @@ export async function createLicense(params: {
 
   fallbackStore.licenses.unshift(license);
   return license;
+}
+
+export async function approveLicense(key: string): Promise<ProLicense | null> {
+  const cleanKey = key.trim().toUpperCase();
+  const db = getD1();
+  const now = Date.now();
+
+  if (db) {
+    try {
+      const row: any = await db
+        .prepare("SELECT * FROM omnisaver_licenses WHERE license_key = ? COLLATE NOCASE")
+        .bind(cleanKey)
+        .first();
+
+      if (row) {
+        const plan = (row.plan_type as ProPlanType) || "monthly";
+        const durationDays = plan === "monthly" ? 30 : plan === "quarterly" ? 90 : 365;
+        const fullExpiry = now + durationDays * 24 * 60 * 60 * 1000;
+
+        await db
+          .prepare("UPDATE omnisaver_licenses SET status = 'active', expires_at = ? WHERE id = ?")
+          .bind(fullExpiry, row.id)
+          .run();
+
+        return {
+          id: row.id,
+          key: row.license_key,
+          deviceId: row.device_id,
+          planType: row.plan_type,
+          pricePkr: Number(row.amount_pkr) || 0,
+          status: "active",
+          issuedAt: new Date(row.created_at).toISOString(),
+          expiresAt: fullExpiry,
+          notes: row.tid_notes,
+          tid: row.tid_notes,
+        };
+      }
+    } catch (err) {
+      console.warn("[D1 approveLicense error]", err);
+    }
+  }
+
+  const lic = fallbackStore.licenses.find((l) => l.key.toUpperCase() === cleanKey);
+  if (!lic) return null;
+  const durationDays = lic.planType === "monthly" ? 30 : lic.planType === "quarterly" ? 90 : 365;
+  lic.expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
+  lic.status = "active";
+  return lic;
 }
 
 export async function extendLicense(key: string, days: number = 30): Promise<ProLicense | null> {
@@ -587,8 +663,8 @@ export async function revokeLicense(key: string): Promise<ProLicense | null> {
 
       if (row) {
         await db
-          .prepare("UPDATE omnisaver_licenses SET status = 'revoked' WHERE id = ?")
-          .bind(row.id)
+          .prepare("UPDATE omnisaver_licenses SET status = 'revoked', expires_at = ? WHERE id = ?")
+          .bind(Date.now(), row.id)
           .run();
 
         return {
@@ -599,7 +675,7 @@ export async function revokeLicense(key: string): Promise<ProLicense | null> {
           pricePkr: Number(row.amount_pkr) || 0,
           status: "revoked",
           issuedAt: new Date(row.created_at).toISOString(),
-          expiresAt: Number(row.expires_at),
+          expiresAt: Date.now(),
           notes: row.tid_notes,
         };
       }
@@ -611,25 +687,17 @@ export async function revokeLicense(key: string): Promise<ProLicense | null> {
   const lic = fallbackStore.licenses.find((l) => l.key.toUpperCase() === cleanKey);
   if (!lic) return null;
   lic.status = "revoked";
+  lic.expiresAt = Date.now();
   return lic;
 }
 
 export async function verifyLicense(
   key: string,
   deviceId: string
-): Promise<{ valid: boolean; planType?: ProPlanType; expiresAt?: number; error?: string }> {
+): Promise<{ valid: boolean; planType?: ProPlanType; expiresAt?: number; status?: "active" | "pending"; error?: string }> {
   const cleanKey = key.trim().toUpperCase();
   const cleanDev = deviceId.trim().toUpperCase();
   const now = Date.now();
-
-  // Dev bypass test key
-  if (cleanKey === "OMNI-TEST-2026") {
-    return {
-      valid: true,
-      planType: "monthly",
-      expiresAt: now + 30 * 24 * 60 * 60 * 1000,
-    };
-  }
 
   const db = getD1();
   if (db) {
@@ -643,16 +711,24 @@ export async function verifyLicense(
         return { valid: false, error: "Invalid license key. Please check the code and try again." };
       }
 
-      if (row.status !== "active") {
+      if (row.status !== "active" && row.status !== "pending") {
         return { valid: false, error: "This license key has been revoked or expired." };
       }
 
       if (now > Number(row.expires_at)) {
         await db.prepare("UPDATE omnisaver_licenses SET status = 'revoked' WHERE id = ?").bind(row.id).run();
-        return { valid: false, error: "This license key has expired." };
+        return {
+          valid: false,
+          error: row.status === "pending"
+            ? "The 24-hour grace period for this TID has expired."
+            : "This license key has expired.",
+        };
       }
 
-      if (row.device_id && row.device_id.toUpperCase() !== cleanDev) {
+      // If license has no bound device, bind to current device
+      if (!row.device_id || row.device_id.trim() === "") {
+        await db.prepare("UPDATE omnisaver_licenses SET device_id = ? WHERE id = ?").bind(cleanDev, row.id).run();
+      } else if (row.device_id.toUpperCase() !== cleanDev) {
         return {
           valid: false,
           error: `License key is bound to another device (${row.device_id}). Each PRO key is locked to one device.`,
@@ -663,6 +739,7 @@ export async function verifyLicense(
         valid: true,
         planType: row.plan_type as ProPlanType,
         expiresAt: Number(row.expires_at),
+        status: row.status as "active" | "pending",
       };
     } catch (err) {
       console.warn("[D1 verifyLicense error, falling back]", err);
@@ -674,14 +751,22 @@ export async function verifyLicense(
   if (!lic) {
     return { valid: false, error: "Invalid license key. Please check the code and try again." };
   }
-  if (lic.status !== "active") {
+  if (lic.status !== "active" && lic.status !== "pending") {
     return { valid: false, error: "This license key has been revoked or expired." };
   }
   if (now > lic.expiresAt) {
+    const wasPending = lic.status === "pending";
     lic.status = "revoked";
-    return { valid: false, error: "This license key has expired." };
+    return {
+      valid: false,
+      error: wasPending
+        ? "The 24-hour grace period for this TID has expired."
+        : "This license key has expired.",
+    };
   }
-  if (lic.deviceId && lic.deviceId.toUpperCase() !== cleanDev) {
+  if (!lic.deviceId || lic.deviceId.trim() === "") {
+    lic.deviceId = cleanDev;
+  } else if (lic.deviceId.toUpperCase() !== cleanDev) {
     return {
       valid: false,
       error: `License key is bound to another device (${lic.deviceId}). Each PRO key is locked to one device.`,
@@ -691,16 +776,17 @@ export async function verifyLicense(
     valid: true,
     planType: lic.planType,
     expiresAt: lic.expiresAt,
+    status: lic.status as "active" | "pending",
   };
 }
 
-// Automated In-App Activation via Transaction ID (TID) or License Key (No WhatsApp Required)
+// Automated In-App Activation via Transaction ID (TID) or License Key with 24-Hour Grace Period
 export async function activateByTidOrKey(params: {
   code: string;
   deviceId: string;
   planType?: ProPlanType;
   senderPhone?: string;
-}): Promise<{ valid: boolean; planType?: ProPlanType; expiresAt?: number; error?: string; message?: string }> {
+}): Promise<{ valid: boolean; planType?: ProPlanType; expiresAt?: number; status?: "active" | "pending"; error?: string; message?: string }> {
   const cleanCode = (params.code || "").trim().toUpperCase();
   const cleanDev = (params.deviceId || "").trim().toUpperCase();
   const plan = params.planType || "quarterly";
@@ -710,60 +796,84 @@ export async function activateByTidOrKey(params: {
     return { valid: false, error: "Transaction ID or License Code is required." };
   }
 
-  // 1. VIP Promo Codes
-  if (cleanCode === "OMNI-TEST-2026" || cleanCode === "OMNI-PRO-VIP" || cleanCode === "LOOKNOW-VIP") {
-    const durationDays = cleanCode === "LOOKNOW-VIP" ? 365 : 30;
-    const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
-    await createLicense({
-      deviceId: cleanDev,
-      planType: durationDays === 365 ? "yearly" : "monthly",
-      notes: `VIP Promo: ${cleanCode}`,
-      tid: `VIP-${cleanCode}`,
-    });
+  // 1. Check if it matches an existing active license or VIP promo code stored in D1
+  const directVerify = await verifyLicense(cleanCode, cleanDev);
+  if (directVerify.valid) {
     return {
-      valid: true,
-      planType: durationDays === 365 ? "yearly" : "monthly",
-      expiresAt,
-      message: "VIP Promo Activated! You now have unlimited OmniSaver PRO access.",
+      ...directVerify,
+      message: directVerify.status === "pending"
+        ? "24-Hour Grace PRO is active while payment receipt is pending verification."
+        : "PRO License Activated Successfully!",
     };
   }
 
-  // 2. Check if it matches an existing license key
-  const directVerify = await verifyLicense(cleanCode, cleanDev);
-  if (directVerify.valid) {
-    return { ...directVerify, message: "PRO License Activated Successfully!" };
-  }
-
-  // 3. Automated Transaction ID (TID) Verification
+  // 2. Automated Transaction ID (TID) Verification with Pending Status & 24h Grace
   const cleanTid = cleanCode.replace(/[^A-Z0-9-]/g, "");
   if (cleanTid.length >= 6) {
     const db = getD1();
     if (db) {
       try {
         const existing: any = await db
-          .prepare("SELECT * FROM omnisaver_licenses WHERE tid_notes LIKE ?")
-          .bind(`%${cleanTid}%`)
+          .prepare("SELECT * FROM omnisaver_licenses WHERE tid_notes LIKE ? OR license_key = ? COLLATE NOCASE")
+          .bind(`%${cleanTid}%`, cleanTid)
           .first();
 
         if (existing) {
-          if (existing.device_id.toUpperCase() === cleanDev && existing.status === "active") {
+          if (
+            existing.device_id.toUpperCase() === cleanDev &&
+            (existing.status === "active" || existing.status === "pending") &&
+            now < Number(existing.expires_at)
+          ) {
             return {
               valid: true,
               planType: existing.plan_type,
               expiresAt: Number(existing.expires_at),
-              message: "PRO License Restored for this device!",
+              status: existing.status,
+              message: existing.status === "pending"
+                ? "24-Hour Grace PRO is currently active for this TID while verification completes."
+                : "PRO License Restored for this device!",
             };
           }
           return {
             valid: false,
-            error: "This Transaction ID has already been redeemed on another device.",
+            error: "This Transaction ID (TID) has already been used.",
           };
         }
       } catch (_) {}
     }
 
-    const durationDays = plan === "monthly" ? 30 : plan === "quarterly" ? 90 : 365;
-    const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
+    // Check fallbackStore as well
+    const fallbackExisting = fallbackStore.licenses.find(
+      (l) =>
+        (l.tid && l.tid.toUpperCase().includes(cleanTid)) ||
+        (l.notes && l.notes.toUpperCase().includes(cleanTid)) ||
+        l.key.toUpperCase() === cleanTid
+    );
+    if (fallbackExisting) {
+      if (
+        fallbackExisting.deviceId.toUpperCase() === cleanDev &&
+        (fallbackExisting.status === "active" || fallbackExisting.status === "pending") &&
+        now < fallbackExisting.expiresAt
+      ) {
+        return {
+          valid: true,
+          planType: fallbackExisting.planType,
+          expiresAt: fallbackExisting.expiresAt,
+          status: fallbackExisting.status,
+          message: fallbackExisting.status === "pending"
+            ? "24-Hour Grace PRO is active while verification completes."
+            : "PRO License Restored!",
+        };
+      }
+      return {
+        valid: false,
+        error: "This Transaction ID (TID) has already been used.",
+      };
+    }
+
+    // New valid-looking TID: grant 24-hour grace period!
+    const graceHours = 24;
+    const expiresAt = now + graceHours * 60 * 60 * 1000;
     const pricing = DEFAULT_CONFIG.proPricing;
     const amount = plan === "monthly" ? pricing.monthly : plan === "quarterly" ? pricing.quarterly : pricing.yearly;
 
@@ -772,14 +882,17 @@ export async function activateByTidOrKey(params: {
       planType: plan,
       pricePkr: amount,
       tid: cleanTid,
-      notes: params.senderPhone ? `Sender: ${params.senderPhone}` : "In-App Automated Activation",
+      notes: `TID: ${cleanTid}${params.senderPhone ? ` (Phone: ${params.senderPhone})` : ""}`,
+      status: "pending",
+      expiresAt,
     });
 
     return {
       valid: true,
       planType: plan,
       expiresAt,
-      message: `Transaction Verified! OmniSaver PRO (${plan.toUpperCase()}) Activated Instantly 🎉`,
+      status: "pending",
+      message: "TID submitted! Instant 24-hour Grace PRO activated while payment is verified.",
     };
   }
 

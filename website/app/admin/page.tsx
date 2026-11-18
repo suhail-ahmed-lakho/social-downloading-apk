@@ -132,6 +132,7 @@ export default function AdminDashboardPage() {
   const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
   const [generatedKeyResult, setGeneratedKeyResult] = useState<string | null>(null);
   const [licenseSearchQuery, setLicenseSearchQuery] = useState("");
+  const [licenseFilter, setLicenseFilter] = useState<"all" | "pending" | "active" | "revoked">("all");
 
   // Config Form State
   const [savingConfig, setSavingConfig] = useState(false);
@@ -293,6 +294,50 @@ export default function AdminDashboardPage() {
         setTimeout(() => setToastMessage(null), 3500);
       }
     } catch (_) {}
+  };
+
+  const handleApproveLicense = async (key: string) => {
+    try {
+      const res = await fetch("/api/admin/license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve", key }),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setLicenses(data.licenses);
+        setToastMessage(`TID Payment Verified! License ${key} approved for full plan duration.`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        setToastMessage(data.error || "Approval failed");
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (_) {
+      setToastMessage("Network error approving license");
+      setTimeout(() => setToastMessage(null), 3500);
+    }
+  };
+
+  const handleRejectLicense = async (key: string) => {
+    try {
+      const res = await fetch("/api/admin/license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", key }),
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        setLicenses(data.licenses);
+        setToastMessage(`TID rejected. License ${key} revoked immediately.`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        setToastMessage(data.error || "Rejection failed");
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (_) {
+      setToastMessage("Network error rejecting license");
+      setTimeout(() => setToastMessage(null), 3500);
+    }
   };
 
   const handleSaveRemoteConfig = async (partialConfig: any) => {
@@ -1435,13 +1480,26 @@ export default function AdminDashboardPage() {
           {activeTab === "licenses" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {/* Top Stats Cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
                 <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active PRO Subscribers</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.filter((l) => l.status === "active").length}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Device-bound active subscriptions</div>
+                </div>
+
+                <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.55)", borderRadius: 16, padding: "20px 22px", position: "relative" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, color: "#FBBF24", fontWeight: 700, textTransform: "uppercase" }}>Pending TID Approvals</div>
+                    {licenses.filter((l) => l.status === "pending").length > 0 && (
+                      <span style={{ fontSize: 10, background: "rgba(245, 158, 11, 0.25)", color: "#FBBF24", padding: "2px 7px", borderRadius: 99, fontWeight: 800 }}>Review</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#FBBF24", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
+                    {licenses.filter((l) => l.status === "pending").length}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>24h temporary grace active</div>
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
@@ -1463,7 +1521,7 @@ export default function AdminDashboardPage() {
                 <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
                   <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Revoked / Expired</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#EF4444", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
-                    {licenses.filter((l) => l.status !== "active").length}
+                    {licenses.filter((l) => l.status !== "active" && l.status !== "pending").length}
                   </div>
                   <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Inactive keys</div>
                 </div>
@@ -1656,12 +1714,45 @@ export default function AdminDashboardPage() {
               {/* Licenses List & Management Table */}
               <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, overflow: "hidden" }}>
                 <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF" }}>
-                    Issued PRO Licenses Database ({licenses.length})
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginRight: 4 }}>
+                      PRO Subscriptions & TIDs ({licenses.length})
+                    </div>
+                    {[
+                      { id: "all", label: `All (${licenses.length})` },
+                      {
+                        id: "pending",
+                        label: `Pending Approvals (${licenses.filter((l) => l.status === "pending").length})`,
+                        alert: licenses.filter((l) => l.status === "pending").length > 0,
+                      },
+                      { id: "active", label: `Active VIP (${licenses.filter((l) => l.status === "active" && Date.now() <= l.expiresAt).length})` },
+                      { id: "revoked", label: "Revoked / Expired" },
+                    ].map((tab) => {
+                      const active = licenseFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setLicenseFilter(tab.id as any)}
+                          style={{
+                            padding: "5px 12px",
+                            borderRadius: 8,
+                            border: tab.alert ? "1px solid #F59E0B" : active ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.1)",
+                            background: tab.alert ? "rgba(245, 158, 11, 0.18)" : active ? "rgba(255, 107, 0, 0.15)" : "transparent",
+                            color: tab.alert ? "#FBBF24" : active ? "#FF8A3D" : "#94A3B8",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
                   </div>
                   <input
                     type="text"
-                    placeholder="Search by Key, Device ID or Notes..."
+                    placeholder="Search by TID, Key, Device ID or Notes..."
                     value={licenseSearchQuery}
                     onChange={(e) => setLicenseSearchQuery(e.target.value)}
                     style={{
@@ -1693,6 +1784,15 @@ export default function AdminDashboardPage() {
                     <tbody>
                       {licenses
                         .filter((lic) => {
+                          const now = Date.now();
+                          const isExpired = now > lic.expiresAt;
+                          const isPending = lic.status === "pending" && !isExpired;
+                          const isActive = lic.status === "active" && !isExpired;
+
+                          if (licenseFilter === "pending") return isPending;
+                          if (licenseFilter === "active") return isActive;
+                          if (licenseFilter === "revoked") return lic.status === "revoked" || isExpired;
+
                           if (!licenseSearchQuery) return true;
                           const q = licenseSearchQuery.toLowerCase();
                           return (
@@ -1703,8 +1803,12 @@ export default function AdminDashboardPage() {
                           );
                         })
                         .map((lic) => {
-                          const isExpired = Date.now() > lic.expiresAt;
+                          const now = Date.now();
+                          const isExpired = now > lic.expiresAt;
+                          const isPending = lic.status === "pending" && !isExpired;
                           const isActive = lic.status === "active" && !isExpired;
+                          const hoursLeft = Math.max(0, Math.round((lic.expiresAt - now) / (1000 * 60 * 60)));
+
                           return (
                             <tr key={lic.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
                               <td style={{ padding: "14px 20px", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#FFFFFF" }}>
@@ -1724,70 +1828,136 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
                               <td style={{ padding: "14px 16px", fontVariantNumeric: "tabular-nums", color: "#A78BFA" }}>
-                                {lic.deviceId}
+                                {lic.deviceId || "Universal"}
                               </td>
                               <td style={{ padding: "14px 16px", color: "#E2E8F0" }}>
                                 <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{lic.planType}</div>
                                 <div style={{ fontSize: 11, color: "#10B981" }}>Rs. {(lic.pricePkr || 0).toLocaleString()}</div>
                               </td>
                               <td style={{ padding: "14px 16px" }}>
-                                <span
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                    padding: "3px 8px",
-                                    borderRadius: 6,
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    background: isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                                    color: isActive ? "#10B981" : "#EF4444",
-                                  }}
-                                >
-                                  {isActive ? "Active" : isExpired ? "Expired" : "Revoked"}
-                                </span>
+                                {isPending ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      padding: "3px 8px",
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 800,
+                                      background: "rgba(245, 158, 11, 0.18)",
+                                      color: "#FBBF24",
+                                      border: "1px solid rgba(245, 158, 11, 0.4)",
+                                    }}
+                                  >
+                                    ⏳ Pending ({hoursLeft}h Grace)
+                                  </span>
+                                ) : isActive ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      padding: "3px 8px",
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      background: "rgba(16, 185, 129, 0.15)",
+                                      color: "#10B981",
+                                      border: "1px solid rgba(16, 185, 129, 0.35)",
+                                    }}
+                                  >
+                                    ⚡ Active VIP
+                                  </span>
+                                ) : isExpired ? (
+                                  <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(148, 163, 184, 0.15)", color: "#94A3B8" }}>
+                                    Expired
+                                  </span>
+                                ) : (
+                                  <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239, 68, 68, 0.15)", color: "#EF4444" }}>
+                                    Revoked
+                                  </span>
+                                )}
                               </td>
                               <td style={{ padding: "14px 16px", color: "#94A3B8" }}>
                                 {new Date(lic.expiresAt).toLocaleDateString()}
                               </td>
                               <td style={{ padding: "14px 16px", color: "#94A3B8" }}>
-                                {lic.notes || lic.tid || "—"}
+                                <div style={{ color: "#F1F5F9", fontWeight: 600 }}>{lic.tid || "—"}</div>
+                                {lic.notes && <div style={{ fontSize: 11, color: "#64748B" }}>{lic.notes}</div>}
                               </td>
                               <td style={{ padding: "14px 20px", textAlign: "right" }}>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
-                                  <button
-                                    onClick={() => handleExtendLicense(lic.key)}
-                                    style={{
-                                      padding: "5px 10px",
-                                      borderRadius: 6,
-                                      background: "rgba(16, 185, 129, 0.12)",
-                                      border: "1px solid rgba(16, 185, 129, 0.3)",
-                                      color: "#10B981",
-                                      fontSize: 11,
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    +30 Days
-                                  </button>
-                                  {isActive && (
+                                {isPending ? (
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                                     <button
-                                      onClick={() => handleRevokeLicense(lic.key)}
+                                      onClick={() => handleApproveLicense(lic.key)}
+                                      style={{
+                                        padding: "6px 12px",
+                                        borderRadius: 6,
+                                        background: "rgba(16, 185, 129, 0.2)",
+                                        border: "1px solid #10B981",
+                                        color: "#10B981",
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                      }}
+                                      title="Confirm payment receipt and grant full plan duration"
+                                    >
+                                      Approve (Full Plan)
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectLicense(lic.key)}
+                                      style={{
+                                        padding: "6px 12px",
+                                        borderRadius: 6,
+                                        background: "rgba(239, 68, 68, 0.15)",
+                                        border: "1px solid #EF4444",
+                                        color: "#EF4444",
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                      }}
+                                      title="Reject fake TID and revoke immediately"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                                    <button
+                                      onClick={() => handleExtendLicense(lic.key)}
                                       style={{
                                         padding: "5px 10px",
                                         borderRadius: 6,
-                                        background: "rgba(239, 68, 68, 0.12)",
-                                        border: "1px solid rgba(239, 68, 68, 0.3)",
-                                        color: "#EF4444",
+                                        background: "rgba(16, 185, 129, 0.12)",
+                                        border: "1px solid rgba(16, 185, 129, 0.3)",
+                                        color: "#10B981",
                                         fontSize: 11,
                                         fontWeight: 700,
                                         cursor: "pointer",
                                       }}
                                     >
-                                      Revoke
+                                      +30 Days
                                     </button>
-                                  )}
-                                </div>
+                                    {isActive && (
+                                      <button
+                                        onClick={() => handleRevokeLicense(lic.key)}
+                                        style={{
+                                          padding: "5px 10px",
+                                          borderRadius: 6,
+                                          background: "rgba(239, 68, 68, 0.12)",
+                                          border: "1px solid rgba(239, 68, 68, 0.3)",
+                                          color: "#EF4444",
+                                          fontSize: 11,
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        Revoke
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           );

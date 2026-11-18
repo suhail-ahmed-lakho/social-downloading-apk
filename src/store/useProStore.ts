@@ -459,11 +459,11 @@ export function buildPaymentProofWhatsAppUrl(params: {
   const plan = PRO_PRICING[params.planId];
   const text =
     `Hello OmniSaver Team, I have transferred the payment for OmniSaver PRO.\n\n` +
-    `⭐ Plan: ${plan.title} (${plan.price})\n` +
-    `🔑 Device ID: ${proState.deviceId}\n` +
-    `💳 Paid via: ${params.paymentMethod}\n` +
-    `🧾 Transaction ID (TID): ${params.tid || 'Attached'}\n\n` +
-    `Please verify and provide my license key. Thanks!`;
+    `• Plan: ${plan.title} (${plan.price})\n` +
+    `• Device ID: ${proState.deviceId}\n` +
+    `• Paid via: ${params.paymentMethod}\n` +
+    `• Transaction ID (TID): ${params.tid || 'Attached'}\n\n` +
+    `Please verify and activate my subscription. Thanks!`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }

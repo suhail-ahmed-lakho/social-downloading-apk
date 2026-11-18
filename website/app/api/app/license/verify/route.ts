@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         valid: result.valid,
         planType: result.planType,
         expiresAt: result.expiresAt,
+        status: result.status,
         message: result.message,
         error: result.error,
       },

@@ -34,7 +34,7 @@ export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style }) 
       >
         <View style={styles.contentRow}>
           <View style={styles.badgeBox}>
-            <Text style={styles.badgeText}>SPONSORED</Text>
+            <Text style={styles.badgeText}>PRO BOOST</Text>
           </View>
 
           <View style={styles.copyCol}>
