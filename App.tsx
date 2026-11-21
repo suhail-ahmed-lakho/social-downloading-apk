@@ -69,7 +69,6 @@ import {
   UpdateCheckResult,
 } from './src/services/update/updateChecker';
 import { CURRENT_APP_VERSION } from './src/config/updateConfig';
-import { trackAppLaunch, trackAppDownload } from './src/services/telemetry/appAnalytics';
 import { Ionicons, FontAwesome5, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserProfileModal } from './src/components/UserProfileModal';
 
@@ -112,14 +111,12 @@ export default function App() {
   useEffect(() => {
     void loadHistory();
     void checkClipboard();
-    void trackAppLaunch();
 
     const unsubCompleted = subscribeDownloadCompleted((savedItem) => {
       setHistoryItems((prev) => [
         savedItem,
         ...prev.filter((existing) => existing.id !== savedItem.id),
       ]);
-      void trackAppDownload(savedItem.platform, 'HD', savedItem.platform === 'youtube_music' ? 'audio' : 'media');
     });
 
     // Auto-check for update after splash screen initializes

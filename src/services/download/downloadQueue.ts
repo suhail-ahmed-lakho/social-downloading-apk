@@ -9,7 +9,7 @@ import { addDownloadToHistory } from '../storage/history';
 import { notifyDownloadComplete, notifyDownloadFailed } from '../notifications/notificationService';
 import { recordDownloadCompletedForAds } from '../ads/adManager';
 import { sendMobileTelemetry } from '../api/backendClient';
-import { getIsPro } from '../../store/useProStore';
+import { getIsPro, getProState } from '../../store/useProStore';
 import {
   buildDownloadHeaders,
   extractDirectUrlFromRapidCdn,
@@ -283,11 +283,20 @@ async function recordSavedHistoryAndNotify(
       downloadId: item.id,
     });
     void recordDownloadCompletedForAds();
+    const proSnapshot = getProState();
     void sendMobileTelemetry({
       action: 'download',
       platform: item.platform,
       details: `${item.title} (${item.qualityLabel || 'HD'})`,
-      isPro: getIsPro(),
+      deviceId: proSnapshot.deviceId,
+      userName: proSnapshot.userName,
+      isPro: proSnapshot.isPro,
+      metadata: {
+        format: item.qualityLabel || (item.isAudio ? 'MP3 Audio' : '1080p HD'),
+        size: sizeMB,
+        userName: proSnapshot.userName,
+        guestId: proSnapshot.guestId,
+      },
     });
   }
 

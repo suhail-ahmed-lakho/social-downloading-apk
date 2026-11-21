@@ -56,13 +56,17 @@ export async function trackAppLaunch(): Promise<void> {
         ? 'iOS iPhone'
         : 'Web App';
 
+    const guestSuffix = userId.replace(/[^A-Z0-9]/g, '').slice(-4).toUpperCase() || '2026';
+    const guestName = `Guest #${guestSuffix}`;
+
     void postWithFallback({
       isApp: true,
       source: 'mobile_app',
       platform: 'mobile-app',
       deviceId: userId,
       action: 'visit',
-      name: `App User (${userId.slice(-6)})`,
+      name: guestName,
+      userName: guestName,
       appVersion: CURRENT_APP_VERSION,
       device,
       details: `Launched OmniSaver Mobile App v${CURRENT_APP_VERSION}`,
@@ -80,16 +84,20 @@ export async function trackAppDownload(platform: string, quality: string, format
         ? 'iOS iPhone'
         : 'Web App';
 
+    const guestSuffix = userId.replace(/[^A-Z0-9]/g, '').slice(-4).toUpperCase() || '2026';
+    const guestName = `Guest #${guestSuffix}`;
+
     void postWithFallback({
       isApp: true,
       source: 'mobile_app',
-      platform: platform || 'mobile-app',
+      platform: platform || 'universal',
       deviceId: userId,
       action: 'download',
-      name: `App User (${userId.slice(-6)})`,
+      name: guestName,
+      userName: guestName,
       appVersion: CURRENT_APP_VERSION,
       device,
-      details: `Saved ${platform.toUpperCase()} ${quality || 'HD'} (${format})`,
+      details: `Saved ${(platform || 'Media').toUpperCase()} ${quality || 'HD'} (${format})`,
     });
   } catch {}
 }

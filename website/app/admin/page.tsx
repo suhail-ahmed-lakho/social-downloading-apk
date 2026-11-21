@@ -641,8 +641,14 @@ export default function AdminDashboardPage() {
   // Filter activities for Live Extraction Stream
   const filteredActivities = useMemo(() => {
     return activities.filter((act) => {
-      if (logPlatformFilter !== "all" && act.platform.toLowerCase() !== logPlatformFilter.toLowerCase()) {
-        return false;
+      if (logPlatformFilter !== "all") {
+        const platLower = act.platform.toLowerCase();
+        const filterLower = logPlatformFilter.toLowerCase();
+        if (filterLower === "app" || filterLower === "omnisaver app") {
+          if (!platLower.includes("app")) return false;
+        } else if (platLower !== filterLower) {
+          return false;
+        }
       }
       if (logStatusFilter !== "all" && act.status !== logStatusFilter) {
         return false;
@@ -2224,7 +2230,7 @@ export default function AdminDashboardPage() {
                 <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                   <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", textAlign: "left", fontSize: 12 }}>
                     <thead>
-                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", color: "#64748B" }}>
+                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", color: "#94A3B8" }}>
                         <th style={{ padding: "12px 20px" }}>License Key</th>
                         <th style={{ padding: "12px 16px" }}>Bound Device ID</th>
                         <th style={{ padding: "12px 16px" }}>Plan & Price</th>
@@ -2237,7 +2243,7 @@ export default function AdminDashboardPage() {
                     <tbody>
                       {filteredLicenses.length === 0 ? (
                         <tr>
-                          <td colSpan={7} style={{ padding: "32px 20px", textAlign: "center", color: "#64748B" }}>
+                          <td colSpan={7} style={{ padding: "32px 20px", textAlign: "center", color: "#94A3B8" }}>
                             No licenses found matching your active filter criteria.
                           </td>
                         </tr>
@@ -2925,7 +2931,7 @@ export default function AdminDashboardPage() {
                 <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                   <table style={{ width: "100%", minWidth: 840, borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                     <thead>
-                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#64748B", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#94A3B8", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
                         <th style={{ padding: "14px 18px" }}>User / Identity</th>
                         <th style={{ padding: "14px 18px" }}>Client IP Address</th>
                         <th style={{ padding: "14px 18px" }}>Location (Geo)</th>
@@ -2938,7 +2944,7 @@ export default function AdminDashboardPage() {
                     <tbody>
                       {filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={7} style={{ padding: "40px 18px", textAlign: "center", color: "#64748B" }}>
+                          <td colSpan={7} style={{ padding: "40px 18px", textAlign: "center", color: "#94A3B8" }}>
                             {users.length === 0
                               ? "No visitors tracked yet. Visit the website to generate real-time user records."
                               : "No users match your search criteria."}
@@ -3218,7 +3224,7 @@ export default function AdminDashboardPage() {
               >
                 {/* Search Bar */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 260 }}>
-                  <Search size={15} style={{ color: "#64748B" }} />
+                  <Search size={15} style={{ color: "#94A3B8" }} />
                   <input
                     type="text"
                     placeholder="Search by URL, media, IP, or user identity..."
@@ -3236,7 +3242,7 @@ export default function AdminDashboardPage() {
                   {logSearchQuery && (
                     <button
                       onClick={() => setLogSearchQuery("")}
-                      style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", fontSize: 11 }}
+                      style={{ background: "transparent", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: 11 }}
                     >
                       Clear
                     </button>
@@ -3245,9 +3251,10 @@ export default function AdminDashboardPage() {
 
                 {/* Platform Filters */}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>Platform:</span>
+                  <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase" }}>Platform:</span>
                   {[
                     { id: "all", label: "All" },
+                    { id: "app", label: "OmniSaver App" },
                     { id: "tiktok", label: "TikTok" },
                     { id: "youtube", label: "YouTube" },
                     { id: "instagram", label: "Instagram" },
@@ -3311,7 +3318,7 @@ export default function AdminDashboardPage() {
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                 <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 12, textAlign: "left" }}>
                   <thead>
-                    <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#64748B", borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                    <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#94A3B8", borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}>
                       <th style={{ padding: "12px 18px" }}>Platform</th>
                       <th style={{ padding: "12px 18px" }}>Details / Media</th>
                       <th style={{ padding: "12px 18px" }}>Format</th>
@@ -3325,7 +3332,7 @@ export default function AdminDashboardPage() {
                   <tbody>
                     {filteredActivities.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ padding: "36px 18px", textAlign: "center", color: "#64748B" }}>
+                        <td colSpan={8} style={{ padding: "36px 18px", textAlign: "center", color: "#94A3B8" }}>
                           No activity events match your active filters. Clear search or select "All".
                         </td>
                       </tr>
@@ -3340,34 +3347,75 @@ export default function AdminDashboardPage() {
                               {row.platform.toLowerCase() === "pinterest" && <PinterestIcon size={16} />}
                               {row.platform.toLowerCase() === "twitter" && <TwitterXIcon size={16} />}
                               {row.platform.toLowerCase() === "facebook" && <FacebookIcon size={16} />}
-                              <span style={{ textTransform: "uppercase", color: "#FF8A3D" }}>{row.platform}</span>
+                              {(row.platform.toLowerCase().includes("omnisaver") || row.platform.toLowerCase().includes("app")) && (
+                                <Smartphone size={16} style={{ color: "#38BDF8" }} />
+                              )}
+                              {row.platform.toLowerCase() === "universal" && (
+                                <Globe size={16} style={{ color: "#A855F7" }} />
+                              )}
+                              <span
+                                style={{
+                                  textTransform: "uppercase",
+                                  color:
+                                    row.platform.toLowerCase() === "pinterest"
+                                      ? "#E60023"
+                                      : row.platform.toLowerCase() === "youtube"
+                                      ? "#FF0000"
+                                      : row.platform.toLowerCase() === "instagram"
+                                      ? "#E1306C"
+                                      : row.platform.toLowerCase() === "tiktok"
+                                      ? "#00F2FE"
+                                      : row.platform.toLowerCase().includes("app")
+                                      ? "#38BDF8"
+                                      : "#FF8A3D",
+                                }}
+                              >
+                                {row.platform}
+                              </span>
                             </div>
                           </td>
-                          <td style={{ padding: "12px 18px", color: "#94A3B8", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <td
+                            style={{
+                              padding: "12px 18px",
+                              color: "#CBD5E1",
+                              maxWidth: 320,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={row.details}
+                          >
                             {row.details}
                           </td>
-                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#00F2FE" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#38BDF8", fontWeight: 600 }}>
                             {row.format || "-"}
                           </td>
-                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#E2E8F0", fontWeight: 600 }}>
                             {row.size || "-"}
                           </td>
-                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#64748B" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#94A3B8" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span>{row.ip}</span>
                               <button
                                 onClick={() => handleCopyIP(row.ip)}
-                                style={{ background: "none", border: "none", color: "#64748B", cursor: "pointer", padding: 1 }}
+                                style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer", padding: 1 }}
                                 title="Copy IP"
                               >
                                 <Copy size={12} />
                               </button>
                             </div>
                           </td>
-                          <td style={{ padding: "12px 18px", color: "#E2E8F0" }}>
-                            {row.userName}
+                          <td style={{ padding: "12px 18px", color: "#FFFFFF", fontWeight: 600 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span>{row.userName}</span>
+                              {row.guestId && row.userName !== row.guestId && (
+                                <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(255, 255, 255, 0.08)", color: "#94A3B8" }}>
+                                  {row.guestId}
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#64748B" }}>
+                          <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#94A3B8" }}>
                             {new Date(row.timestamp).toLocaleTimeString()}
                           </td>
                           <td style={{ padding: "12px 18px" }}>
