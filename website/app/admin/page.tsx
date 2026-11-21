@@ -593,13 +593,13 @@ export default function AdminDashboardPage() {
         }),
       });
       if (res.ok) {
-        showToast("Real extraction completed! Live log recorded.");
+        showToast("Real extraction completed! Live log recorded.", "success");
         await fetchTelemetry(true);
       } else {
-        showToast("Extraction returned non-200");
+        showToast("Extraction returned non-200", "error");
       }
     } catch {
-      showToast("Sample extraction test completed.");
+      showToast("Sample extraction test completed.", "info");
     } finally {
       setIsTestingSample(false);
     }
@@ -666,12 +666,13 @@ export default function AdminDashboardPage() {
     return licenses.filter((lic) => {
       const now = Date.now();
       const isExpired = now > lic.expiresAt;
-      const isPending = lic.status === "pending" && !isExpired;
+      const isPending = lic.status === "pending";
       const isActive = lic.status === "active" && !isExpired;
+      const isRevokedOrExpired = lic.status === "revoked" || (lic.status === "active" && isExpired);
 
       if (licenseFilter === "pending" && !isPending) return false;
       if (licenseFilter === "active" && !isActive) return false;
-      if (licenseFilter === "revoked" && !(lic.status === "revoked" || isExpired)) return false;
+      if (licenseFilter === "revoked" && !isRevokedOrExpired) return false;
 
       if (licensePlanFilter !== "all" && lic.planType?.toLowerCase() !== licensePlanFilter.toLowerCase()) {
         return false;
@@ -835,6 +836,22 @@ export default function AdminDashboardPage() {
         fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
+      <style>{`
+        * {
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        code, pre, .font-mono {
+          font-family: 'JetBrains Mono', monospace !important;
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #080B10 inset !important;
+          -webkit-text-fill-color: #FFFFFF !important;
+          caret-color: #FFFFFF !important;
+        }
+      `}</style>
       {/* Mobile Backdrop Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div
@@ -1148,8 +1165,8 @@ export default function AdminDashboardPage() {
                           </span>
                           <span
                             style={{
-                              fontSize: 10,
-                              color: "#64748B",
+                              fontSize: 10.5,
+                              color: "#94A3B8",
                               marginTop: 1,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
@@ -1959,106 +1976,113 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleCreateLicense} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
-                      Customer Device ID (OMNI-XXXX-XXXX) *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. OMNI-8F3E-91B0"
-                      value={newLicDeviceId}
-                      onChange={(e) => setNewLicDeviceId(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        background: "#080B10",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        color: "#FFFFFF",
-                        fontVariantNumeric: "tabular-nums",
-                        fontSize: 13,
-                        outline: "none",
-                      }}
-                      required
-                    />
+                <form onSubmit={handleCreateLicense} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6, whiteSpace: "nowrap" }}>
+                        Customer Device ID *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. OMNI-8F3E-91B0"
+                        value={newLicDeviceId}
+                        onChange={(e) => setNewLicDeviceId(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          background: "#080B10",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
+                          color: "#FFFFFF",
+                          fontVariantNumeric: "tabular-nums",
+                          fontSize: 13,
+                          outline: "none",
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6, whiteSpace: "nowrap" }}>
+                        Select PRO Plan *
+                      </label>
+                      <select
+                        value={newLicPlan}
+                        onChange={(e) => setNewLicPlan(e.target.value as any)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          background: "#080B10",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
+                          color: "#FFFFFF",
+                          fontSize: 13,
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="monthly">Monthly Pass — Rs. 750 (30 Days)</option>
+                        <option value="quarterly">3 Months Saver — Rs. 1,800 (90 Days)</option>
+                        <option value="yearly">Yearly VIP — Rs. 4,500 (365 Days)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6, whiteSpace: "nowrap" }}>
+                        Payment TID / Reference
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. EP-9238471 or Bank Ref"
+                        value={newLicTid}
+                        onChange={(e) => setNewLicTid(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          background: "#080B10",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
+                          color: "#FFFFFF",
+                          fontSize: 13,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6, whiteSpace: "nowrap" }}>
+                        Customer Name / Note
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Asad (WhatsApp 0300...)"
+                        value={newLicNotes}
+                        onChange={(e) => setNewLicNotes(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          background: "#080B10",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
+                          color: "#FFFFFF",
+                          fontSize: 13,
+                          outline: "none",
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
-                      Select PRO Plan *
-                    </label>
-                    <select
-                      value={newLicPlan}
-                      onChange={(e) => setNewLicPlan(e.target.value as any)}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        background: "#080B10",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        color: "#FFFFFF",
-                        fontSize: 13,
-                        outline: "none",
-                      }}
-                    >
-                      <option value="monthly">Monthly Plan — Rs. 750 (30 Days)</option>
-                      <option value="quarterly">3 Months Saver — Rs. 1,800 (90 Days) • POPULAR</option>
-                      <option value="yearly">Yearly VIP — Rs. 4,500 (365 Days)</option>
-                    </select>
-                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#94A3B8" }}>
+                      <ShieldCheck size={16} style={{ color: "#10B981" }} />
+                      <span>Keys are cryptographically hardware-locked to the customer&apos;s OMNI device hash.</span>
+                    </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
-                      Payment TID / Reference
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. EP-9238471 or Bank Ref"
-                      value={newLicTid}
-                      onChange={(e) => setNewLicTid(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        background: "#080B10",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        color: "#FFFFFF",
-                        fontSize: 13,
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 6 }}>
-                      Customer Name or WhatsApp Note
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Asad (WhatsApp 0300...)"
-                      value={newLicNotes}
-                      onChange={(e) => setNewLicNotes(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        background: "#080B10",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        color: "#FFFFFF",
-                        fontSize: 13,
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "flex-end" }}>
                     <button
                       type="submit"
                       disabled={isGeneratingLicense}
                       style={{
-                        width: "100%",
-                        padding: "11px 18px",
+                        padding: "11px 26px",
                         borderRadius: 10,
                         background: "linear-gradient(135deg, #FF6B00 0%, #FF8A3D 100%)",
                         color: "#FFFFFF",
@@ -2066,11 +2090,12 @@ export default function AdminDashboardPage() {
                         fontSize: 13,
                         border: "none",
                         cursor: isGeneratingLicense ? "wait" : "pointer",
-                        display: "flex",
+                        display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: 8,
-                        boxShadow: "0 4px 14px rgba(255, 107, 0, 0.35)",
+                        boxShadow: "0 4px 16px rgba(255, 107, 0, 0.35)",
+                        minWidth: isMobile ? "100%" : "220px",
                       }}
                     >
                       <Zap size={16} />
@@ -2088,16 +2113,22 @@ export default function AdminDashboardPage() {
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginRight: 4 }}>
                         PRO Subscriptions & TIDs ({licenses.length})
                       </div>
-                      {[
-                        { id: "all", label: `All (${licenses.length})` },
-                        {
-                          id: "pending",
-                          label: `Pending Approvals (${licenses.filter((l) => l.status === "pending").length})`,
-                          alert: licenses.filter((l) => l.status === "pending").length > 0,
-                        },
-                        { id: "active", label: `Active VIP (${licenses.filter((l) => l.status === "active" && Date.now() <= l.expiresAt).length})` },
-                        { id: "revoked", label: "Revoked / Expired" },
-                      ].map((tab) => {
+                      {(() => {
+                        const pendingCount = licenses.filter((l) => l.status === "pending").length;
+                        const activeCount = licenses.filter((l) => l.status === "active" && Date.now() <= l.expiresAt).length;
+                        const revokedExpiredCount = licenses.filter((l) => l.status === "revoked" || (l.status === "active" && Date.now() > l.expiresAt)).length;
+
+                        return [
+                          { id: "all", label: `All (${licenses.length})` },
+                          {
+                            id: "pending",
+                            label: `Pending Approvals (${pendingCount})`,
+                            alert: pendingCount > 0,
+                          },
+                          { id: "active", label: `Active VIP (${activeCount})` },
+                          { id: "revoked", label: `Revoked / Expired (${revokedExpiredCount})` },
+                        ];
+                      })().map((tab) => {
                         const active = licenseFilter === tab.id;
                         return (
                           <button
@@ -2154,30 +2185,43 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <input
-                      type="text"
-                      placeholder="Search by TID, Key, Device ID or Notes..."
-                      value={licenseSearchQuery}
-                      onChange={(e) => setLicenseSearchQuery(e.target.value)}
+                    <div
                       style={{
-                        padding: "8px 14px",
-                        borderRadius: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
                         background: "#080B10",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                        color: "#FFFFFF",
-                        fontSize: 12,
-                        width: 280,
-                        outline: "none",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: 8,
+                        padding: "6px 12px",
+                        width: isMobile ? "100%" : 300,
                       }}
-                    />
-                    {licenseSearchQuery && (
-                      <button
-                        onClick={() => setLicenseSearchQuery("")}
-                        style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", fontSize: 12 }}
-                      >
-                        Clear
-                      </button>
-                    )}
+                    >
+                      <Search size={14} style={{ color: "#94A3B8", flexShrink: 0 }} />
+                      <input
+                        type="text"
+                        placeholder="Search by TID, Key, Device ID or Notes..."
+                        value={licenseSearchQuery}
+                        onChange={(e) => setLicenseSearchQuery(e.target.value)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#FFFFFF",
+                          fontSize: 12,
+                          width: "100%",
+                          outline: "none",
+                        }}
+                      />
+                      {licenseSearchQuery && (
+                        <button
+                          onClick={() => setLicenseSearchQuery("")}
+                          style={{ background: "transparent", border: "none", color: "#94A3B8", cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}
+                          title="Clear search"
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -2204,10 +2248,14 @@ export default function AdminDashboardPage() {
                       ) : (
                         filteredLicenses.map((lic) => {
                           const now = Date.now();
-                          const isExpired = now > lic.expiresAt;
-                          const isPending = lic.status === "pending" && !isExpired;
-                          const isActive = lic.status === "active" && !isExpired;
+                          const isPending = lic.status === "pending";
+                          const isGraceActive = isPending && now <= lic.expiresAt;
+                          const isGraceExpired = isPending && now > lic.expiresAt;
+                          const isActive = lic.status === "active" && now <= lic.expiresAt;
+                          const isExpired = lic.status === "active" && now > lic.expiresAt;
+                          const isRevoked = lic.status === "revoked";
                           const hoursLeft = Math.max(0, Math.round((lic.expiresAt - now) / (1000 * 60 * 60)));
+                          const daysAgo = Math.max(1, Math.round((now - lic.expiresAt) / (1000 * 60 * 60 * 24)));
 
                           return (
                             <tr key={lic.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
@@ -2235,13 +2283,13 @@ export default function AdminDashboardPage() {
                                 <div style={{ fontSize: 11, color: "#10B981" }}>Rs. {(lic.pricePkr || 0).toLocaleString()}</div>
                               </td>
                               <td style={{ padding: "14px 16px" }}>
-                                {isPending ? (
+                                {isGraceActive ? (
                                   <span
                                     style={{
                                       display: "inline-flex",
                                       alignItems: "center",
-                                      gap: 4,
-                                      padding: "3px 8px",
+                                      gap: 5,
+                                      padding: "4px 9px",
                                       borderRadius: 6,
                                       fontSize: 11,
                                       fontWeight: 800,
@@ -2252,13 +2300,31 @@ export default function AdminDashboardPage() {
                                   >
                                     ⏳ Pending ({hoursLeft}h Grace)
                                   </span>
+                                ) : isGraceExpired ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                      padding: "4px 9px",
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 800,
+                                      background: "rgba(239, 68, 68, 0.18)",
+                                      color: "#F87171",
+                                      border: "1px solid rgba(239, 68, 68, 0.4)",
+                                    }}
+                                    title="24h temporary grace has ended. Awaiting admin review."
+                                  >
+                                    ⚠️ Grace Expired ({daysAgo}d ago)
+                                  </span>
                                 ) : isActive ? (
                                   <span
                                     style={{
                                       display: "inline-flex",
                                       alignItems: "center",
-                                      gap: 4,
-                                      padding: "3px 8px",
+                                      gap: 5,
+                                      padding: "4px 9px",
                                       borderRadius: 6,
                                       fontSize: 11,
                                       fontWeight: 700,
@@ -2270,11 +2336,11 @@ export default function AdminDashboardPage() {
                                     ⚡ Active VIP
                                   </span>
                                 ) : isExpired ? (
-                                  <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(148, 163, 184, 0.15)", color: "#94A3B8" }}>
+                                  <span style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(148, 163, 184, 0.15)", color: "#94A3B8" }}>
                                     Expired
                                   </span>
                                 ) : (
-                                  <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239, 68, 68, 0.15)", color: "#EF4444" }}>
+                                  <span style={{ padding: "4px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239, 68, 68, 0.15)", color: "#EF4444" }}>
                                     Revoked
                                   </span>
                                 )}
@@ -2284,7 +2350,7 @@ export default function AdminDashboardPage() {
                               </td>
                               <td style={{ padding: "14px 16px", color: "#94A3B8" }}>
                                 <div style={{ color: "#F1F5F9", fontWeight: 600 }}>{lic.tid || "—"}</div>
-                                {lic.notes && <div style={{ fontSize: 11, color: "#64748B" }}>{lic.notes}</div>}
+                                {lic.notes && <div style={{ fontSize: 11, color: "#94A3B8" }}>{lic.notes}</div>}
                               </td>
                               <td style={{ padding: "14px 20px", textAlign: "right" }}>
                                 {isPending ? (
@@ -2339,7 +2405,7 @@ export default function AdminDashboardPage() {
                                     >
                                       +30 Days
                                     </button>
-                                    {isActive && (
+                                    {!isRevoked && (
                                       <button
                                         onClick={() => handleRevokeLicense(lic.key)}
                                         style={{
