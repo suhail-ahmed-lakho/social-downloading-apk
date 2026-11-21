@@ -14,7 +14,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, FontAwesome5, Feather } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
@@ -247,6 +247,31 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           {/* TAB 1: PRICING & FEATURE COMPARISON */}
           {activeTab === 'pricing' && (
             <View style={styles.tabContent}>
+              {/* Active Plan Status Hero if already PRO */}
+              {pro.isPro && (
+                <View style={styles.activePlanHeroBox}>
+                  <View style={styles.activePlanHeroTop}>
+                    <View style={styles.activePlanHeroTitleRow}>
+                      <MaterialCommunityIcons name="crown" size={18} color="#FBBF24" />
+                      <Text style={styles.activePlanHeroTitle}>
+                        {pro.planMeta.title}
+                      </Text>
+                    </View>
+                    <View style={[styles.activePlanHeroBadge, { backgroundColor: pro.planMeta.badgeColor }]}>
+                      <Text style={styles.activePlanHeroBadgeText}>{pro.planMeta.badge}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.activePlanHeroCountdown}>
+                    Time Left: <Text style={{ color: '#FBBF24', fontWeight: '800' }}>{pro.remainingTime.formatted}</Text>
+                  </Text>
+                  {pro.expiryTimestamp && (
+                    <Text style={styles.activePlanHeroExpiry}>
+                      Expires: {pro.remainingTime.expiryDateFormatted}
+                    </Text>
+                  )}
+                </View>
+              )}
+
               {/* Feature Comparison Box */}
               <View style={styles.comparisonCard}>
                 <View style={styles.compHeader}>
@@ -738,6 +763,48 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     gap: 16,
+  },
+  activePlanHeroBox: {
+    backgroundColor: '#0E131F',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    padding: 14,
+    gap: 6,
+  },
+  activePlanHeroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  activePlanHeroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  activePlanHeroTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  activePlanHeroBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  activePlanHeroBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  activePlanHeroCountdown: {
+    fontSize: 13,
+    color: '#CBD5E1',
+    marginTop: 2,
+  },
+  activePlanHeroExpiry: {
+    fontSize: 11,
+    color: '#94A3B8',
   },
   comparisonCard: {
     backgroundColor: COLORS.cardBg,

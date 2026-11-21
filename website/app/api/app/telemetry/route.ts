@@ -20,10 +20,13 @@ export async function POST(req: NextRequest) {
       action = "heartbeat",
       platform,
       deviceId,
+      userName,
       isPro = false,
       details = "Mobile App Activity",
-      appVersion = "1.0.16",
+      appVersion = "1.0.18",
     } = body;
+
+    const trimmedUserName = userName && typeof userName === "string" ? userName.trim() : undefined;
 
     await recordEvent({
       source: source === "website" ? "website" : "mobile_app",
@@ -38,7 +41,10 @@ export async function POST(req: NextRequest) {
       browser: `OmniSaver v${appVersion}`,
       status: "SUCCESS",
       details,
-      metadata: body.metadata,
+      metadata: {
+        ...(body.metadata || {}),
+        userName: trimmedUserName,
+      },
     });
 
     return NextResponse.json(

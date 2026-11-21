@@ -70,7 +70,8 @@ import {
 } from './src/services/update/updateChecker';
 import { CURRENT_APP_VERSION } from './src/config/updateConfig';
 import { trackAppLaunch, trackAppDownload } from './src/services/telemetry/appAnalytics';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { UserProfileModal } from './src/components/UserProfileModal';
 
 const NativeInstagramBrowserModal =
   Platform.OS !== 'web'
@@ -96,6 +97,7 @@ export default function App() {
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showProUpgradeModal, setShowProUpgradeModal] = useState(false);
+  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [clipboardBanner, setClipboardBanner] = useState<{
     text: string;
     platform: string;
@@ -329,7 +331,8 @@ export default function App() {
           hasUpdate={!!updateInfo?.hasUpdate}
           onOpenUpdate={() => handleCheckForUpdates(true)}
           isPro={pro.isPro}
-          onOpenProUpgrade={() => setShowProUpgradeModal(true)}
+          onOpenProUpgrade={() => setShowUserProfileModal(true)}
+          onOpenProfile={() => setShowUserProfileModal(true)}
         />
 
         {/* Floating Clipboard Detection Toast */}
@@ -385,6 +388,66 @@ export default function App() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            {/* User Account & VIP Subscription Status Strip */}
+            <TouchableOpacity
+              style={styles.accountStatusStrip}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShowUserProfileModal(true);
+              }}
+              activeOpacity={0.88}
+            >
+              <View style={styles.accountStripLeft}>
+                <View style={[styles.avatarMiniWrap, pro.isPro && styles.avatarMiniWrapPro]}>
+                  {pro.isPro ? (
+                    <MaterialCommunityIcons name="crown" size={13} color="#FBBF24" />
+                  ) : (
+                    <Ionicons name="person" size={12} color="#94A3B8" />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.accountNameRow}>
+                    <Text style={styles.accountNameText} numberOfLines={1}>
+                      {pro.userName}
+                    </Text>
+                    <Feather name="edit-2" size={11} color={COLORS.textMuted} />
+                  </View>
+                  <Text style={styles.accountSubText} numberOfLines={1}>
+                    {pro.isPro ? pro.planMeta.title : `Free Plan • ${pro.guestId}`}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.accountStripRight}>
+                {pro.isPro ? (
+                  <View
+                    style={[
+                      styles.proTimePill,
+                      pro.remainingTime.isGrace && styles.proTimePillGrace,
+                    ]}
+                  >
+                    <Ionicons
+                      name="timer-outline"
+                      size={12}
+                      color={pro.remainingTime.isGrace ? '#F59E0B' : '#10B981'}
+                    />
+                    <Text
+                      style={[
+                        styles.proTimePillText,
+                        pro.remainingTime.isGrace && { color: '#FBBF24' },
+                      ]}
+                    >
+                      {pro.remainingTime.shortLabel}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.freeUpgradePill}>
+                    <Text style={styles.freeUpgradePillText}>Upgrade PRO ›</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+
             {/* Filter / Platform Selector Chips */}
             <PlatformPills
               selectedPlatform={selectedPlatform}
@@ -671,6 +734,13 @@ export default function App() {
             onOpenProUpgrade={() => setShowProUpgradeModal(true)}
           />
         )}
+
+        {/* User Profile & Subscription Management Modal */}
+        <UserProfileModal
+          visible={showUserProfileModal}
+          onClose={() => setShowUserProfileModal(false)}
+          onOpenUpgradeModal={() => setShowProUpgradeModal(true)}
+        />
 
         {/* PRO Upgrade & License Activation Modal */}
         <ProUpgradeModal
@@ -1007,5 +1077,92 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
     lineHeight: 16,
+  },
+  accountStatusStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 10,
+    backgroundColor: '#0E131F',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  accountStripLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    paddingRight: 8,
+  },
+  avatarMiniWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarMiniWrapPro: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+  },
+  accountNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  accountNameText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: -0.2,
+  },
+  accountSubText: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  accountStripRight: {
+    alignItems: 'flex-end',
+  },
+  proTimePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  proTimePillGrace: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  proTimePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#34D399',
+    fontVariant: ['tabular-nums'],
+  },
+  freeUpgradePill: {
+    backgroundColor: 'rgba(255, 107, 0, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 0, 0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  freeUpgradePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accentPrimary,
   },
 });

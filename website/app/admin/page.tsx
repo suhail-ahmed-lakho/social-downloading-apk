@@ -71,6 +71,13 @@ interface PlatformStat {
 interface UserRecord {
   ip: string;
   name: string;
+  customName?: string;
+  isCustomName?: boolean;
+  guestId?: string;
+  deviceId?: string;
+  planType?: string;
+  licenseStatus?: string;
+  remainingTime?: string;
   email?: string;
   country: string;
   city: string;
@@ -88,6 +95,7 @@ interface UserActivity {
   country: string;
   city: string;
   userName: string;
+  guestId?: string;
   userEmail?: string;
   device: string;
   browser: string;
@@ -2695,15 +2703,48 @@ export default function AdminDashboardPage() {
                                   {u.name ? u.name.slice(0, 2).toUpperCase() : "U"}
                                 </div>
                                 <div>
-                                  <div style={{ fontWeight: 700, color: "#FFFFFF" }}>{u.name}</div>
-                                  {u.email && (
-                                    <div style={{ fontSize: 11, color: "#00F2FE", fontVariantNumeric: "tabular-nums" }}>
-                                      {u.email}
-                                    </div>
-                                  )}
-                                  {!u.email && (
-                                    <div style={{ fontSize: 11, color: "#64748B" }}>
-                                      {u.isBlocked ? "Blacklisted Threat" : "Web Visitor"}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontWeight: 700, color: "#FFFFFF" }}>{u.name}</span>
+                                    {(u as any).isCustomName && (
+                                      <span
+                                        style={{
+                                          fontSize: 9,
+                                          fontWeight: 800,
+                                          padding: "1px 5px",
+                                          borderRadius: 4,
+                                          background: "rgba(16, 185, 129, 0.2)",
+                                          border: "1px solid rgba(16, 185, 129, 0.4)",
+                                          color: "#34D399",
+                                        }}
+                                      >
+                                        Named User
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>
+                                    {(u as any).guestId ? `${(u as any).guestId} • ` : ""}{(u as any).deviceId ? `${(u as any).deviceId}` : (u.isBlocked ? "Blacklisted Threat" : "Web Visitor")}
+                                  </div>
+                                  {(u as any).planType && (u as any).planType !== "free" && (
+                                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4 }}>
+                                      <span
+                                        style={{
+                                          fontSize: 10,
+                                          fontWeight: 800,
+                                          padding: "1px 6px",
+                                          borderRadius: 4,
+                                          background: (u as any).licenseStatus === "pending" ? "rgba(245, 158, 11, 0.2)" : "rgba(139, 92, 246, 0.2)",
+                                          border: (u as any).licenseStatus === "pending" ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid rgba(139, 92, 246, 0.4)",
+                                          color: (u as any).licenseStatus === "pending" ? "#FBBF24" : "#A78BFA",
+                                          textTransform: "uppercase",
+                                        }}
+                                      >
+                                        {(u as any).licenseStatus === "pending" ? "Grace PRO" : `${(u as any).planType} PRO`}
+                                      </span>
+                                      {(u as any).remainingTime && (
+                                        <span style={{ fontSize: 10, color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
+                                          ({(u as any).remainingTime})
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>

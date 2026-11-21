@@ -428,16 +428,58 @@ export async function getDualChannelStats() {
   const proCount = proDeviceSet.size;
   const freeCount = Math.max(0, totalDevices - proCount);
 
+  // Map device custom names from telemetry
+  const deviceCustomNames = new Map<string, string>();
+  for (const e of eventsList) {
+    const meta = e.metadata || {};
+    const devId = e.deviceId;
+    if (devId && meta.userName && typeof meta.userName === "string" && meta.userName.trim()) {
+      deviceCustomNames.set(devId, meta.userName.trim());
+    }
+  }
+
+  // Map active licenses to device IDs to know plan and remaining days
+  const deviceLicenseMap = new Map<string, { planType: string; status: string; expiresAt: number; remainingText: string }>();
+  for (const lic of licensesList) {
+    if (lic.deviceId) {
+      const diff = lic.expiresAt - now;
+      let remainingText = "Expired";
+      if (diff > 0) {
+        const days = Math.floor(diff / (24 * 3600 * 1000));
+        const hours = Math.floor((diff % (24 * 3600 * 1000)) / (3600 * 1000));
+        if (days > 0) {
+          remainingText = `${days}d ${hours}h left`;
+        } else {
+          remainingText = `${hours}h left`;
+        }
+      }
+      deviceLicenseMap.set(lic.deviceId, {
+        planType: lic.planType,
+        status: lic.status,
+        expiresAt: lic.expiresAt,
+        remainingText,
+      });
+    }
+  }
+
   // 3. Map real telemetry into live activities and users for admin stream
   const recentActivities = eventsList.slice(0, 100).map((e) => {
     const meta = e.metadata || {};
     const isMobile = e.source === "mobile_app";
+    const devId = e.deviceId;
+    const customName = devId ? deviceCustomNames.get(devId) : undefined;
+    const guestId = devId ? `Guest #${devId.replace(/[^A-Z0-9]/g, '').slice(-4) || '2026'}` : undefined;
+    const finalUserName = isMobile
+      ? (customName || meta.userName || meta.name || guestId || "Mobile User")
+      : (meta.userName || meta.name || "Web Visitor");
+
     return {
       id: e.id,
       ip: e.ip || "127.0.0.1",
       country: e.country || meta.country || "PK",
       city: e.city || meta.city || "Karachi",
-      userName: isMobile ? (e.deviceId || meta.name || "OmniSaver User") : (meta.name || "Web Visitor"),
+      userName: finalUserName,
+      guestId,
       userEmail: meta.email,
       device: e.device || meta.device || (isMobile ? "Android Phone" : "Web Client"),
       browser: e.browser || meta.browser || (isMobile ? "OmniSaver App" : "Chrome / Edge"),
@@ -458,11 +500,27 @@ export async function getDualChannelStats() {
     const key = (isMobile && e.deviceId) ? e.deviceId : (e.ip || "unknown");
     const existing = userMap.get(key);
     const isDl = e.action === "download";
+    const devId = e.deviceId;
+    const customName = devId ? deviceCustomNames.get(devId) : undefined;
+    const guestId = devId ? `Guest #${devId.replace(/[^A-Z0-9]/g, '').slice(-4) || '2026'}` : "Guest";
+    const displayName = isMobile
+      ? (customName || meta.userName || meta.name || guestId)
+      : (meta.userName || meta.name || "Web Visitor");
+    const isCustom = isMobile && Boolean(customName && customName !== guestId);
+    const licInfo = devId ? deviceLicenseMap.get(devId) : undefined;
+
     if (!existing) {
       userMap.set(key, {
         id: key,
         ip: e.ip || "127.0.0.1",
-        name: isMobile ? (e.deviceId || "Mobile App Device") : "Web Visitor",
+        name: displayName,
+        customName: isCustom ? customName : undefined,
+        isCustomName: isCustom,
+        guestId: isMobile ? guestId : undefined,
+        deviceId: devId,
+        planType: licInfo ? licInfo.planType : (e.isPro ? "pro" : "free"),
+        licenseStatus: licInfo?.status,
+        remainingTime: licInfo?.remainingText,
         email: meta.email,
         country: e.country || meta.country || "PK",
         city: e.city || meta.city || "Karachi",
@@ -485,6 +543,16 @@ export async function getDualChannelStats() {
       }
       if (e.platform) {
         existing.lastPlatform = e.platform.toUpperCase();
+      }
+      if (displayName && (!existing.name || existing.name.startsWith("Guest #"))) {
+        existing.name = displayName;
+        existing.customName = isCustom ? customName : undefined;
+        existing.isCustomName = isCustom;
+      }
+      if (licInfo && (!existing.planType || existing.planType === "free")) {
+        existing.planType = licInfo.planType;
+        existing.licenseStatus = licInfo.status;
+        existing.remainingTime = licInfo.remainingText;
       }
       if (new Date(e.timestamp) > new Date(existing.lastSeen)) {
         existing.lastSeen = e.timestamp;

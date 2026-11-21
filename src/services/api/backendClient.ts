@@ -164,6 +164,7 @@ export async function sendMobileTelemetry(payload: {
   action: 'heartbeat' | 'download' | 'extract' | 'login';
   platform?: string;
   deviceId?: string;
+  userName?: string;
   isPro?: boolean;
   details?: string;
   appVersion?: string;
@@ -180,10 +181,11 @@ export async function sendMobileTelemetry(payload: {
         },
         body: JSON.stringify({
           source: 'mobile_app',
-          appVersion: payload.appVersion || '1.0.16',
+          appVersion: payload.appVersion || '1.0.18',
           os: Platform.OS,
           ...payload,
           deviceId: devId,
+          userName: payload.userName || undefined,
         }),
       },
       5000

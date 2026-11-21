@@ -13,6 +13,7 @@ interface HeaderProps {
   onOpenDownloads?: () => void;
   isPro?: boolean;
   onOpenProUpgrade?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDownloads,
   isPro = false,
   onOpenProUpgrade,
+  onOpenProfile,
 }) => {
   return (
     <View style={styles.container}>
@@ -107,6 +109,24 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Feather name="help-circle" size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
+
+          {onOpenProfile && (
+            <TouchableOpacity
+              testID="header-profile-btn"
+              style={[
+                styles.iconButton,
+                isPro && { borderColor: 'rgba(245, 158, 11, 0.4)', backgroundColor: 'rgba(245, 158, 11, 0.08)' },
+              ]}
+              onPress={onOpenProfile}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isPro ? 'person' : 'person-outline'}
+                size={16}
+                color={isPro ? '#FBBF24' : COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>

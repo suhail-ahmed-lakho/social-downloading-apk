@@ -14,6 +14,9 @@ export interface ProState {
   planType: ProPlanType;
   expiryTimestamp: number | null;
   deviceId: string;
+  guestId: string;
+  userName: string;
+  isCustomName: boolean;
   dailyFreePrivateCaptures: number;
   lastCaptureDate: string;
   licenseKey: string | null;
@@ -27,7 +30,174 @@ const STORAGE_KEYS = {
   DEVICE_ID: '@omnisaver_pro_device_id_v1',
   DAILY_CAPTURES: '@omnisaver_pro_daily_captures_v1',
   LICENSE_KEY: '@omnisaver_pro_license_key_v1',
+  USER_NAME: '@omnisaver_pro_user_name_v1',
 } as const;
+
+export function deriveGuestId(deviceId: string): string {
+  const clean = (deviceId || '').replace(/[^A-Z0-9]/g, '');
+  return `Guest #${clean.slice(-4) || '2026'}`;
+}
+
+export interface RemainingTimeInfo {
+  formatted: string;
+  shortLabel: string;
+  days: number;
+  hours: number;
+  minutes: number;
+  isExpired: boolean;
+  isGrace: boolean;
+  expiryDateFormatted: string;
+}
+
+export function calculateRemainingTime(expiryTimestamp: number | null): RemainingTimeInfo {
+  if (!expiryTimestamp) {
+    return {
+      formatted: 'Free Tier (No Expiry)',
+      shortLabel: 'Free Plan',
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      isExpired: false,
+      isGrace: false,
+      expiryDateFormatted: 'N/A',
+    };
+  }
+
+  const now = Date.now();
+  const diff = expiryTimestamp - now;
+
+  const expDate = new Date(expiryTimestamp);
+  const dateStr = expDate.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timeStr = expDate.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const expiryDateFormatted = `${dateStr} at ${timeStr}`;
+
+  if (diff <= 0) {
+    return {
+      formatted: 'Subscription Expired',
+      shortLabel: 'Expired',
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      isExpired: true,
+      isGrace: false,
+      expiryDateFormatted,
+    };
+  }
+
+  const totalHours = Math.floor(diff / (1000 * 60 * 60));
+  const totalDays = Math.floor(totalHours / 24);
+  const remainingHours = totalHours % 24;
+  const remainingMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  const isGrace = totalHours <= 26; // Grace 24h
+
+  let formatted = '';
+  let shortLabel = '';
+
+  if (totalDays > 0) {
+    formatted = `${totalDays} Day${totalDays > 1 ? 's' : ''}, ${remainingHours} Hour${remainingHours !== 1 ? 's' : ''} Left`;
+    shortLabel = `${totalDays}d left`;
+  } else if (totalHours > 0) {
+    formatted = `${totalHours} Hour${totalHours > 1 ? 's' : ''}, ${remainingMinutes}m Left`;
+    shortLabel = `${totalHours}h left`;
+  } else {
+    formatted = `${Math.max(1, remainingMinutes)} Min Left`;
+    shortLabel = `${Math.max(1, remainingMinutes)}m left`;
+  }
+
+  return {
+    formatted,
+    shortLabel,
+    days: totalDays,
+    hours: totalHours,
+    minutes: remainingMinutes,
+    isExpired: false,
+    isGrace,
+    expiryDateFormatted,
+  };
+}
+
+export function getPlanDisplayMeta(
+  planType: ProPlanType,
+  isPro: boolean,
+  expiryTimestamp: number | null
+): {
+  title: string;
+  badge: string;
+  badgeColor: string;
+  accentGradient: [string, string];
+  isGrace: boolean;
+  description: string;
+} {
+  if (!isPro) {
+    return {
+      title: 'Free Tier',
+      badge: 'FREE',
+      badgeColor: '#64748B',
+      accentGradient: ['#334155', '#1E293B'],
+      isGrace: false,
+      description: 'Standard speed • 2 Private IG captures / day',
+    };
+  }
+
+  const remaining = calculateRemainingTime(expiryTimestamp);
+  if (remaining.isGrace) {
+    return {
+      title: '24h Grace PRO',
+      badge: '24H GRACE',
+      badgeColor: '#F59E0B',
+      accentGradient: ['#F59E0B', '#B45309'],
+      isGrace: true,
+      description: 'Instant full access while bank receipt is verified',
+    };
+  }
+
+  switch (planType) {
+    case 'yearly':
+      return {
+        title: 'Yearly Obsidian VIP',
+        badge: 'YEARLY VIP',
+        badgeColor: '#F59E0B',
+        accentGradient: ['#F59E0B', '#78350F'],
+        isGrace: false,
+        description: 'Permanent VIP suite • Studio master MP3 & 4K UHD',
+      };
+    case 'quarterly':
+      return {
+        title: '3 Months Saver PRO',
+        badge: '3-MONTHS VIP',
+        badgeColor: '#A855F7',
+        accentGradient: ['#A855F7', '#6B21A8'],
+        isGrace: false,
+        description: 'Turbo multi-core threads • Unlimited private capture',
+      };
+    case 'monthly':
+      return {
+        title: 'Monthly VIP PRO',
+        badge: 'MONTHLY VIP',
+        badgeColor: '#3B82F6',
+        accentGradient: ['#3B82F6', '#1D4ED8'],
+        isGrace: false,
+        description: 'Flexible 30-day full speed access & zero ads',
+      };
+    default:
+      return {
+        title: 'OmniSaver PRO',
+        badge: 'ACTIVE PRO',
+        badgeColor: '#10B981',
+        accentGradient: ['#10B981', '#047857'],
+        isGrace: false,
+        description: 'Full premium downloading unlocked',
+      };
+  }
+}
 
 export const PRO_LIMITS = {
   FREE_DAILY_PRIVATE_CAPTURES: 2,
@@ -143,6 +313,9 @@ let proState: ProState = {
   planType: 'free',
   expiryTimestamp: null,
   deviceId: 'OMNI-LOAD-ING0',
+  guestId: 'Guest #2026',
+  userName: 'Guest #2026',
+  isCustomName: false,
   dailyFreePrivateCaptures: 0,
   lastCaptureDate: getTodayDateString(),
   licenseKey: null,
@@ -176,10 +349,48 @@ export function getIsPro(): boolean {
   return true;
 }
 
+// User Profile Name Management
+export async function updateUserName(newName: string): Promise<void> {
+  const trimmed = newName.trim();
+  const guestId = deriveGuestId(proState.deviceId);
+  const finalName = trimmed || guestId;
+  const isCustom = Boolean(trimmed && trimmed !== guestId);
+
+  proState = {
+    ...proState,
+    userName: finalName,
+    isCustomName: isCustom,
+  };
+
+  try {
+    if (isCustom) {
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_NAME, finalName);
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEYS.USER_NAME);
+    }
+  } catch {}
+
+  emitState();
+
+  // Instant Cloudflare D1 telemetry sync with updated name
+  sendMobileTelemetry({
+    action: 'heartbeat',
+    deviceId: proState.deviceId,
+    userName: finalName,
+    isPro: proState.isPro,
+    details: `Profile name set to "${finalName}"`,
+  }).catch(() => {});
+}
+
+export async function resetToGuestName(): Promise<void> {
+  const guestId = deriveGuestId(proState.deviceId);
+  await updateUserName(guestId);
+}
+
 // Initialize & load persisted PRO store from storage
 export async function initializeProStore(): Promise<ProState> {
   try {
-    const [savedIsPro, savedPlan, savedExpiry, savedDeviceId, savedCaptures, savedKey] =
+    const [savedIsPro, savedPlan, savedExpiry, savedDeviceId, savedCaptures, savedKey, savedUserName] =
       await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.IS_PRO),
         AsyncStorage.getItem(STORAGE_KEYS.PLAN_TYPE),
@@ -187,6 +398,7 @@ export async function initializeProStore(): Promise<ProState> {
         AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID),
         AsyncStorage.getItem(STORAGE_KEYS.DAILY_CAPTURES),
         AsyncStorage.getItem(STORAGE_KEYS.LICENSE_KEY),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_NAME),
       ]);
 
     // Ensure persistent unique Device ID
@@ -195,6 +407,10 @@ export async function initializeProStore(): Promise<ProState> {
       deviceId = generateDeviceId();
       await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
     }
+
+    const guestId = deriveGuestId(deviceId);
+    const userName = savedUserName && savedUserName.trim() ? savedUserName.trim() : guestId;
+    const isCustomName = Boolean(savedUserName && savedUserName.trim() && savedUserName.trim() !== guestId);
 
     // Daily captures parsing
     const today = getTodayDateString();
@@ -225,6 +441,9 @@ export async function initializeProStore(): Promise<ProState> {
       planType,
       expiryTimestamp,
       deviceId,
+      guestId,
+      userName,
+      isCustomName,
       dailyFreePrivateCaptures: dailyCaptures,
       lastCaptureDate: today,
       licenseKey: savedKey || null,
@@ -238,16 +457,22 @@ export async function initializeProStore(): Promise<ProState> {
     sendMobileTelemetry({
       action: 'heartbeat',
       deviceId: proState.deviceId,
+      userName: proState.userName,
       isPro: proState.isPro,
-      details: `OmniSaver App Launch (${proState.isPro ? 'PRO' : 'FREE'})`,
+      details: `OmniSaver App Launch (${proState.isPro ? 'PRO' : 'FREE'}) - ${proState.userName}`,
     }).catch(() => {});
 
     return { ...proState };
   } catch (err) {
     console.warn('Could not initialize PRO store:', err);
+    const fallbackDevId = generateDeviceId();
+    const fallbackGuest = deriveGuestId(fallbackDevId);
     proState = {
       ...proState,
-      deviceId: generateDeviceId(),
+      deviceId: fallbackDevId,
+      guestId: fallbackGuest,
+      userName: fallbackGuest,
+      isCustomName: false,
       initialized: true,
     };
     emitState();
@@ -455,17 +680,22 @@ export function buildPaymentProofWhatsAppUrl(params: {
   paymentMethod: string;
   supportPhone?: string;
 }): string {
-  const phone = params.supportPhone || '923001234567';
+  const phone = params.supportPhone || getLiveSupportWhatsapp();
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
   const plan = PRO_PRICING[params.planId];
+  const remaining = calculateRemainingTime(proState.expiryTimestamp);
+
   const text =
     `Hello OmniSaver Team, I have transferred the payment for OmniSaver PRO.\n\n` +
-    `• Plan: ${plan.title} (${plan.price})\n` +
-    `• Device ID: ${proState.deviceId}\n` +
+    `• User Name: ${proState.userName} (${proState.guestId})\n` +
+    `• Hardware Device ID: ${proState.deviceId}\n` +
+    `• Plan Selected: ${plan.title} (${plan.price})\n` +
     `• Paid via: ${params.paymentMethod}\n` +
-    `• Transaction ID (TID): ${params.tid || 'Attached'}\n\n` +
-    `Please verify and activate my subscription. Thanks!`;
+    `• Transaction ID (TID): ${params.tid || 'Attached'}\n` +
+    (proState.isPro ? `• Current Status: ${proState.planType.toUpperCase()} (${remaining.shortLabel})\n\n` : `\n`) +
+    `Please verify my payment receipt and activate my account. Thanks!`;
 
-  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
 // React Hook
@@ -474,6 +704,10 @@ export function useProStore(): ProState & {
   deactivate: typeof deactivatePro;
   recordCapture: typeof recordPrivateCapture;
   canCapture: typeof canPerformPrivateCapture;
+  setUserName: typeof updateUserName;
+  resetToGuestName: typeof resetToGuestName;
+  remainingTime: RemainingTimeInfo;
+  planMeta: ReturnType<typeof getPlanDisplayMeta>;
 } {
   const [state, setState] = useState<ProState>(proState);
 
@@ -493,6 +727,10 @@ export function useProStore(): ProState & {
     deactivate: deactivatePro,
     recordCapture: recordPrivateCapture,
     canCapture: canPerformPrivateCapture,
+    setUserName: updateUserName,
+    resetToGuestName,
+    remainingTime: calculateRemainingTime(state.expiryTimestamp),
+    planMeta: getPlanDisplayMeta(state.planType, state.isPro, state.expiryTimestamp),
   };
 }
 
