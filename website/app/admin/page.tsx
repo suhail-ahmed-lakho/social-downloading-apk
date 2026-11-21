@@ -40,6 +40,8 @@ import {
   Laptop,
   CreditCard,
   SmartphoneNfc,
+  X,
+  Filter,
 } from "lucide-react";
 import {
   YouTubeIcon,
@@ -133,15 +135,27 @@ export default function AdminDashboardPage() {
   const [generatedKeyResult, setGeneratedKeyResult] = useState<string | null>(null);
   const [licenseSearchQuery, setLicenseSearchQuery] = useState("");
   const [licenseFilter, setLicenseFilter] = useState<"all" | "pending" | "active" | "revoked">("all");
+  const [licensePlanFilter, setLicensePlanFilter] = useState<"all" | "monthly" | "quarterly" | "yearly">("all");
 
   // Config Form State
   const [savingConfig, setSavingConfig] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Live Stream Logs Filters
+  const [logSearchQuery, setLogSearchQuery] = useState("");
+  const [logPlatformFilter, setLogPlatformFilter] = useState<"all" | "youtube" | "tiktok" | "instagram" | "pinterest" | "facebook" | "twitter">("all");
+  const [logStatusFilter, setLogStatusFilter] = useState<"all" | "SUCCESS" | "FAILED">("all");
+
+  // Engines & Firewall Filters
+  const [engineFilter, setEngineFilter] = useState<"all" | "operational" | "issues">("all");
+  const [firewallSearchQuery, setFirewallSearchQuery] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [copiedIP, setCopiedIP] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -176,11 +190,20 @@ export default function AdminDashboardPage() {
   // Users Filter & Search
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userStatusFilter, setUserStatusFilter] = useState<"all" | "active" | "blocked" | "guests">("all");
+  const [userChannelFilter, setUserChannelFilter] = useState<"all" | "mobile" | "website">("all");
   const [newIPToBlock, setNewIPToBlock] = useState("");
   const [isTestingSample, setIsTestingSample] = useState(false);
 
-  // Check existing session & add Ctrl+B shortcut
+  // Responsive screen detection + Ctrl+B shortcut
   useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) setIsMobileMenuOpen(false);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
     const saved = sessionStorage.getItem("looknow_admin_auth");
     if (saved === "granted") {
       setIsAuthenticated(true);
@@ -193,8 +216,16 @@ export default function AdminDashboardPage() {
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3800);
+  };
 
   // Fetch real telemetry from backend
   const fetchTelemetry = async (silent = false) => {
@@ -227,8 +258,7 @@ export default function AdminDashboardPage() {
   const handleCreateLicense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLicDeviceId.trim()) {
-      setToastMessage("Please enter a valid Device ID (e.g. OMNI-A1B2-C3D4)");
-      setTimeout(() => setToastMessage(null), 3000);
+      showToast("Please enter a valid Device ID (e.g. OMNI-A1B2-C3D4)", "error");
       return;
     }
     setIsGeneratingLicense(true);
@@ -248,17 +278,14 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setLicenses(data.licenses);
         setGeneratedKeyResult(data.license.key);
-        setToastMessage(`PRO License Generated: ${data.license.key}`);
-        setTimeout(() => setToastMessage(null), 4000);
+        showToast(`PRO License Generated: ${data.license.key}`, "success");
         setNewLicNotes("");
         setNewLicTid("");
       } else {
-        setToastMessage(data.error || "Failed to create license");
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast(data.error || "Failed to create license", "error");
       }
     } catch {
-      setToastMessage("Network error creating license");
-      setTimeout(() => setToastMessage(null), 3500);
+      showToast("Network error creating license", "error");
     } finally {
       setIsGeneratingLicense(false);
     }
@@ -274,10 +301,11 @@ export default function AdminDashboardPage() {
       const data: any = await res.json();
       if (data.success) {
         setLicenses(data.licenses);
-        setToastMessage(`License ${key} extended +30 days!`);
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast(`License ${key} extended +30 days!`, "success");
       }
-    } catch (_) {}
+    } catch (_) {
+      showToast("Network error extending license", "error");
+    }
   };
 
   const handleRevokeLicense = async (key: string) => {
@@ -290,10 +318,11 @@ export default function AdminDashboardPage() {
       const data: any = await res.json();
       if (data.success) {
         setLicenses(data.licenses);
-        setToastMessage(`License ${key} revoked.`);
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast(`License ${key} revoked.`, "info");
       }
-    } catch (_) {}
+    } catch (_) {
+      showToast("Network error revoking license", "error");
+    }
   };
 
   const handleApproveLicense = async (key: string) => {
@@ -306,15 +335,12 @@ export default function AdminDashboardPage() {
       const data: any = await res.json();
       if (data.success) {
         setLicenses(data.licenses);
-        setToastMessage(`TID Payment Verified! License ${key} approved for full plan duration.`);
-        setTimeout(() => setToastMessage(null), 4000);
+        showToast(`TID Payment Verified! License ${key} approved for full plan.`, "success");
       } else {
-        setToastMessage(data.error || "Approval failed");
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast(data.error || "Approval failed", "error");
       }
     } catch (_) {
-      setToastMessage("Network error approving license");
-      setTimeout(() => setToastMessage(null), 3500);
+      showToast("Network error approving license", "error");
     }
   };
 
@@ -328,15 +354,12 @@ export default function AdminDashboardPage() {
       const data: any = await res.json();
       if (data.success) {
         setLicenses(data.licenses);
-        setToastMessage(`TID rejected. License ${key} revoked immediately.`);
-        setTimeout(() => setToastMessage(null), 4000);
+        showToast(`TID rejected. License ${key} revoked immediately.`, "info");
       } else {
-        setToastMessage(data.error || "Rejection failed");
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast(data.error || "Rejection failed", "error");
       }
     } catch (_) {
-      setToastMessage("Network error rejecting license");
-      setTimeout(() => setToastMessage(null), 3500);
+      showToast("Network error rejecting license", "error");
     }
   };
 
@@ -349,14 +372,14 @@ export default function AdminDashboardPage() {
         body: JSON.stringify(partialConfig),
       });
       const data: any = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setAppRemoteConfig(data.config);
-        setToastMessage("App Remote Config synchronized successfully!");
-        setTimeout(() => setToastMessage(null), 3500);
+        showToast("App Remote Config synchronized & saved to D1 successfully!", "success");
+      } else {
+        showToast(data.error || "Failed to save remote config", "error");
       }
-    } catch (_) {
-      setToastMessage("Failed to save remote config");
-      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to save remote config", "error");
     } finally {
       setSavingConfig(false);
     }
@@ -387,17 +410,12 @@ export default function AdminDashboardPage() {
     setPinInput("");
   };
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
   const handleCopyIP = (ip: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(ip);
       setCopiedIP(ip);
       setTimeout(() => setCopiedIP(null), 2000);
-      showToast(`Copied ${ip} to clipboard`);
+      showToast(`Copied ${ip} to clipboard`, "info");
     }
   };
 
@@ -502,9 +520,19 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Filter users based on search & filter tabs
+  // Filter users based on search, status filter & channel
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      const isMobileUser =
+        u.device?.toLowerCase().includes("android") ||
+        u.browser?.toLowerCase().includes("omnisaver") ||
+        u.name?.startsWith("OMNI-") ||
+        u.name?.toLowerCase().includes("mobile") ||
+        u.name?.startsWith("user_");
+
+      if (userChannelFilter === "mobile" && !isMobileUser) return false;
+      if (userChannelFilter === "website" && isMobileUser) return false;
+
       const query = userSearchQuery.toLowerCase().trim();
       const matchesQuery =
         !query ||
@@ -513,7 +541,8 @@ export default function AdminDashboardPage() {
         (u.email && u.email.toLowerCase().includes(query)) ||
         u.country.toLowerCase().includes(query) ||
         u.city.toLowerCase().includes(query) ||
-        u.device.toLowerCase().includes(query);
+        u.device.toLowerCase().includes(query) ||
+        u.browser.toLowerCase().includes(query);
 
       if (!matchesQuery) return false;
 
@@ -522,7 +551,76 @@ export default function AdminDashboardPage() {
       if (userStatusFilter === "guests") return u.totalExtractions === 0 && !u.isBlocked;
       return true;
     });
-  }, [users, userSearchQuery, userStatusFilter]);
+  }, [users, userSearchQuery, userStatusFilter, userChannelFilter]);
+
+  // Filter activities for Live Extraction Stream
+  const filteredActivities = useMemo(() => {
+    return activities.filter((act) => {
+      if (logPlatformFilter !== "all" && act.platform.toLowerCase() !== logPlatformFilter.toLowerCase()) {
+        return false;
+      }
+      if (logStatusFilter !== "all" && act.status !== logStatusFilter) {
+        return false;
+      }
+      if (logSearchQuery.trim()) {
+        const q = logSearchQuery.toLowerCase().trim();
+        const matches =
+          act.details.toLowerCase().includes(q) ||
+          act.ip.toLowerCase().includes(q) ||
+          act.userName.toLowerCase().includes(q) ||
+          (act.format && act.format.toLowerCase().includes(q)) ||
+          act.platform.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [activities, logPlatformFilter, logStatusFilter, logSearchQuery]);
+
+  // Filter licenses based on search, status filter, and plan filter
+  const filteredLicenses = useMemo(() => {
+    return licenses.filter((lic) => {
+      const now = Date.now();
+      const isExpired = now > lic.expiresAt;
+      const isPending = lic.status === "pending" && !isExpired;
+      const isActive = lic.status === "active" && !isExpired;
+
+      if (licenseFilter === "pending" && !isPending) return false;
+      if (licenseFilter === "active" && !isActive) return false;
+      if (licenseFilter === "revoked" && !(lic.status === "revoked" || isExpired)) return false;
+
+      if (licensePlanFilter !== "all" && lic.planType?.toLowerCase() !== licensePlanFilter.toLowerCase()) {
+        return false;
+      }
+
+      if (licenseSearchQuery.trim()) {
+        const q = licenseSearchQuery.toLowerCase().trim();
+        const matches =
+          lic.key.toLowerCase().includes(q) ||
+          lic.deviceId.toLowerCase().includes(q) ||
+          (lic.notes && lic.notes.toLowerCase().includes(q)) ||
+          (lic.tid && lic.tid.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+  }, [licenses, licenseFilter, licensePlanFilter, licenseSearchQuery]);
+
+  // Filter engines
+  const filteredEngines = useMemo(() => {
+    return engines.filter((eng) => {
+      if (engineFilter === "operational") return eng.status === "operational";
+      if (engineFilter === "issues") return eng.status !== "operational" || eng.latencyMs > 200;
+      return true;
+    });
+  }, [engines, engineFilter]);
+
+  // Filter blocked IPs
+  const filteredBlockedIPs = useMemo(() => {
+    if (!firewallSearchQuery.trim()) return blockedIPs;
+    const q = firewallSearchQuery.toLowerCase().trim();
+    return blockedIPs.filter((ip) => ip.toLowerCase().includes(q));
+  }, [blockedIPs, firewallSearchQuery]);
 
   // ─── LOGIN VAULT SCREEN (Protected Gateway) ───────────
   if (!isAuthenticated) {
@@ -649,39 +747,57 @@ export default function AdminDashboardPage() {
         minHeight: "100vh",
         background: "#080B10",
         color: "#F1F5F9",
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* ─── Extendable / Collapsible Sidebar ─── */}
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 90,
+          }}
+        />
+      )}
+
+      {/* ─── Extendable / Collapsible / Mobile Off-Canvas Sidebar ─── */}
       <aside
         style={{
-          width: isSidebarCollapsed ? 82 : 270,
-          transition: "width 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          width: isMobile ? 280 : isSidebarCollapsed ? 82 : 270,
+          transition: "transform 0.25s ease, width 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           background: "#0B0F17",
           borderRight: "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
-          position: "sticky",
+          position: isMobile ? "fixed" : "sticky",
           top: 0,
+          left: 0,
+          bottom: 0,
           height: "100vh",
+          transform: isMobile ? (isMobileMenuOpen ? "translateX(0)" : "translateX(-100%)") : "none",
           overflowY: "auto",
           overflowX: "hidden",
-          zIndex: 40,
+          zIndex: isMobile ? 100 : 40,
+          boxShadow: isMobile && isMobileMenuOpen ? "0 0 50px rgba(0, 0, 0, 0.9)" : "none",
         }}
       >
         {/* Brand header + Sidebar Toggle Button */}
         {/* Brand header with LookNow logo and clean toggle button */}
         <div
           style={{
-            padding: isSidebarCollapsed ? "16px 10px" : "18px 20px",
+            padding: (!isMobile && isSidebarCollapsed) ? "16px 10px" : "18px 20px",
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
-            justifyContent: isSidebarCollapsed ? "center" : "space-between",
+            justifyContent: (!isMobile && isSidebarCollapsed) ? "center" : "space-between",
           }}
         >
-          {!isSidebarCollapsed && (
+          {(isMobile || !isSidebarCollapsed) && (
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
               <div
                 style={{
@@ -711,33 +827,52 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Dedicated Single Toggle Button (Menu when collapsed, ChevronsLeft when expanded) */}
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            title={isSidebarCollapsed ? "Expand Sidebar Menu (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-            style={{
-              background: isSidebarCollapsed ? "rgba(255, 107, 0, 0.15)" : "rgba(255, 255, 255, 0.05)",
-              border: isSidebarCollapsed ? "1px solid rgba(255, 107, 0, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: 8,
-              padding: isSidebarCollapsed ? "10px" : "7px",
-              color: isSidebarCollapsed ? "#FF8A3D" : "#94A3B8",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#FF8A3D";
-              e.currentTarget.style.borderColor = "rgba(255, 107, 0, 0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = isSidebarCollapsed ? "#FF8A3D" : "#94A3B8";
-              e.currentTarget.style.borderColor = isSidebarCollapsed ? "rgba(255, 107, 0, 0.4)" : "rgba(255, 255, 255, 0.1)";
-            }}
-          >
-            {isSidebarCollapsed ? <Menu size={19} strokeWidth={2.2} /> : <ChevronsLeft size={18} strokeWidth={2.2} />}
-          </button>
+          {/* Close button on mobile / Collapse button on desktop */}
+          {isMobile ? (
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: 8,
+                padding: 6,
+                color: "#CBD5E1",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <X size={18} />
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? "Expand Sidebar Menu (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+              style={{
+                background: isSidebarCollapsed ? "rgba(255, 107, 0, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                border: isSidebarCollapsed ? "1px solid rgba(255, 107, 0, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 8,
+                padding: isSidebarCollapsed ? "10px" : "7px",
+                color: isSidebarCollapsed ? "#FF8A3D" : "#94A3B8",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#FF8A3D";
+                e.currentTarget.style.borderColor = "rgba(255, 107, 0, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = isSidebarCollapsed ? "#FF8A3D" : "#94A3B8";
+                e.currentTarget.style.borderColor = isSidebarCollapsed ? "rgba(255, 107, 0, 0.4)" : "rgba(255, 255, 255, 0.1)";
+              }}
+            >
+              {isSidebarCollapsed ? <Menu size={19} strokeWidth={2.2} /> : <ChevronsLeft size={18} strokeWidth={2.2} />}
+            </button>
+          )}
         </div>
 
         {/* Navigation Tabs with Clean Pure Icons (No awkward square boxes) */}
@@ -818,20 +953,24 @@ export default function AdminDashboardPage() {
           ].map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
+            const showFull = isMobile || !isSidebarCollapsed;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                title={isSidebarCollapsed ? `${item.label} — ${item.sub}` : undefined}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  if (isMobile) setIsMobileMenuOpen(false);
+                }}
+                title={!showFull ? `${item.label} — ${item.sub}` : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: isSidebarCollapsed ? "center" : "space-between",
+                  justifyContent: !showFull ? "center" : "space-between",
                   gap: 12,
-                  padding: isSidebarCollapsed ? "12px 0" : "10px 14px",
+                  padding: !showFull ? "12px 0" : "10px 14px",
                   borderRadius: 10,
                   border: "none",
-                  borderLeft: active && !isSidebarCollapsed ? `3px solid ${item.accent}` : "3px solid transparent",
+                  borderLeft: active && showFull ? `3px solid ${item.accent}` : "3px solid transparent",
                   background: active ? "rgba(255, 255, 255, 0.06)" : "transparent",
                   color: active ? "#FFFFFF" : "#94A3B8",
                   cursor: "pointer",
@@ -853,7 +992,6 @@ export default function AdminDashboardPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  {/* Clean pure icon without awkward background box */}
                   <Icon
                     size={20}
                     strokeWidth={active ? 2.4 : 1.9}
@@ -865,7 +1003,7 @@ export default function AdminDashboardPage() {
                     }}
                   />
 
-                  {!isSidebarCollapsed && (
+                  {showFull && (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{ fontSize: 13, fontWeight: active ? 800 : 600, color: active ? "#FFFFFF" : "#CBD5E1" }}>
                         {item.label}
@@ -877,7 +1015,7 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
 
-                {!isSidebarCollapsed && item.badge && (
+                {showFull && item.badge && (
                   <span
                     style={{
                       fontSize: 11,
@@ -894,8 +1032,7 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
 
-                {/* Collapsed mode active neon indicator */}
-                {isSidebarCollapsed && active && (
+                {!showFull && active && (
                   <span
                     style={{
                       position: "absolute",
@@ -916,7 +1053,7 @@ export default function AdminDashboardPage() {
         {/* Footer Actions */}
         <div
           style={{
-            padding: isSidebarCollapsed ? "12px 8px" : 16,
+            padding: (!isMobile && isSidebarCollapsed) ? "12px 8px" : 16,
             borderTop: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             flexDirection: "column",
@@ -929,8 +1066,8 @@ export default function AdminDashboardPage() {
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: isSidebarCollapsed ? "center" : "space-between",
-              padding: isSidebarCollapsed ? "10px 0" : "10px 12px",
+              justifyContent: (!isMobile && isSidebarCollapsed) ? "center" : "space-between",
+              padding: (!isMobile && isSidebarCollapsed) ? "10px 0" : "10px 12px",
               borderRadius: 8,
               background: "rgba(255, 255, 255, 0.04)",
               color: "#94A3B8",
@@ -939,7 +1076,7 @@ export default function AdminDashboardPage() {
               textDecoration: "none",
             }}
           >
-            {!isSidebarCollapsed && <span>Live Website</span>}
+            {(isMobile || !isSidebarCollapsed) && <span>Live Website</span>}
             <ExternalLink size={14} />
           </Link>
 
@@ -951,7 +1088,7 @@ export default function AdminDashboardPage() {
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
-              padding: isSidebarCollapsed ? "10px 0" : "9px 12px",
+              padding: (!isMobile && isSidebarCollapsed) ? "10px 0" : "9px 12px",
               borderRadius: 8,
               background: "transparent",
               border: "1px solid rgba(239, 68, 68, 0.2)",
@@ -962,21 +1099,23 @@ export default function AdminDashboardPage() {
             }}
           >
             <LogOut size={13} />
-            {!isSidebarCollapsed && <span>Lock Console</span>}
+            {(isMobile || !isSidebarCollapsed) && <span>Lock Console</span>}
           </button>
         </div>
       </aside>
 
       {/* ─── Main Content Canvas ─── */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", maxHeight: "100vh" }}>
-        {/* Top Header Bar with Open Sidebar Menu Button */}
+        {/* Top Header Bar with Hamburger for Mobile */}
         <header
           style={{
-            padding: "16px 28px",
+            padding: isMobile ? "14px 16px" : "16px 28px",
             borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
             background: "#080B10",
             position: "sticky",
             top: 0,
@@ -984,24 +1123,46 @@ export default function AdminDashboardPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em", margin: 0 }}>
-              {activeTab === "overview" && "Live Dual-Channel Telemetry & Download Overview"}
-              {activeTab === "licenses" && "OmniSaver PRO License & VIP Subscription Manager"}
-              {activeTab === "config" && "OmniSaver Mobile App Remote Config & OTA"}
-              {activeTab === "users" && "Users Intelligence & Visitor Profiles"}
-              {activeTab === "engines" && "Media Scraper Engines Watchdog"}
-              {activeTab === "logs" && "Live Stream Extraction Activity"}
-              {activeTab === "apk" && "Native Android APK Distribution Manager"}
-              {activeTab === "monetization" && "Monetization, Ads & Sponsor Banners"}
-              {activeTab === "firewall" && "Threat Defense & Bot Firewall"}
-            </h2>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2, display: "flex", alignItems: "center", gap: 8 }}>
-              <span>Auto-Sync: <strong style={{ color: "#10B981" }}>8s Pulse</strong></span>
-              <span>•</span>
-              <span>Last update: <strong style={{ color: "#94A3B8", fontVariantNumeric: "tabular-nums" }}>{lastSyncTime || "Live Connected"}</strong></span>
-              <span>•</span>
-              <span style={{ color: "#FF8A3D", fontWeight: 600 }}>100% Real Backend Data</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {isMobile && (
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                style={{
+                  background: "rgba(255, 107, 0, 0.15)",
+                  border: "1px solid rgba(255, 107, 0, 0.35)",
+                  color: "#FF8A3D",
+                  borderRadius: 9,
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="Open Navigation"
+              >
+                <Menu size={19} />
+              </button>
+            )}
+
+            <div>
+              <h2 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em", margin: 0 }}>
+                {activeTab === "overview" && "Live Dual-Channel Telemetry & Download Overview"}
+                {activeTab === "licenses" && "OmniSaver PRO License & VIP Subscription Manager"}
+                {activeTab === "config" && "OmniSaver Mobile App Remote Config & OTA"}
+                {activeTab === "users" && "Users Intelligence & Visitor Profiles"}
+                {activeTab === "engines" && "Media Scraper Engines Watchdog"}
+                {activeTab === "logs" && "Live Stream Extraction Activity"}
+                {activeTab === "apk" && "Native Android APK Distribution Manager"}
+                {activeTab === "monetization" && "Monetization, Ads & Sponsor Banners"}
+                {activeTab === "firewall" && "Threat Defense & Bot Firewall"}
+              </h2>
+              <div style={{ fontSize: 11, color: "#64748B", marginTop: 3, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <span>Auto-Sync: <strong style={{ color: "#10B981" }}>8s Pulse</strong></span>
+                <span>•</span>
+                <span>Last update: <strong style={{ color: "#94A3B8", fontVariantNumeric: "tabular-nums" }}>{lastSyncTime || "Live Connected"}</strong></span>
+                <span>•</span>
+                <span style={{ color: "#FF8A3D", fontWeight: 600 }}>100% Real Backend Data</span>
+              </div>
             </div>
           </div>
 
@@ -1030,31 +1191,56 @@ export default function AdminDashboardPage() {
           </div>
         </header>
 
-        {/* Toast alert */}
-        {toastMessage && (
+        {/* Color-Coded Toast Alert Banner */}
+        {toast && (
           <div
             style={{
-              margin: "16px 28px 0",
+              margin: isMobile ? "12px 14px 0" : "16px 28px 0",
               padding: "12px 18px",
-              borderRadius: 10,
-              background: "#065F46",
-              border: "1px solid #10B981",
-              color: "#ECFDF5",
+              borderRadius: 12,
+              background: toast.type === "error"
+                ? "rgba(239, 68, 68, 0.15)"
+                : toast.type === "info"
+                ? "rgba(255, 107, 0, 0.15)"
+                : "rgba(16, 185, 129, 0.15)",
+              border: `1px solid ${
+                toast.type === "error" ? "#EF4444" : toast.type === "info" ? "#FF8A3D" : "#10B981"
+              }`,
+              color: toast.type === "error" ? "#FCA5A5" : toast.type === "info" ? "#FFD8B3" : "#D1FAE5",
               fontSize: 13,
               fontWeight: 600,
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+              gap: 10,
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
             }}
           >
-            <CheckCircle2 size={16} />
-            <span>{toastMessage}</span>
+            {toast.type === "error" ? (
+              <AlertTriangle size={18} style={{ color: "#EF4444", flexShrink: 0 }} />
+            ) : toast.type === "info" ? (
+              <Sparkles size={18} style={{ color: "#FF8A3D", flexShrink: 0 }} />
+            ) : (
+              <CheckCircle2 size={18} style={{ color: "#10B981", flexShrink: 0 }} />
+            )}
+            <span style={{ flex: 1 }}>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                padding: 4,
+                opacity: 0.7,
+              }}
+            >
+              <X size={14} />
+            </button>
           </div>
         )}
 
         {/* Tab Body */}
-        <div style={{ padding: "24px 28px", flex: 1 }}>
+        <div style={{ padding: isMobile ? "16px 14px" : "24px 28px", flex: 1 }}>
           {/* ═══════════════════════════════════════════════
               TAB 1: OVERVIEW & REAL-TIME ANALYTICS
              ═══════════════════════════════════════════════ */}
@@ -1336,56 +1522,75 @@ export default function AdminDashboardPage() {
                         val: metrics.totalExtractions.toLocaleString(),
                         sub: `${activities.length} total event logs`,
                         color: "#10B981",
+                        icon: Download,
+                        bgGlow: "rgba(16, 185, 129, 0.12)",
                       },
                       {
                         label: "Bandwidth Streamed",
                         val: metrics.totalBandwidth,
                         sub: "Direct edge stream throughput",
                         color: "#06B6D4",
+                        icon: Activity,
+                        bgGlow: "rgba(6, 182, 212, 0.12)",
                       },
                       {
                         label: "Unique Visitors (IPs)",
                         val: metrics.uniqueVisitors.toLocaleString(),
                         sub: `${users.length} captured profiles`,
                         color: "#8B5CF6",
+                        icon: Users,
+                        bgGlow: "rgba(139, 92, 246, 0.12)",
                       },
                       {
                         label: "Firewall Blacklisted",
                         val: metrics.blockedCount.toLocaleString(),
                         sub: "Threats neutralized",
                         color: "#EF4444",
+                        icon: ShieldAlert,
+                        bgGlow: "rgba(239, 68, 68, 0.12)",
                       },
-                    ].map((kpi, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "#0E131F",
-                          border: "1px solid rgba(255, 255, 255, 0.08)",
-                          borderRadius: 16,
-                          padding: "20px 22px",
-                          position: "relative",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600, marginBottom: 8 }}>
-                          {kpi.label}
-                        </div>
+                    ].map((kpi, idx) => {
+                      const KPIIcon = kpi.icon;
+                      return (
                         <div
+                          key={idx}
                           style={{
-                            fontSize: 28,
-                            fontWeight: 800,
-                            color: "#FFFFFF",
-                            letterSpacing: "-0.02em",
-                            fontVariantNumeric: "tabular-nums",
+                            background: "#0E131F",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderTop: `2px solid ${kpi.color}`,
+                            borderRadius: 16,
+                            padding: "20px 22px",
+                            position: "relative",
+                            overflow: "hidden",
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
                           }}
                         >
-                          {kpi.val}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                            <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 700, letterSpacing: "0.02em" }}>
+                              {kpi.label}
+                            </span>
+                            <div style={{ width: 34, height: 34, borderRadius: 9, background: kpi.bgGlow, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <KPIIcon size={18} style={{ color: kpi.color }} />
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 28,
+                              fontWeight: 800,
+                              color: "#FFFFFF",
+                              letterSpacing: "-0.02em",
+                              fontVariantNumeric: "tabular-nums",
+                              fontFamily: "'Plus Jakarta Sans', sans-serif",
+                            }}
+                          >
+                            {kpi.val}
+                          </div>
+                          <div style={{ fontSize: 11, color: kpi.color, marginTop: 8, fontWeight: 700 }}>
+                            {kpi.sub}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 11, color: kpi.color, marginTop: 8, fontWeight: 700 }}>
-                          {kpi.sub}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -1713,63 +1918,107 @@ export default function AdminDashboardPage() {
 
               {/* Licenses List & Management Table */}
               <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, overflow: "hidden" }}>
-                <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginRight: 4 }}>
-                      PRO Subscriptions & TIDs ({licenses.length})
+                <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginRight: 4 }}>
+                        PRO Subscriptions & TIDs ({licenses.length})
+                      </div>
+                      {[
+                        { id: "all", label: `All (${licenses.length})` },
+                        {
+                          id: "pending",
+                          label: `Pending Approvals (${licenses.filter((l) => l.status === "pending").length})`,
+                          alert: licenses.filter((l) => l.status === "pending").length > 0,
+                        },
+                        { id: "active", label: `Active VIP (${licenses.filter((l) => l.status === "active" && Date.now() <= l.expiresAt).length})` },
+                        { id: "revoked", label: "Revoked / Expired" },
+                      ].map((tab) => {
+                        const active = licenseFilter === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setLicenseFilter(tab.id as any)}
+                            style={{
+                              padding: "5px 12px",
+                              borderRadius: 8,
+                              border: tab.alert ? "1px solid #F59E0B" : active ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.1)",
+                              background: tab.alert ? "rgba(245, 158, 11, 0.18)" : active ? "rgba(255, 107, 0, 0.15)" : "transparent",
+                              color: tab.alert ? "#FBBF24" : active ? "#FF8A3D" : "#94A3B8",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
                     </div>
-                    {[
-                      { id: "all", label: `All (${licenses.length})` },
-                      {
-                        id: "pending",
-                        label: `Pending Approvals (${licenses.filter((l) => l.status === "pending").length})`,
-                        alert: licenses.filter((l) => l.status === "pending").length > 0,
-                      },
-                      { id: "active", label: `Active VIP (${licenses.filter((l) => l.status === "active" && Date.now() <= l.expiresAt).length})` },
-                      { id: "revoked", label: "Revoked / Expired" },
-                    ].map((tab) => {
-                      const active = licenseFilter === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => setLicenseFilter(tab.id as any)}
-                          style={{
-                            padding: "5px 12px",
-                            borderRadius: 8,
-                            border: tab.alert ? "1px solid #F59E0B" : active ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.1)",
-                            background: tab.alert ? "rgba(245, 158, 11, 0.18)" : active ? "rgba(255, 107, 0, 0.15)" : "transparent",
-                            color: tab.alert ? "#FBBF24" : active ? "#FF8A3D" : "#94A3B8",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            transition: "all 0.15s ease",
-                          }}
-                        >
-                          {tab.label}
-                        </button>
-                      );
-                    })}
+
+                    {/* Plan Type Sub-filter Pills */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>Plan:</span>
+                      {[
+                        { id: "all", label: "All Plans" },
+                        { id: "monthly", label: "Monthly (Rs. 750)" },
+                        { id: "quarterly", label: "Quarterly (Rs. 1,800)" },
+                        { id: "yearly", label: "Yearly VIP (Rs. 4,500)" },
+                      ].map((p) => {
+                        const active = licensePlanFilter === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setLicensePlanFilter(p.id as any)}
+                            style={{
+                              padding: "3px 10px",
+                              borderRadius: 6,
+                              border: active ? "1px solid #F59E0B" : "1px solid rgba(255, 255, 255, 0.08)",
+                              background: active ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                              color: active ? "#FBBF24" : "#94A3B8",
+                              fontSize: 11,
+                              fontWeight: active ? 700 : 500,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {p.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Search by TID, Key, Device ID or Notes..."
-                    value={licenseSearchQuery}
-                    onChange={(e) => setLicenseSearchQuery(e.target.value)}
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 8,
-                      background: "#080B10",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      color: "#FFFFFF",
-                      fontSize: 12,
-                      width: 260,
-                      outline: "none",
-                    }}
-                  />
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Search by TID, Key, Device ID or Notes..."
+                      value={licenseSearchQuery}
+                      onChange={(e) => setLicenseSearchQuery(e.target.value)}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        color: "#FFFFFF",
+                        fontSize: 12,
+                        width: 280,
+                        outline: "none",
+                      }}
+                    />
+                    {licenseSearchQuery && (
+                      <button
+                        onClick={() => setLicenseSearchQuery("")}
+                        style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", fontSize: 12 }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 12 }}>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", textAlign: "left", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "rgba(255, 255, 255, 0.03)", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", color: "#64748B" }}>
                         <th style={{ padding: "12px 20px" }}>License Key</th>
@@ -1782,27 +2031,14 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {licenses
-                        .filter((lic) => {
-                          const now = Date.now();
-                          const isExpired = now > lic.expiresAt;
-                          const isPending = lic.status === "pending" && !isExpired;
-                          const isActive = lic.status === "active" && !isExpired;
-
-                          if (licenseFilter === "pending") return isPending;
-                          if (licenseFilter === "active") return isActive;
-                          if (licenseFilter === "revoked") return lic.status === "revoked" || isExpired;
-
-                          if (!licenseSearchQuery) return true;
-                          const q = licenseSearchQuery.toLowerCase();
-                          return (
-                            lic.key.toLowerCase().includes(q) ||
-                            lic.deviceId.toLowerCase().includes(q) ||
-                            (lic.notes && lic.notes.toLowerCase().includes(q)) ||
-                            (lic.tid && lic.tid.toLowerCase().includes(q))
-                          );
-                        })
-                        .map((lic) => {
+                      {filteredLicenses.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ padding: "32px 20px", textAlign: "center", color: "#64748B" }}>
+                            No licenses found matching your active filter criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredLicenses.map((lic) => {
                           const now = Date.now();
                           const isExpired = now > lic.expiresAt;
                           const isPending = lic.status === "pending" && !isExpired;
@@ -1961,7 +2197,8 @@ export default function AdminDashboardPage() {
                               </td>
                             </tr>
                           );
-                        })}
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1997,7 +2234,9 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.paymentDetails?.easypaisa?.title || "Suhail Ahmed"}
                       id="cfg_ep_title"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13, outline: "none" }}
                     />
                   </div>
 
@@ -2009,7 +2248,9 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.paymentDetails?.easypaisa?.accountNo || "03001234567"}
                       id="cfg_ep_no"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13, outline: "none" }}
                     />
                   </div>
 
@@ -2021,7 +2262,9 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.paymentDetails?.nayapay?.accountId || "03001234567@nayapay"}
                       id="cfg_np_id"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13, outline: "none" }}
                     />
                   </div>
 
@@ -2033,7 +2276,9 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.paymentDetails?.bankIban?.iban || "PK36MEZN0001234567890123"}
                       id="cfg_bank_iban"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13, outline: "none" }}
                     />
                   </div>
 
@@ -2045,7 +2290,9 @@ export default function AdminDashboardPage() {
                       type="text"
                       defaultValue={appRemoteConfig?.paymentDetails?.whatsappNumber || "+923001234567"}
                       id="cfg_whatsapp"
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13 }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontSize: 13, outline: "none" }}
                     />
                   </div>
                 </div>
@@ -2063,24 +2310,29 @@ export default function AdminDashboardPage() {
                         paymentDetails: {
                           easypaisa: { title: epTitle, accountNo: epNo },
                           nayapay: { title: epTitle, accountId: npId },
-                          bankIban: { bank: "Meezan Bank", title: epTitle, iban },
+                          bankIban: { bank: "Meezan Bank Limited", title: epTitle, iban },
                           whatsappNumber: whatsapp,
                         },
                       });
                     }}
                     disabled={savingConfig}
                     style={{
-                      padding: "10px 20px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 22px",
                       borderRadius: 10,
-                      background: "#10B981",
+                      background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
                       color: "#FFFFFF",
                       fontWeight: 800,
                       fontSize: 13,
                       border: "none",
-                      cursor: "pointer",
+                      cursor: savingConfig ? "wait" : "pointer",
+                      boxShadow: "0 4px 14px rgba(16, 185, 129, 0.35)",
                     }}
                   >
-                    Save Live Payment Accounts
+                    <Check size={16} />
+                    <span>{savingConfig ? "Saving to Cloudflare D1..." : "Save Live Payment Accounts"}</span>
                   </button>
                 </div>
               </div>
@@ -2329,26 +2581,54 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {(["all", "active", "guests", "blocked"] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setUserStatusFilter(filter)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: 8,
-                        border: userStatusFilter === filter ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.08)",
-                        background: userStatusFilter === filter ? "rgba(255, 107, 0, 0.15)" : "rgba(255, 255, 255, 0.03)",
-                        color: userStatusFilter === filter ? "#FF8A3D" : "#94A3B8",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {filter}
-                    </button>
-                  ))}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  {/* Channel Filter (Mobile App vs Web) */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255, 255, 255, 0.04)", padding: 3, borderRadius: 8 }}>
+                    {[
+                      { id: "all", label: `All (${users.length})` },
+                      { id: "mobile", label: "📱 Mobile App" },
+                      { id: "website", label: "🌐 Web Visitors" },
+                    ].map((ch) => (
+                      <button
+                        key={ch.id}
+                        onClick={() => setUserChannelFilter(ch.id as any)}
+                        style={{
+                          padding: "5px 10px",
+                          borderRadius: 6,
+                          border: "none",
+                          background: userChannelFilter === ch.id ? "#FF6B00" : "transparent",
+                          color: userChannelFilter === ch.id ? "#FFFFFF" : "#94A3B8",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {ch.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {(["all", "active", "guests", "blocked"] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setUserStatusFilter(filter)}
+                        style={{
+                          padding: "5px 10px",
+                          borderRadius: 8,
+                          border: userStatusFilter === filter ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.08)",
+                          background: userStatusFilter === filter ? "rgba(255, 107, 0, 0.15)" : "rgba(255, 255, 255, 0.03)",
+                          color: userStatusFilter === filter ? "#FF8A3D" : "#94A3B8",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2361,8 +2641,8 @@ export default function AdminDashboardPage() {
                   overflow: "hidden",
                 }}
               >
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <table style={{ width: "100%", minWidth: 840, borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                     <thead>
                       <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#64748B", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
                         <th style={{ padding: "14px 18px" }}>User / Identity</th>
@@ -2582,6 +2862,7 @@ export default function AdminDashboardPage() {
                 overflow: "hidden",
               }}
             >
+              {/* Header Title + Stats */}
               <div
                 style={{
                   padding: "16px 20px",
@@ -2589,23 +2870,132 @@ export default function AdminDashboardPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 12,
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Live Telemetry Stream</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Live Telemetry & Download Stream</div>
                   <div style={{ fontSize: 12, color: "#64748B" }}>
-                    Real-time requests received from active browsers & devices
+                    Real-time download and extraction events captured from active mobile devices & browsers
                   </div>
                 </div>
 
-                <span style={{ fontSize: 11, color: "#10B981", display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} />
-                  <span>Real Backend Buffer ({activities.length} events)</span>
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 11, color: "#10B981", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
+                    <span>Live Edge Stream ({filteredActivities.length} of {activities.length} events)</span>
+                  </span>
+                </div>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, textAlign: "left" }}>
+              {/* Filter Toolbar for Stream */}
+              <div
+                style={{
+                  padding: "12px 20px",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                  background: "rgba(255, 255, 255, 0.02)",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                {/* Search Bar */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 260 }}>
+                  <Search size={15} style={{ color: "#64748B" }} />
+                  <input
+                    type="text"
+                    placeholder="Search by URL, media, IP, or user identity..."
+                    value={logSearchQuery}
+                    onChange={(e) => setLogSearchQuery(e.target.value)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#FFFFFF",
+                      fontSize: 12,
+                      outline: "none",
+                      width: "100%",
+                    }}
+                  />
+                  {logSearchQuery && (
+                    <button
+                      onClick={() => setLogSearchQuery("")}
+                      style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", fontSize: 11 }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Platform Filters */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>Platform:</span>
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "tiktok", label: "TikTok" },
+                    { id: "youtube", label: "YouTube" },
+                    { id: "instagram", label: "Instagram" },
+                    { id: "pinterest", label: "Pinterest" },
+                    { id: "facebook", label: "Facebook" },
+                    { id: "twitter", label: "Twitter / X" },
+                  ].map((plat) => {
+                    const active = logPlatformFilter === plat.id;
+                    return (
+                      <button
+                        key={plat.id}
+                        onClick={() => setLogPlatformFilter(plat.id as any)}
+                        style={{
+                          padding: "3px 9px",
+                          borderRadius: 6,
+                          border: active ? "1px solid #FF6B00" : "1px solid rgba(255, 255, 255, 0.08)",
+                          background: active ? "rgba(255, 107, 0, 0.15)" : "transparent",
+                          color: active ? "#FF8A3D" : "#94A3B8",
+                          fontSize: 11,
+                          fontWeight: active ? 700 : 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {plat.label}
+                      </button>
+                    );
+                  })}
+
+                  <div style={{ width: 1, height: 16, background: "rgba(255, 255, 255, 0.1)", margin: "0 4px" }} />
+
+                  {/* Status Filters */}
+                  {[
+                    { id: "all", label: "All Status" },
+                    { id: "SUCCESS", label: "Success" },
+                    { id: "FAILED", label: "Failed" },
+                  ].map((st) => {
+                    const active = logStatusFilter === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        onClick={() => setLogStatusFilter(st.id as any)}
+                        style={{
+                          padding: "3px 9px",
+                          borderRadius: 6,
+                          border: active ? "1px solid #10B981" : "1px solid rgba(255, 255, 255, 0.08)",
+                          background: active ? "rgba(16, 185, 129, 0.15)" : "transparent",
+                          color: active ? "#10B981" : "#94A3B8",
+                          fontSize: 11,
+                          fontWeight: active ? 700 : 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {st.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Table Container */}
+              <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 12, textAlign: "left" }}>
                   <thead>
                     <tr style={{ background: "rgba(255, 255, 255, 0.03)", color: "#64748B", borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}>
                       <th style={{ padding: "12px 18px" }}>Platform</th>
@@ -2619,17 +3009,25 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {activities.length === 0 ? (
+                    {filteredActivities.length === 0 ? (
                       <tr>
                         <td colSpan={8} style={{ padding: "36px 18px", textAlign: "center", color: "#64748B" }}>
-                          No activities logged yet. Trigger an extraction on the main page to populate this table live.
+                          No activity events match your active filters. Clear search or select "All".
                         </td>
                       </tr>
                     ) : (
-                      activities.map((row) => (
+                      filteredActivities.map((row) => (
                         <tr key={row.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)", color: "#E2E8F0" }}>
                           <td style={{ padding: "12px 18px", fontWeight: 700 }}>
-                            <span style={{ textTransform: "uppercase", color: "#FF8A3D" }}>{row.platform}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                              {row.platform.toLowerCase() === "youtube" && <YouTubeIcon size={16} />}
+                              {row.platform.toLowerCase() === "tiktok" && <TikTokIcon size={16} />}
+                              {row.platform.toLowerCase() === "instagram" && <InstagramIcon size={16} />}
+                              {row.platform.toLowerCase() === "pinterest" && <PinterestIcon size={16} />}
+                              {row.platform.toLowerCase() === "twitter" && <TwitterXIcon size={16} />}
+                              {row.platform.toLowerCase() === "facebook" && <FacebookIcon size={16} />}
+                              <span style={{ textTransform: "uppercase", color: "#FF8A3D" }}>{row.platform}</span>
+                            </div>
                           </td>
                           <td style={{ padding: "12px 18px", color: "#94A3B8", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {row.details}
@@ -2641,7 +3039,16 @@ export default function AdminDashboardPage() {
                             {row.size || "-"}
                           </td>
                           <td style={{ padding: "12px 18px", fontVariantNumeric: "tabular-nums", color: "#64748B" }}>
-                            {row.ip}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span>{row.ip}</span>
+                              <button
+                                onClick={() => handleCopyIP(row.ip)}
+                                style={{ background: "none", border: "none", color: "#64748B", cursor: "pointer", padding: 1 }}
+                                title="Copy IP"
+                              >
+                                <Copy size={12} />
+                              </button>
+                            </div>
                           </td>
                           <td style={{ padding: "12px 18px", color: "#E2E8F0" }}>
                             {row.userName}
@@ -2654,13 +3061,14 @@ export default function AdminDashboardPage() {
                               style={{
                                 fontSize: 10,
                                 fontWeight: 700,
-                                padding: "2px 6px",
+                                padding: "2px 7px",
                                 borderRadius: 4,
                                 background:
                                   row.status === "SUCCESS"
                                     ? "rgba(16, 185, 129, 0.15)"
                                     : "rgba(239, 68, 68, 0.15)",
                                 color: row.status === "SUCCESS" ? "#10B981" : "#EF4444",
+                                border: row.status === "SUCCESS" ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
                               }}
                             >
                               {row.status}
@@ -2679,7 +3087,57 @@ export default function AdminDashboardPage() {
               TAB 4: API ENGINES WATCHDOG
              ═══════════════════════════════════════════════ */}
           {activeTab === "engines" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {/* Engines Filter Toolbar */}
+              <div
+                style={{
+                  background: "#0E131F",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: 14,
+                  padding: "14px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Media Scraper Health & Real-Time Probes</div>
+                  <div style={{ fontSize: 12, color: "#64748B" }}>
+                    Latency and uptime monitored across edge scrapers
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {[
+                    { id: "all", label: `All Engines (${engines.length})` },
+                    { id: "operational", label: `Operational (${engines.filter((e) => e.status === "operational").length})` },
+                    { id: "issues", label: `Degraded (${engines.filter((e) => e.status !== "operational" || e.latencyMs > 200).length})` },
+                  ].map((flt) => {
+                    const active = engineFilter === flt.id;
+                    return (
+                      <button
+                        key={flt.id}
+                        onClick={() => setEngineFilter(flt.id as any)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 8,
+                          border: active ? "1px solid #06B6D4" : "1px solid rgba(255, 255, 255, 0.08)",
+                          background: active ? "rgba(6, 182, 212, 0.15)" : "transparent",
+                          color: active ? "#06B6D4" : "#94A3B8",
+                          fontSize: 11,
+                          fontWeight: active ? 700 : 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {flt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div
                 style={{
                   display: "grid",
@@ -2687,7 +3145,7 @@ export default function AdminDashboardPage() {
                   gap: 16,
                 }}
               >
-                {engines.map((eng) => (
+                {filteredEngines.map((eng) => (
                   <div
                     key={eng.id}
                     style={{
@@ -2706,6 +3164,7 @@ export default function AdminDashboardPage() {
                           {eng.id === "youtube" && <YouTubeIcon size={20} />}
                           {eng.id === "tiktok" && <TikTokIcon size={20} />}
                           {eng.id === "instagram" && <InstagramIcon size={20} />}
+                          {eng.id === "pinterest" && <PinterestIcon size={20} />}
                           {eng.id === "twitter" && <TwitterXIcon size={20} />}
                           {eng.id === "facebook" && <FacebookIcon size={20} />}
                           <span style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF" }}>{eng.name}</span>
@@ -3022,17 +3481,37 @@ export default function AdminDashboardPage() {
                   </button>
                 </form>
 
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8", marginBottom: 10 }}>
-                  Active Blacklisted Addresses ({blockedIPs.length})
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#94A3B8" }}>
+                    Active Blacklisted Addresses ({filteredBlockedIPs.length} of {blockedIPs.length})
+                  </div>
+                  {blockedIPs.length > 3 && (
+                    <input
+                      type="text"
+                      placeholder="Filter IP..."
+                      value={firewallSearchQuery}
+                      onChange={(e) => setFirewallSearchQuery(e.target.value)}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 6,
+                        background: "#080B10",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        color: "#FFFFFF",
+                        fontSize: 11,
+                        width: 140,
+                        outline: "none",
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {blockedIPs.length === 0 ? (
+                  {filteredBlockedIPs.length === 0 ? (
                     <div style={{ padding: "16px", color: "#64748B", fontSize: 12, textAlign: "center" }}>
-                      No IP addresses are currently blocked.
+                      {blockedIPs.length === 0 ? "No IP addresses are currently blocked." : "No blocked IPs match your filter."}
                     </div>
                   ) : (
-                    blockedIPs.map((ip, i) => (
+                    filteredBlockedIPs.map((ip, i) => (
                       <div
                         key={i}
                         style={{
@@ -3048,7 +3527,16 @@ export default function AdminDashboardPage() {
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>{ip}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span>{ip}</span>
+                          <button
+                            onClick={() => handleCopyIP(ip)}
+                            style={{ background: "none", border: "none", color: "#64748B", cursor: "pointer", padding: 2 }}
+                            title="Copy IP"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
                         <button
                           onClick={() => handleUnblockIP(ip)}
                           style={{
@@ -3080,6 +3568,39 @@ export default function AdminDashboardPage() {
           to {
             transform: rotate(360deg);
           }
+        }
+
+        /* Dark Obsidian Luxury Custom Scrollbars */
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #080B10;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 107, 0, 0.5);
+        }
+
+        /* Dark Theme Browser Autofill Reset (Prevents white background on inputs) */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #080B10 inset !important;
+          -webkit-text-fill-color: #FFFFFF !important;
+          transition: background-color 5000s ease-in-out 0s;
+          caret-color: #FFFFFF !important;
+        }
+
+        input:focus, select:focus, textarea:focus {
+          outline: none !important;
+          border-color: #FF6B00 !important;
+          box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2) !important;
         }
       `}</style>
     </div>

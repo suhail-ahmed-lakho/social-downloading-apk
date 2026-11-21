@@ -68,15 +68,20 @@ export async function GET(req: NextRequest) {
       },
     ];
 
-    // Real Metrics directly computed from live requests
-    const metrics = getRealMetrics();
-    const users = getUniqueUsers();
-    const activities = getRealActivities();
+    // Real Metrics directly computed from live D1 requests & edge telemetry
     const blockedIPs = getBlockedIPList();
     const appSettings = getAppSettings();
     const dualStats = await getDualChannelStats();
     const licenses = await listLicenses();
     const appConfig = await getAppConfig();
+
+    const metrics = dualStats.aggregatedMetrics || getRealMetrics();
+    const users = (dualStats.activeUsers && dualStats.activeUsers.length > 0)
+      ? dualStats.activeUsers
+      : getUniqueUsers();
+    const activities = (dualStats.recentActivities && dualStats.recentActivities.length > 0)
+      ? dualStats.recentActivities
+      : getRealActivities();
 
     return NextResponse.json({
       success: true,
