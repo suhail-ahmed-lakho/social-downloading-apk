@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   Eye,
   Volume2,
+  ChevronRight,
 } from "lucide-react";
 import {
   YouTubeIcon,
@@ -1152,9 +1153,9 @@ export default function VideoDownloaderTool() {
               <div>
                 <strong>Where to find your downloaded videos on mobile:</strong>
                 <div style={{ marginTop: 4 }}>
-                  • <strong>Android:</strong> Open your phone&apos;s <strong>Files</strong> or <strong>Gallery</strong> app ➔ Look in the <strong>&quot;Download&quot;</strong> album.
+                  • <strong>Android:</strong> Open your phone&apos;s <strong>Files</strong> or <strong>Gallery</strong> app <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Look in the <strong>&quot;Download&quot;</strong> album.
                   <br />
-                  • <strong>iPhone / iPad:</strong> Open <strong>Files</strong> app ➔ <strong>Downloads</strong> ➔ Tap Share ➔ Select <strong>&quot;Save Video&quot;</strong> to copy it directly into your Photos album!
+                  • <strong>iPhone / iPad:</strong> Open <strong>Files</strong> app <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> <strong>Downloads</strong> <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Tap Share <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Select <strong>&quot;Save Video&quot;</strong> to copy it directly into your Photos album!
                 </div>
               </div>
             </div>
@@ -1672,8 +1673,8 @@ export default function VideoDownloaderTool() {
                     </div>
                     <ol style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, paddingLeft: 18, margin: 0 }}>
                       <li>Browsers (Chrome / Samsung Internet) save files into your phone&apos;s <strong>Downloads</strong> folder.</li>
-                      <li>Open your phone&apos;s <strong>Files</strong> (or <em>Files by Google</em>) app ➔ Tap <strong>Downloads</strong>. Your video is right there!</li>
-                      <li>In your phone Gallery app: Tap <strong>&quot;Albums&quot;</strong> or <strong>&quot;Collections&quot;</strong> ➔ Scroll to the <strong>&quot;Download&quot;</strong> album to watch it.</li>
+                      <li>Open your phone&apos;s <strong>Files</strong> (or <em>Files by Google</em>) app <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Tap <strong>Downloads</strong>. Your video is right there!</li>
+                      <li>In your phone Gallery app: Tap <strong>&quot;Albums&quot;</strong> or <strong>&quot;Collections&quot;</strong> <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Scroll to the <strong>&quot;Download&quot;</strong> album to watch it.</li>
                     </ol>
                   </div>
 
@@ -1687,8 +1688,8 @@ export default function VideoDownloaderTool() {
                     </div>
                     <ol style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, paddingLeft: 18, margin: 0 }}>
                       <li>Apple Safari downloads files to the <strong>Files</strong> app (in the <em>Downloads</em> folder).</li>
-                      <li>Open your <strong>Files</strong> app ➔ Tap the downloaded video.</li>
-                      <li>Tap the <strong>Share</strong> button (bottom-left arrow icon) ➔ Tap <strong>&quot;Save Video&quot;</strong>.</li>
+                      <li>Open your <strong>Files</strong> app <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Tap the downloaded video.</li>
+                      <li>Tap the <strong>Share</strong> button (bottom-left arrow icon) <ChevronRight size={13} style={{ display: "inline-block", verticalAlign: "middle" }} /> Tap <strong>&quot;Save Video&quot;</strong>.</li>
                       <li>It will instantly appear in your iPhone <strong>Photos / Camera Roll</strong>!</li>
                     </ol>
                   </div>

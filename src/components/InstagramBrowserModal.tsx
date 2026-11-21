@@ -64,7 +64,7 @@ export const InstagramBrowserModal: React.FC<InstagramBrowserModalProps> = ({
             },
           },
           {
-            text: 'Upgrade to PRO (Rs. 750/mo)',
+            text: 'Upgrade to PRO (Rs. 150/mo)',
             onPress: () => {
               onClose();
               if (onOpenProUpgrade) onOpenProUpgrade();

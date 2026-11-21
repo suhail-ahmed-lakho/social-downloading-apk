@@ -207,9 +207,9 @@ export const PRO_LIMITS = {
 } as const;
 
 export const PRO_PRICING = {
-  monthly: { id: 'monthly' as const, title: 'Monthly Plan', price: 'Rs. 750', duration: 'month', periodDays: 30 },
-  quarterly: { id: 'quarterly' as const, title: '3 Months Saver', price: 'Rs. 1,800', monthlyEquivalent: 'Rs. 600/mo', duration: '3 months', periodDays: 90, isPopular: true },
-  yearly: { id: 'yearly' as const, title: 'Yearly VIP', price: 'Rs. 4,500', monthlyEquivalent: 'Rs. 375/mo', duration: 'year', periodDays: 365, isBestValue: true },
+  monthly: { id: 'monthly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', duration: 'month', periodDays: 30 },
+  quarterly: { id: 'quarterly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', monthlyEquivalent: 'Rs. 150/mo', duration: '3 months', periodDays: 30, isPopular: true },
+  yearly: { id: 'yearly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', monthlyEquivalent: 'Rs. 150/mo', duration: 'month', periodDays: 30, isBestValue: true },
 } as const;
 
 export const PAYMENT_CHANNELS = [

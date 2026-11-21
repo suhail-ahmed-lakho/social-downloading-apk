@@ -493,7 +493,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     style={styles.upgradeBtnGradient}
                   >
                     <MaterialCommunityIcons name="crown" size={16} color="#FFFBEB" />
-                    <Text style={styles.upgradeBtnText}>Upgrade to VIP PRO (From Rs. 750)</Text>
+                    <Text style={styles.upgradeBtnText}>Upgrade to VIP PRO (Rs. 150/mo)</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               )}

@@ -41,7 +41,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
 }) => {
   const pro = useProStore();
   const [activeTab, setActiveTab] = useState<'pricing' | 'activate' | 'payment'>(initialTab);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [selectedChannel, setSelectedChannel] = useState<string>('easypaisa');
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [tidInput, setTidInput] = useState('');
@@ -286,113 +286,39 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
                 {renderComparisonRow('Download Threads', 'Standard Speed', 'Turbo Multi-Core')}
               </View>
 
-              {/* Pricing Cards */}
-              <Text style={styles.sectionHeader}>SELECT YOUR VIP PLAN</Text>
+              {/* Pricing Cards (Single Monthly Package) */}
+              <Text style={styles.sectionHeader}>VIP PRO MEMBERSHIP PLAN</Text>
 
-              {/* Monthly Plan */}
+              {/* Monthly Plan - Single Package */}
               <TouchableOpacity
                 style={[
                   styles.planCard,
-                  selectedPlan === 'monthly' && styles.planCardSelected,
+                  styles.planCardSelected,
+                  styles.popularCardHighlight,
                 ]}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setSelectedPlan('monthly');
                 }}
-                activeOpacity={0.88}
-              >
-                <View style={styles.planRadioCol}>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      selectedPlan === 'monthly' && styles.radioCircleSelected,
-                    ]}
-                  >
-                    {selectedPlan === 'monthly' && <View style={styles.radioDot} />}
-                  </View>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.planTitle}>{PRO_PRICING.monthly.title}</Text>
-                  <Text style={styles.planSub}>Flexible month-to-month access</Text>
-                </View>
-                <View style={styles.planPriceCol}>
-                  <Text style={styles.planPrice}>{PRO_PRICING.monthly.price}</Text>
-                  <Text style={styles.planPeriod}>/ month</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* 3 Months Saver (Most Popular) */}
-              <TouchableOpacity
-                style={[
-                  styles.planCard,
-                  selectedPlan === 'quarterly' && styles.planCardSelected,
-                  styles.popularCardHighlight,
-                ]}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setSelectedPlan('quarterly');
-                }}
-                activeOpacity={0.88}
+                activeOpacity={0.9}
               >
                 <View style={styles.popularBadge}>
-                  <Text style={styles.popularBadgeText}>MOST POPULAR • SAVE 20%</Text>
+                  <Text style={styles.popularBadgeText}>OFFICIAL VIP PASS • 30 DAYS</Text>
                 </View>
                 <View style={styles.planRadioCol}>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      selectedPlan === 'quarterly' && styles.radioCircleSelected,
-                    ]}
-                  >
-                    {selectedPlan === 'quarterly' && <View style={styles.radioDot} />}
+                  <View style={[styles.radioCircle, styles.radioCircleSelected]}>
+                    <View style={styles.radioDot} />
                   </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.planTitle}>{PRO_PRICING.quarterly.title}</Text>
+                  <Text style={styles.planTitle}>Monthly VIP Pass</Text>
                   <Text style={styles.planSub}>
-                    Just <Text style={{ color: COLORS.accentPrimary, fontWeight: '700' }}>Rs. 600/month</Text>
+                    Unlimited 4K Downloads, Multi-Core Speed & No Ads
                   </Text>
                 </View>
                 <View style={styles.planPriceCol}>
-                  <Text style={styles.planPrice}>{PRO_PRICING.quarterly.price}</Text>
-                  <Text style={styles.planPeriod}>for 3 months</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Yearly VIP (Best Value) */}
-              <TouchableOpacity
-                style={[
-                  styles.planCard,
-                  selectedPlan === 'yearly' && styles.planCardSelected,
-                ]}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setSelectedPlan('yearly');
-                }}
-                activeOpacity={0.88}
-              >
-                <View style={[styles.popularBadge, { backgroundColor: '#10B981' }]}>
-                  <Text style={styles.popularBadgeText}>BEST VALUE • SAVE 50%</Text>
-                </View>
-                <View style={styles.planRadioCol}>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      selectedPlan === 'yearly' && styles.radioCircleSelected,
-                    ]}
-                  >
-                    {selectedPlan === 'yearly' && <View style={styles.radioDot} />}
-                  </View>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.planTitle}>{PRO_PRICING.yearly.title}</Text>
-                  <Text style={styles.planSub}>
-                    Just <Text style={{ color: '#10B981', fontWeight: '700' }}>Rs. 375/month</Text>
-                  </Text>
-                </View>
-                <View style={styles.planPriceCol}>
-                  <Text style={styles.planPrice}>{PRO_PRICING.yearly.price}</Text>
-                  <Text style={styles.planPeriod}>/ full year</Text>
+                  <Text style={styles.planPrice}>Rs. 150</Text>
+                  <Text style={styles.planPeriod}>/ 30 days</Text>
                 </View>
               </TouchableOpacity>
 

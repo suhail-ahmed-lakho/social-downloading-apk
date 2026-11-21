@@ -507,7 +507,7 @@ export const MediaPreviewCard: React.FC<MediaPreviewCardProps> = ({
                     },
                   },
                   {
-                    text: 'Upgrade to PRO (Rs. 750/mo)',
+                    text: 'Upgrade to PRO (Rs. 150/mo)',
                     onPress: () => {
                       if (onOpenProUpgrade) onOpenProUpgrade();
                     },

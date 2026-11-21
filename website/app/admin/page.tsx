@@ -191,7 +191,7 @@ export default function AdminDashboardPage() {
 
   // License Generator State
   const [newLicDeviceId, setNewLicDeviceId] = useState("");
-  const [newLicPlan, setNewLicPlan] = useState<"monthly" | "quarterly" | "yearly">("quarterly");
+  const [newLicPlan, setNewLicPlan] = useState<"monthly" | "quarterly" | "yearly">("monthly");
   const [newLicNotes, setNewLicNotes] = useState("");
   const [newLicTid, setNewLicTid] = useState("");
   const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
@@ -2021,9 +2021,7 @@ export default function AdminDashboardPage() {
                           cursor: "pointer",
                         }}
                       >
-                        <option value="monthly">Monthly Pass — Rs. 750 (30 Days)</option>
-                        <option value="quarterly">3 Months Saver — Rs. 1,800 (90 Days)</option>
-                        <option value="yearly">Yearly VIP — Rs. 4,500 (365 Days)</option>
+                        <option value="monthly">Monthly VIP Pass — Rs. 150 (30 Days)</option>
                       </select>
                     </div>
 
@@ -2157,9 +2155,7 @@ export default function AdminDashboardPage() {
                       <span style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>Plan:</span>
                       {[
                         { id: "all", label: "All Plans" },
-                        { id: "monthly", label: "Monthly (Rs. 750)" },
-                        { id: "quarterly", label: "Quarterly (Rs. 1,800)" },
-                        { id: "yearly", label: "Yearly VIP (Rs. 4,500)" },
+                        { id: "monthly", label: "Monthly (Rs. 150)" },
                       ].map((p) => {
                         const active = licensePlanFilter === p.id;
                         return (

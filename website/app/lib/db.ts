@@ -112,9 +112,9 @@ const DEFAULT_CONFIG: AppRemoteConfig = {
     ],
   },
   proPricing: {
-    monthly: 750,
-    quarterly: 1800,
-    yearly: 4500,
+    monthly: 150,
+    quarterly: 150,
+    yearly: 150,
   },
 };
 
