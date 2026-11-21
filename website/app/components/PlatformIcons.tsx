@@ -25,6 +25,22 @@ export function YouTubeIcon({ size = 24, style = {} }: { size?: number; style?: 
   );
 }
 
+export function YouTubeMusicIcon({ size = 24, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+      <defs>
+        <radialGradient id="ytm-grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FF0000" />
+          <stop offset="100%" stopColor="#990000" />
+        </radialGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#ytm-grad)" />
+      <circle cx="12" cy="12" r="7" stroke="#FFFFFF" strokeWidth="1.6" fill="none" />
+      <polygon points="10,9 15,12 10,15" fill="#FFFFFF" />
+    </svg>
+  );
+}
+
 export function TikTokIcon({ size = 24, style = {} }: { size?: number; style?: React.CSSProperties }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>

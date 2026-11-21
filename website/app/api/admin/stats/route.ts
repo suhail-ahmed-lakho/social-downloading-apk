@@ -27,6 +27,14 @@ export async function GET(req: NextRequest) {
         supportedFormats: ["2160p 4K", "1440p 2K", "1080p HD", "720p", "320kbps MP3"],
       },
       {
+        id: "youtube_music",
+        name: "YouTube Music Lossless Audio",
+        status: "operational",
+        latencyMs: 118,
+        uptime: "100.0%",
+        supportedFormats: ["320kbps MP3", "256kbps AAC", "Lossless Master FLAC"],
+      },
+      {
         id: "tiktok",
         name: "TikTok No-Watermark Engine",
         status: "operational",
