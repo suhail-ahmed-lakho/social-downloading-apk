@@ -81,6 +81,40 @@ const NativeHeadlessInstagramExtractor =
     ? (require('./src/components/HeadlessInstagramExtractor').HeadlessInstagramExtractor as React.ComponentType<any>)
     : null;
 
+const RecentCardThumbnail: React.FC<{ item: DownloadHistoryItem }> = ({ item }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (item.thumbnail && !hasError) {
+    return (
+      <Image
+        source={{ uri: item.thumbnail }}
+        style={styles.recentThumb}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.recentThumb, styles.recentThumbPlaceholder]}>
+      <Ionicons
+        name={
+          item.platform === 'youtube' || item.platform === 'youtube_music'
+            ? 'logo-youtube'
+            : item.platform === 'tiktok'
+            ? 'videocam'
+            : item.platform === 'pinterest'
+            ? 'logo-pinterest'
+            : item.platform === 'instagram'
+            ? 'logo-instagram'
+            : 'film'
+        }
+        size={22}
+        color={COLORS.accentPrimary}
+      />
+    </View>
+  );
+};
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [url, setUrl] = useState('');
@@ -328,7 +362,8 @@ export default function App() {
           hasUpdate={!!updateInfo?.hasUpdate}
           onOpenUpdate={() => handleCheckForUpdates(true)}
           isPro={pro.isPro}
-          onOpenProUpgrade={() => setShowUserProfileModal(true)}
+          userName={pro.userName}
+          onOpenProUpgrade={() => setShowProUpgradeModal(true)}
           onOpenProfile={() => setShowUserProfileModal(true)}
         />
 
@@ -386,20 +421,25 @@ export default function App() {
             showsVerticalScrollIndicator={false}
           >
             {/* User Account & VIP Subscription Status Strip */}
-            <TouchableOpacity
-              style={styles.accountStatusStrip}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setShowUserProfileModal(true);
-              }}
-              activeOpacity={0.88}
-            >
-              <View style={styles.accountStripLeft}>
+            <View style={styles.accountStatusStrip}>
+              <TouchableOpacity
+                style={styles.accountStripLeft}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setShowUserProfileModal(true);
+                }}
+                activeOpacity={0.82}
+              >
                 <View style={[styles.avatarMiniWrap, pro.isPro && styles.avatarMiniWrapPro]}>
                   {pro.isPro ? (
                     <MaterialCommunityIcons name="crown" size={13} color="#FBBF24" />
                   ) : (
-                    <Ionicons name="person" size={12} color="#94A3B8" />
+                    <LinearGradient
+                      colors={['#3B82F6', '#1D4ED8']}
+                      style={styles.avatarMiniGradient}
+                    >
+                      <Text style={styles.avatarMiniLetter}>{(pro.userName.charAt(0) || 'G').toUpperCase()}</Text>
+                    </LinearGradient>
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -413,15 +453,20 @@ export default function App() {
                     {pro.isPro ? pro.planMeta.title : `Free Plan • ${pro.guestId}`}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
 
               <View style={styles.accountStripRight}>
                 {pro.isPro ? (
-                  <View
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setShowUserProfileModal(true);
+                    }}
                     style={[
                       styles.proTimePill,
                       pro.remainingTime.isGrace && styles.proTimePillGrace,
                     ]}
+                    activeOpacity={0.82}
                   >
                     <Ionicons
                       name="timer-outline"
@@ -436,14 +481,21 @@ export default function App() {
                     >
                       {pro.remainingTime.shortLabel}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 ) : (
-                  <View style={styles.freeUpgradePill}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setShowProUpgradeModal(true);
+                    }}
+                    style={styles.freeUpgradePill}
+                    activeOpacity={0.82}
+                  >
                     <Text style={styles.freeUpgradePillText}>Upgrade PRO ›</Text>
-                  </View>
+                  </TouchableOpacity>
                 )}
               </View>
-            </TouchableOpacity>
+            </View>
 
             {/* Filter / Platform Selector Chips */}
             <PlatformPills
@@ -604,17 +656,7 @@ export default function App() {
                         handleShare(item.localUri);
                       }}
                     >
-                      {item.thumbnail ? (
-                        <Image source={{ uri: item.thumbnail }} style={styles.recentThumb} />
-                      ) : (
-                        <View style={[styles.recentThumb, styles.recentThumbPlaceholder]}>
-                          <Ionicons
-                            name={item.platform === 'youtube' ? 'logo-youtube' : item.platform === 'tiktok' ? 'videocam' : item.platform === 'pinterest' ? 'logo-pinterest' : 'camera'}
-                            size={20}
-                            color={COLORS.textMuted}
-                          />
-                        </View>
-                      )}
+                      <RecentCardThumbnail item={item} />
                       <View style={styles.recentCardInfo}>
                         <View style={styles.recentPlatformBadge}>
                           <Text style={styles.recentPlatformText}>{item.platform.toUpperCase()}</Text>
@@ -673,8 +715,12 @@ export default function App() {
               </View>
             )}
 
-            {/* Ad Placement Slot */}
-            <AdBannerSlot placement="home" style={{ paddingHorizontal: 20, marginTop: 10 }} />
+            {/* Ad / VIP Upgrade Placement Slot */}
+            <AdBannerSlot
+              placement="home"
+              style={{ paddingHorizontal: 20, marginTop: 10 }}
+              onPress={() => setShowProUpgradeModal(true)}
+            />
           </ScrollView>
         ) : activeTab === 'queue' ? (
           <DownloadsScreen
@@ -762,7 +808,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 20) : 44,
+    paddingTop: Platform.OS === 'android' ? ((RNStatusBar.currentHeight || 24) + 6) : 48,
   },
   keyboardContainer: {
     flex: 1,
@@ -990,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   recentCarousel: {
     paddingLeft: 20,
-    paddingRight: 8,
+    paddingRight: 28,
     gap: 12,
   },
   recentCard: {
@@ -1100,6 +1146,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1108,6 +1155,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.4)',
+  },
+  avatarMiniGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarMiniLetter: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
   accountNameRow: {
     flexDirection: 'row',

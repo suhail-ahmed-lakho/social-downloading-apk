@@ -207,34 +207,34 @@ export const PRO_LIMITS = {
 } as const;
 
 export const PRO_PRICING = {
-  monthly: { id: 'monthly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', duration: 'month', periodDays: 30 },
-  quarterly: { id: 'quarterly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', monthlyEquivalent: 'Rs. 150/mo', duration: '3 months', periodDays: 30, isPopular: true },
-  yearly: { id: 'yearly' as const, title: 'Monthly VIP Plan', price: 'Rs. 150', monthlyEquivalent: 'Rs. 150/mo', duration: 'month', periodDays: 30, isBestValue: true },
+  monthly: { id: 'monthly' as const, title: 'Monthly VIP Pass', price: 'Rs. 150', duration: '30 Days', periodDays: 30 },
+  quarterly: { id: 'quarterly' as const, title: 'Monthly VIP Pass', price: 'Rs. 150', duration: '30 Days', periodDays: 30 },
+  yearly: { id: 'yearly' as const, title: 'Monthly VIP Pass', price: 'Rs. 150', duration: '30 Days', periodDays: 30 },
 } as const;
 
 export const PAYMENT_CHANNELS = [
   {
     id: 'easypaisa',
-    name: 'EasyPaisa',
-    accountNumber: '03001234567',
-    accountTitle: 'OmniSaver Subscriptions',
+    name: 'Easypaisa',
+    accountNumber: '03078235748',
+    accountTitle: 'Suhail Ahmed',
     badge: 'Instant Transfer',
     color: '#00BA51',
   },
   {
     id: 'nayapay',
-    name: 'NayaPay / Sadapay',
-    accountNumber: '03001234567',
-    accountTitle: 'OmniSaver Tech',
+    name: 'NayaPay',
+    accountNumber: '03078235748',
+    accountTitle: 'Suhail Ahmed',
     badge: 'Zero Fees',
     color: '#FF6B00',
   },
   {
-    id: 'bank',
-    name: 'Bank Transfer (IBAN)',
-    accountNumber: 'PK36MEZN0001234567890123',
-    accountTitle: 'OmniSaver Media Services',
-    badge: 'Meezan Bank',
+    id: 'sadapay',
+    name: 'SadaPay',
+    accountNumber: '03078235748',
+    accountTitle: 'Suhail Ahmed',
+    badge: 'Raast / Instant Transfer',
     color: '#3B82F6',
   },
 ] as const;
@@ -243,29 +243,34 @@ export function getLivePaymentChannels() {
   const remote = getCachedRemoteConfig();
   if (remote?.paymentDetails) {
     const { easypaisa, nayapay, bankIban } = remote.paymentDetails;
+    const cleanBank =
+      bankIban?.iban && !bankIban.iban.includes('0001234567890123')
+        ? bankIban.iban
+        : '03078235748';
+
     return [
       {
         id: 'easypaisa',
-        name: 'EasyPaisa',
-        accountNumber: easypaisa.accountNo || '03001234567',
-        accountTitle: easypaisa.title || 'OmniSaver Subscriptions',
+        name: 'Easypaisa',
+        accountNumber: easypaisa.accountNo || '03078235748',
+        accountTitle: easypaisa.title || 'Suhail Ahmed',
         badge: 'Instant Transfer',
         color: '#00BA51',
       },
       {
         id: 'nayapay',
-        name: 'NayaPay / Sadapay',
-        accountNumber: nayapay.accountId || '03001234567@nayapay',
-        accountTitle: nayapay.title || 'OmniSaver Tech',
+        name: 'NayaPay',
+        accountNumber: nayapay.accountId || '03078235748',
+        accountTitle: nayapay.title || 'Suhail Ahmed',
         badge: 'Zero Fees',
         color: '#FF6B00',
       },
       {
-        id: 'bank',
-        name: bankIban.bank || 'Bank Transfer (IBAN)',
-        accountNumber: bankIban.iban || 'PK36MEZN0001234567890123',
-        accountTitle: bankIban.title || 'OmniSaver Media Services',
-        badge: 'Direct IBAN',
+        id: 'sadapay',
+        name: 'SadaPay',
+        accountNumber: cleanBank,
+        accountTitle: bankIban.title || 'Suhail Ahmed',
+        badge: 'Raast / Instant Transfer',
         color: '#3B82F6',
       },
     ];
@@ -275,7 +280,7 @@ export function getLivePaymentChannels() {
 
 export function getLiveSupportWhatsapp(): string {
   const remote = getCachedRemoteConfig();
-  return remote?.paymentDetails?.whatsappNumber || '+923001234567';
+  return remote?.paymentDetails?.whatsappNumber || '03078235748';
 }
 
 export function getTodayDateString(): string {

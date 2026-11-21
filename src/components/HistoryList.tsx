@@ -23,6 +23,34 @@ interface HistoryListProps {
   onClearAll: () => void;
 }
 
+const HistoryItemThumbnail: React.FC<{
+  item: DownloadHistoryItem;
+  isAudio: boolean;
+  isImage: boolean;
+}> = ({ item, isAudio, isImage }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (item.thumbnail && !hasError) {
+    return (
+      <Image
+        source={{ uri: item.thumbnail }}
+        style={styles.thumb}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.thumb, styles.thumbFallback]}>
+      <Ionicons
+        name={isAudio ? 'musical-notes' : isImage ? 'image' : 'film'}
+        size={18}
+        color={COLORS.accentPrimary}
+      />
+    </View>
+  );
+};
+
 export const HistoryList: React.FC<HistoryListProps> = ({
   items,
   onShare,
@@ -116,17 +144,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     return (
       <View style={styles.itemCard}>
         <View style={styles.thumbWrapper}>
-          {item.thumbnail ? (
-            <Image source={{ uri: item.thumbnail }} style={styles.thumb} />
-          ) : (
-            <View style={[styles.thumb, styles.thumbFallback]}>
-              <Ionicons
-                name={isAudio ? 'musical-notes' : isImage ? 'image' : 'film'}
-                size={18}
-                color={COLORS.textMuted}
-              />
-            </View>
-          )}
+          <HistoryItemThumbnail item={item} isAudio={isAudio} isImage={isImage} />
           <View style={styles.platformBadge}>{getPlatformIcon(item.platform)}</View>
         </View>
 
@@ -325,13 +343,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: '#0E121B',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   thumb: {
     width: '100%',
     height: '100%',
   },
   thumbFallback: {
+    backgroundColor: '#131826',
     alignItems: 'center',
     justifyContent: 'center',
   },

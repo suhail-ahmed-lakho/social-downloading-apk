@@ -9,9 +9,10 @@ import { getCachedRemoteConfig } from '../services/api/backendClient';
 interface AdBannerSlotProps {
   placement: 'home' | 'saved' | 'preview';
   style?: StyleProp<ViewStyle>;
+  onPress?: () => void;
 }
 
-export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style }) => {
+export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style, onPress }) => {
   const pro = useProStore();
 
   // 100% Ad-Free experience for PRO subscribers or if remotely disabled
@@ -25,7 +26,12 @@ export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style }) 
   }
 
   return (
-    <View style={[styles.container, style]} testID={`ad-slot-${placement}`}>
+    <TouchableOpacity
+      style={[styles.container, style]}
+      testID={`ad-slot-${placement}`}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.88 : 1}
+    >
       <LinearGradient
         colors={['#171B28', '#101420']}
         start={{ x: 0, y: 0 }}
@@ -34,20 +40,20 @@ export const AdBannerSlot: React.FC<AdBannerSlotProps> = ({ placement, style }) 
       >
         <View style={styles.contentRow}>
           <View style={styles.badgeBox}>
-            <Text style={styles.badgeText}>PRO BOOST</Text>
+            <Text style={styles.badgeText}>VIP PASS</Text>
           </View>
 
           <View style={styles.copyCol}>
-            <Text style={styles.titleText}>OmniSaver Turbo Speed Active</Text>
-            <Text style={styles.subText}>Enjoy fast multi-threaded 4K & MP3 downloads with zero limits.</Text>
+            <Text style={styles.titleText}>Unlock OmniSaver VIP</Text>
+            <Text style={styles.subText}>Enjoy 100% ad-free 4K downloads, studio MP3s & turbo speeds.</Text>
           </View>
 
           <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={14} color={COLORS.accentPrimary} />
+            <Ionicons name="flash-outline" size={14} color={COLORS.accentPrimary} />
           </View>
         </View>
       </LinearGradient>
-    </View>
+    </TouchableOpacity>
   );
 };
 

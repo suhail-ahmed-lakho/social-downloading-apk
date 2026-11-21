@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 20) : 40,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 24) + 8) : 48,
   },
   topBar: {
     flexDirection: 'row',

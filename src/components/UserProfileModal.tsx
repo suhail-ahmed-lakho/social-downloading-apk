@@ -10,6 +10,7 @@ import {
   Alert,
   Linking,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -400,12 +401,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </View>
               </View>
 
-              {pro.expiryTimestamp && (
+              {pro.isPro && pro.expiryTimestamp ? (
                 <View style={styles.expiryDateRow}>
                   <Text style={styles.expiryDateLabel}>Expiry Date:</Text>
                   <Text style={styles.expiryDateValue}>{remaining.expiryDateFormatted}</Text>
                 </View>
-              )}
+              ) : null}
             </View>
 
             {/* 24h Grace Notice if applicable */}
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#080B10',
-    paddingTop: Platform.OS === 'ios' ? 44 : 10,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 24) + 8) : 48,
   },
   topBar: {
     flexDirection: 'row',
@@ -584,6 +585,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 76 : 64,
   },
   userCard: {
     backgroundColor: '#0E131F',

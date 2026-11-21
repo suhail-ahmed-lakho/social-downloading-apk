@@ -94,38 +94,26 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               style={[styles.tabButton, isActive && styles.tabButtonActive]}
             >
               <View style={styles.iconContainer}>
-                {isActive ? (
-                  <LinearGradient
-                    testID="nav-active-capsule"
-                    colors={COLORS.gradientPrimary}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.activeCapsule}
-                  >
-                    <Ionicons name={tab.activeIcon} size={19} color="#FFFFFF" />
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.inactiveIconBox}>
-                    <Ionicons name={tab.icon} size={20} color={COLORS.textSecondary} />
-                  </View>
-                )}
+                <View style={[styles.iconBox, isActive && styles.iconBoxActive]}>
+                  <Ionicons
+                    name={isActive ? tab.activeIcon : tab.icon}
+                    size={22}
+                    color={isActive ? COLORS.accentPrimary : '#94A3B8'}
+                  />
+                  {isActive && <View style={styles.activeIndicatorDot} />}
+                </View>
 
                 {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 ? (
                   <View
                     testID={`nav-badge-${tab.key}`}
                     style={[
                       styles.badge,
-                      tab.badgeTone === 'accent' && (isActive ? styles.badgeActiveInvert : styles.badgeAccent),
+                      tab.badgeTone === 'accent' && styles.badgeAccent,
                       tab.badgeTone === 'warning' && styles.badgeWarning,
                       tab.badgeTone === 'neutral' && styles.badgeNeutral,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.badgeText,
-                        tab.badgeTone === 'accent' && isActive && styles.badgeTextInvert,
-                      ]}
-                    >
+                    <Text style={styles.badgeText}>
                       {tab.badgeCount > 99 ? '99+' : tab.badgeCount}
                     </Text>
                   </View>
@@ -172,55 +160,55 @@ const styles = StyleSheet.create({
   tabButtonActive: {},
   iconContainer: {
     position: 'relative',
-    width: 58,
-    height: 30,
-    marginBottom: 4,
+    width: 48,
+    height: 32,
+    marginBottom: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeCapsule: {
-    width: 58,
-    height: 30,
-    borderRadius: 15,
-    overflow: 'hidden',
+  iconBox: {
+    width: 48,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inactiveIconBox: {
-    width: 58,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+  iconBoxActive: {
+    backgroundColor: 'rgba(255, 94, 58, 0.12)',
+  },
+  activeIndicatorDot: {
+    position: 'absolute',
+    bottom: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.accentPrimary,
   },
   tabLabel: {
-    color: COLORS.textMuted,
+    color: '#64748B',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: 0.2,
   },
   tabLabelActive: {
-    color: COLORS.accentLight,
+    color: COLORS.accentPrimary,
     fontWeight: '700',
   },
   badge: {
     position: 'absolute',
-    top: -3,
-    right: 2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -2,
+    right: 4,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.8,
+    borderWidth: 1.5,
     borderColor: '#0C0F17',
   },
   badgeAccent: {
     backgroundColor: COLORS.accentPrimary,
-  },
-  badgeActiveInvert: {
-    backgroundColor: '#FFFFFF',
   },
   badgeWarning: {
     backgroundColor: '#F59E0B',
@@ -233,16 +221,13 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '800',
   },
-  badgeTextInvert: {
-    color: '#FF2A6D',
-  },
   warningDot: {
     position: 'absolute',
-    top: 1,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 0,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: '#F59E0B',
     borderWidth: 1.5,
     borderColor: '#0C0F17',

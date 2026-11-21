@@ -109,7 +109,7 @@ const ENGINE_METAS: Record<string, { color: string; borderGrad: string; bgGrad: 
   },
   twitter: {
     color: "#94A3B8",
-    borderGrad: "linear-gradient(90deg, #CBD5E1, #64748B)",
+    borderGrad: "linear-gradient(90deg, #CBD5E1, #94A3B8)",
     bgGrad: "linear-gradient(180deg, rgba(148, 163, 184, 0.08) 0%, rgba(14, 19, 31, 0.7) 100%)",
     iconBg: "rgba(148, 163, 184, 0.15)",
     platform: "Twitter / X Video Stream",
@@ -244,12 +244,12 @@ export default function AdminDashboardPage() {
   const [blockedIPs, setBlockedIPs] = useState<string[]>([]);
   const [engines, setEngines] = useState<EngineHealth[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>({
-    apkVersion: "1.0.18",
-    apkReleaseDate: "2026-11-18",
+    apkVersion: "1.0.20",
+    apkReleaseDate: "2026-11-21",
     apkFileSizeBytes: "35.3 MB",
     apkDownloadUrl: "/api/download/apk",
     apkForceUpdate: false,
-    apkChangelog: "OmniSaver v1.0.18 Luxury Edition: Obsidian Gold PRO badge, Vector icons, 24h grace TID PRO, and Cloudflare D1 dual-channel sync.",
+    apkChangelog: "OmniSaver v1.0.20 Official Release: Unified tier state, Minimalist bottom navigation, Safe area padding, Real local payment verification.",
     enableGoogleAdSense: false,
     adSensePublisherId: "ca-pub-XXXXXXXXXXXXXXXX",
     enableHeaderSponsorBanner: true,
@@ -725,7 +725,7 @@ export default function AdminDashboardPage() {
           justifyContent: "center",
           padding: 20,
           background: "radial-gradient(circle at 50% 20%, #161D2A 0%, #080B10 100%)",
-          fontFamily: "Inter, -apple-system, sans-serif",
+          fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         }}
       >
         <div
@@ -823,7 +823,7 @@ export default function AdminDashboardPage() {
             </button>
           </form>
 
-          <div style={{ marginTop: 24, fontSize: 12, color: "#64748B" }}>
+          <div style={{ marginTop: 24, fontSize: 12, color: "#94A3B8" }}>
             Master access key: <code style={{ color: "#FF8A3D" }}>looknow2026</code>
           </div>
         </div>
@@ -839,12 +839,12 @@ export default function AdminDashboardPage() {
         minHeight: "100vh",
         background: "#080B10",
         color: "#F1F5F9",
-        fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <style>{`
         * {
-          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
         code, pre, .font-mono {
           font-family: 'JetBrains Mono', monospace !important;
@@ -1045,7 +1045,7 @@ export default function AdminDashboardPage() {
                   sub: "OmniSaver Android APK",
                   icon: Smartphone,
                   accent: "#84CC16",
-                  badge: `v${appRemoteConfig?.versionConfig?.latestVersion || appSettings.apkVersion || "1.0.18"}`,
+                  badge: `v${appRemoteConfig?.versionConfig?.latestVersion || appSettings.apkVersion || "1.0.20"}`,
                 },
               ],
             },
@@ -1086,7 +1086,7 @@ export default function AdminDashboardPage() {
                     fontSize: 9.5,
                     fontWeight: 800,
                     letterSpacing: "0.08em",
-                    color: "#64748B",
+                    color: "#94A3B8",
                     textTransform: "uppercase",
                     padding: "4px 8px 3px",
                     display: "flex",
@@ -1328,7 +1328,7 @@ export default function AdminDashboardPage() {
                   {activeTab.toUpperCase()}
                 </span>
               </div>
-              <h2 style={{ fontSize: isMobile ? 17 : 21, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.02em", margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <h2 style={{ fontSize: isMobile ? 17 : 21, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.02em", margin: 0, fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
                 {activeTab === "overview" && "Live Dual-Channel Telemetry & Download Overview"}
                 {activeTab === "licenses" && "OmniSaver PRO License & VIP Subscription Manager"}
                 {activeTab === "config" && "OmniSaver Mobile App Remote Config & OTA"}
@@ -1339,15 +1339,15 @@ export default function AdminDashboardPage() {
                 {activeTab === "monetization" && "Monetization, Ads & Sponsor Banners"}
                 {activeTab === "firewall" && "Threat Defense & Bot Firewall"}
               </h2>
-              <div style={{ fontSize: 11, color: "#64748B", marginTop: 4, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 99, background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.25)", color: "#34D399", fontWeight: 700, fontSize: 10.5 }}>
+              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 99, background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.25)", color: "#34D399", fontWeight: 700, fontSize: 10.5, whiteSpace: "nowrap" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
                   8s Pulse Sync
                 </span>
                 <span style={{ color: "#334155" }}>•</span>
-                <span>Last update: <strong style={{ color: "#E2E8F0", fontVariantNumeric: "tabular-nums" }}>{lastSyncTime || "Live Connected"}</strong></span>
+                <span style={{ whiteSpace: "nowrap" }}>Last update: <strong style={{ color: "#E2E8F0", fontVariantNumeric: "tabular-nums" }}>{lastSyncTime || "Live Connected"}</strong></span>
                 <span style={{ color: "#334155" }}>•</span>
-                <span style={{ color: "#FF8A3D", fontWeight: 700 }}>100% Real Edge D1 Telemetry</span>
+                <span style={{ color: "#FF8A3D", fontWeight: 700, whiteSpace: "nowrap" }}>100% Real Edge D1 Telemetry</span>
               </div>
             </div>
           </div>
@@ -1448,7 +1448,7 @@ export default function AdminDashboardPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4 }}>
+                  <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4 }}>
                     Channel Filter:
                   </span>
                   {[
@@ -1492,28 +1492,28 @@ export default function AdminDashboardPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(6, 182, 212, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Web Visitors</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total Web Visitors</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#06B6D4", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique IP addresses on website</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Media Fetches</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Web Media Fetches</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Links resolved via web studio</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Web Proxy Downloads</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Web Proxy Downloads</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Streamed directly through server proxy</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(255, 107, 0, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>APK Download Clicks</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>APK Download Clicks</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#FF6B00", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
                       </div>
@@ -1555,21 +1555,21 @@ export default function AdminDashboardPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(139, 92, 246, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Registered Devices</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total Registered Devices</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#A78BFA", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Unique device IDs (OMNI-XXXX)</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active Users (DAU / MAU)</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Active Users (DAU / MAU)</div>
                       <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {dualStats?.mobile?.dau ?? 1} DAU · {dualStats?.mobile?.mau ?? 1} MAU
                       </div>
                       <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>Active in last 24 hours & 30 days</div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>PRO VIP Subscribers</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>PRO VIP Subscribers</div>
                       <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length} <span style={{ fontSize: 14, color: "#94A3B8" }}>/ {dualStats?.mobile?.freeUsers ?? 0} Free</span>
                       </div>
@@ -1578,7 +1578,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                     <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                      <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total PKR Revenue</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total PKR Revenue</div>
                       <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                         Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
                       </div>
@@ -1631,25 +1631,25 @@ export default function AdminDashboardPage() {
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>Unique Visitors</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>Unique Visitors</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalVisitors ?? metrics.uniqueVisitors).toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>Media Fetches</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>Media Fetches</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalFetches ?? metrics.totalExtractions).toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>Proxy Downloads</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>Proxy Downloads</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.totalDownloads ?? Math.round(metrics.totalExtractions * 0.8)).toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>APK Download Clicks</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>APK Download Clicks</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B00", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.website?.apkClicks ?? 0).toLocaleString()}
                           </div>
@@ -1668,25 +1668,25 @@ export default function AdminDashboardPage() {
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>Registered Devices</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>Registered Devices</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {(dualStats?.mobile?.totalRegisteredDevices ?? 1).toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>Active (DAU / MAU)</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>Active (DAU / MAU)</div>
                           <div style={{ fontSize: 18, fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
                             {dualStats?.mobile?.dau ?? 1} / {dualStats?.mobile?.mau ?? 1}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>PRO Subscribers</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>PRO Subscribers</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#F59E0B", fontVariantNumeric: "tabular-nums" }}>
                             {dualStats?.mobile?.proUsers ?? licenses.filter((l) => l.status === "active").length}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "#64748B" }}>PKR Revenue</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8" }}>PKR Revenue</div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
                             Rs. {(dualStats?.mobile?.totalRevenuePkr ?? licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0)).toLocaleString()}
                           </div>
@@ -1796,7 +1796,7 @@ export default function AdminDashboardPage() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF" }}>
                       Real Download Volume by Platform
                     </div>
-                    <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>
                       Calculated dynamically from real video & audio queries
                     </div>
                   </div>
@@ -1824,7 +1824,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {metrics.platforms.length === 0 || metrics.totalExtractions === 0 ? (
-                  <div style={{ padding: "30px 20px", textAlign: "center", color: "#64748B" }}>
+                  <div style={{ padding: "30px 20px", textAlign: "center", color: "#94A3B8" }}>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       No extractions logged yet. Click &quot;Trigger Live Test Extraction&quot; above or visit the main website to download a video.
                     </p>
@@ -1874,7 +1874,7 @@ export default function AdminDashboardPage() {
               {/* Top Stats Cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
                 <div style={{ background: "#0E131F", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active PRO Subscribers</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Active PRO Subscribers</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.filter((l) => l.status === "active").length}
                   </div>
@@ -1895,7 +1895,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Subscription Revenue</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total Subscription Revenue</div>
                   <div style={{ fontSize: 26, fontWeight: 800, color: "#10B981", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     Rs. {licenses.filter((l) => l.status === "active").reduce((s, l) => s + (l.pricePkr || 0), 0).toLocaleString()}
                   </div>
@@ -1903,7 +1903,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 16, padding: "20px 22px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Issued Keys</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total Issued Keys</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#FFFFFF", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.length}
                   </div>
@@ -1911,7 +1911,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 16, padding: "20px 22px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Revoked / Expired</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Revoked / Expired</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#EF4444", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
                     {licenses.filter((l) => l.status !== "active" && l.status !== "pending").length}
                   </div>
@@ -2158,7 +2158,7 @@ export default function AdminDashboardPage() {
 
                     {/* Plan Type Sub-filter Pills */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>Plan:</span>
+                      <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase" }}>Plan:</span>
                       {[
                         { id: "all", label: "All Plans" },
                         { id: "monthly", label: "Monthly (Rs. 150)" },
@@ -2270,7 +2270,7 @@ export default function AdminDashboardPage() {
                                       setCopiedKey(lic.key);
                                       setTimeout(() => setCopiedKey(null), 2000);
                                     }}
-                                    style={{ background: "none", border: "none", color: copiedKey === lic.key ? "#10B981" : "#64748B", cursor: "pointer", padding: 2 }}
+                                    style={{ background: "none", border: "none", color: copiedKey === lic.key ? "#10B981" : "#94A3B8", cursor: "pointer", padding: 2 }}
                                     title="Copy License Key"
                                   >
                                     {copiedKey === lic.key ? <Check size={13} /> : <Copy size={13} />}
@@ -2693,7 +2693,7 @@ export default function AdminDashboardPage() {
                         marginTop: 12,
                         padding: "6px 14px",
                         borderRadius: 8,
-                        background: (appRemoteConfig?.adConfig?.bannerEnabled ?? true) ? "#10B981" : "#64748B",
+                        background: (appRemoteConfig?.adConfig?.bannerEnabled ?? true) ? "#10B981" : "#334155",
                         color: "#FFFFFF",
                         border: "none",
                         fontWeight: 700,
@@ -2728,7 +2728,7 @@ export default function AdminDashboardPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue={appRemoteConfig?.versionConfig?.latestVersion || "1.0.16"}
+                      defaultValue={appRemoteConfig?.versionConfig?.latestVersion || "1.0.20"}
                       id="cfg_ver_num"
                       style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontVariantNumeric: "tabular-nums", fontSize: 13 }}
                     />
@@ -2740,7 +2740,7 @@ export default function AdminDashboardPage() {
                     </label>
                     <input
                       type="number"
-                      defaultValue={appRemoteConfig?.versionConfig?.versionCode || 10016}
+                      defaultValue={appRemoteConfig?.versionConfig?.versionCode || 10020}
                       id="cfg_ver_code"
                       style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "#080B10", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", fontVariantNumeric: "tabular-nums", fontSize: 13 }}
                     />
@@ -2807,21 +2807,21 @@ export default function AdminDashboardPage() {
                 }}
               >
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Total Captured Visitors</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Total Captured Visitors</div>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#FFFFFF", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.length}
                   </div>
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Active Media Downloaders</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Active Media Downloaders</div>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#10B981", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.filter((u) => u.totalExtractions > 0).length}
                   </div>
                 </div>
 
                 <div style={{ background: "#0E131F", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 14, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>Blacklisted Threats</div>
+                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>Blacklisted Threats</div>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#EF4444", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                     {users.filter((u) => u.isBlocked).length}
                   </div>
@@ -2843,7 +2843,7 @@ export default function AdminDashboardPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 260 }}>
-                  <Search size={16} style={{ color: "#64748B" }} />
+                  <Search size={16} style={{ color: "#94A3B8" }} />
                   <input
                     type="text"
                     value={userSearchQuery}
@@ -2861,7 +2861,7 @@ export default function AdminDashboardPage() {
                   {userSearchQuery && (
                     <button
                       onClick={() => setUserSearchQuery("")}
-                      style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", fontSize: 12 }}
+                      style={{ background: "transparent", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: 12 }}
                     >
                       Clear
                     </button>
@@ -3049,7 +3049,7 @@ export default function AdminDashboardPage() {
                                   style={{
                                     background: "transparent",
                                     border: "none",
-                                    color: copiedIP === u.ip ? "#10B981" : "#64748B",
+                                    color: copiedIP === u.ip ? "#10B981" : "#94A3B8",
                                     cursor: "pointer",
                                     padding: 3,
                                   }}
@@ -3062,7 +3062,7 @@ export default function AdminDashboardPage() {
                             {/* Location (City / Country) */}
                             <td style={{ padding: "14px 18px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <Globe size={13} style={{ color: "#64748B" }} />
+                                <Globe size={13} style={{ color: "#94A3B8" }} />
                                 <span style={{ color: "#E2E8F0" }}>
                                   {u.city ? `${u.city}, ` : ""}{u.country}
                                 </span>
@@ -3084,7 +3084,7 @@ export default function AdminDashboardPage() {
                                 >
                                   {u.device}
                                 </span>
-                                <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>
+                                <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>
                                   {u.browser}
                                 </div>
                               </div>
@@ -3097,7 +3097,7 @@ export default function AdminDashboardPage() {
                                   style={{
                                     fontWeight: 700,
                                     fontVariantNumeric: "tabular-nums",
-                                    color: u.totalExtractions > 0 ? "#10B981" : "#64748B",
+                                    color: u.totalExtractions > 0 ? "#10B981" : "#94A3B8",
                                   }}
                                 >
                                   {u.totalExtractions}
@@ -3120,7 +3120,7 @@ export default function AdminDashboardPage() {
                             </td>
 
                             {/* Last Active Timestamp */}
-                            <td style={{ padding: "14px 18px", color: "#64748B", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                            <td style={{ padding: "14px 18px", color: "#94A3B8", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
                               {new Date(u.lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                             </td>
 
@@ -3196,7 +3196,7 @@ export default function AdminDashboardPage() {
               >
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Live Telemetry & Download Stream</div>
-                  <div style={{ fontSize: 12, color: "#64748B" }}>
+                  <div style={{ fontSize: 12, color: "#94A3B8" }}>
                     Real-time download and extraction events captured from active mobile devices & browsers
                   </div>
                 </div>
@@ -3517,7 +3517,7 @@ export default function AdminDashboardPage() {
               >
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF" }}>Media Scraper Health & Real-Time Probes</div>
-                  <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>
                     Continuous heartbeat ping monitoring direct Cloudflare Edge stream extractors
                   </div>
                 </div>
@@ -3616,7 +3616,7 @@ export default function AdminDashboardPage() {
                               <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em" }}>
                                 {eng.name}
                               </div>
-                              <div style={{ fontSize: 11, color: "#64748B", marginTop: 1 }}>
+                              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
                                 Cloudflare Edge Stream Probe
                               </div>
                             </div>
@@ -3651,7 +3651,7 @@ export default function AdminDashboardPage() {
                               <span>Latency</span>
                             </div>
                             <div style={{ fontSize: 17, fontWeight: 800, color: eng.latencyMs < 150 ? "#34D399" : "#FBBF24", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
-                              {eng.latencyMs}<span style={{ fontSize: 11, color: "#64748B", marginLeft: 2 }}>ms</span>
+                              {eng.latencyMs}<span style={{ fontSize: 11, color: "#94A3B8", marginLeft: 2 }}>ms</span>
                             </div>
                             <div style={{ fontSize: 9.5, color: "#10B981", marginTop: 3, fontWeight: 600 }}>● Optimal Edge</div>
                           </div>
@@ -3670,7 +3670,7 @@ export default function AdminDashboardPage() {
 
                         {/* Supported Extraction Formats */}
                         <div>
-                          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#64748B", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                             Supported Formats & Codecs
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -3701,7 +3701,7 @@ export default function AdminDashboardPage() {
                           background: "rgba(0, 0, 0, 0.25)",
                           borderTop: "1px solid rgba(255, 255, 255, 0.05)",
                           fontSize: 10.5,
-                          color: "#64748B",
+                          color: "#94A3B8",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
@@ -3733,7 +3733,7 @@ export default function AdminDashboardPage() {
               <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 6 }}>
                 Native Android APK Version Manager
               </div>
-              <p style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>
+              <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 24 }}>
                 Control live download URLs and version strings pushed to website visitors and existing app installs.
               </p>
 
@@ -3851,7 +3851,7 @@ export default function AdminDashboardPage() {
               <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 6 }}>
                 Monetization & Ad Banner Switches
               </div>
-              <p style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>
+              <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 24 }}>
                 Toggle advertisement scripts and sponsor links without rebuilding or redeploying website code.
               </p>
 
@@ -3859,7 +3859,7 @@ export default function AdminDashboardPage() {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: 10, background: "rgba(255, 255, 255, 0.03)" }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Google AdSense Auto-Ads</div>
-                    <div style={{ fontSize: 12, color: "#64748B" }}>Injects responsive ad units across page layouts</div>
+                    <div style={{ fontSize: 12, color: "#94A3B8" }}>Injects responsive ad units across page layouts</div>
                   </div>
                   <input
                     type="checkbox"
@@ -3872,7 +3872,7 @@ export default function AdminDashboardPage() {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: 10, background: "rgba(255, 255, 255, 0.03)" }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Header Sponsor Banner</div>
-                    <div style={{ fontSize: 12, color: "#64748B" }}>Top-of-page highlighted announcement pill</div>
+                    <div style={{ fontSize: 12, color: "#94A3B8" }}>Top-of-page highlighted announcement pill</div>
                   </div>
                   <input
                     type="checkbox"
@@ -3940,7 +3940,7 @@ export default function AdminDashboardPage() {
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 6 }}>
                   Threat Defense & IP Blacklist
                 </div>
-                <p style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
+                <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 20 }}>
                   Active firewall blocks malicious loops, SSRF exploits, and crawler abuse. Requests from these IPs receive HTTP 403 Forbidden.
                 </p>
 
@@ -4012,7 +4012,7 @@ export default function AdminDashboardPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {filteredBlockedIPs.length === 0 ? (
-                    <div style={{ padding: "16px", color: "#64748B", fontSize: 12, textAlign: "center" }}>
+                    <div style={{ padding: "16px", color: "#94A3B8", fontSize: 12, textAlign: "center" }}>
                       {blockedIPs.length === 0 ? "No IP addresses are currently blocked." : "No blocked IPs match your filter."}
                     </div>
                   ) : (
@@ -4036,7 +4036,7 @@ export default function AdminDashboardPage() {
                           <span>{ip}</span>
                           <button
                             onClick={() => handleCopyIP(ip)}
-                            style={{ background: "none", border: "none", color: "#64748B", cursor: "pointer", padding: 2 }}
+                            style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer", padding: 2 }}
                             title="Copy IP"
                           >
                             <Copy size={12} />
@@ -4069,7 +4069,7 @@ export default function AdminDashboardPage() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
         *, *::before, *::after {
-          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }

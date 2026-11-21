@@ -7,8 +7,8 @@ export async function GET() {
   const appConfig = await getAppConfig();
   const vCfg = appConfig.versionConfig;
 
-  const version = vCfg.latestVersion || "1.0.18";
-  const versionCode = vCfg.versionCode || 10018;
+  const version = vCfg.latestVersion || "1.0.20";
+  const versionCode = vCfg.versionCode || 10020;
   const releaseTitle = `OmniSaver v${version} - Lakho's Team Official Release`;
   const releaseDate = new Date().toISOString().split("T")[0];
   const fileSize = "35.3 MB";

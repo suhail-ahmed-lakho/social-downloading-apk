@@ -471,6 +471,26 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           {/* TAB 3: LOCAL PAYMENT & PROOF SUBMISSION */}
           {activeTab === 'payment' && (
             <View style={styles.tabContent}>
+              {/* Selected Plan Summary Banner */}
+              <View style={styles.selectedPlanBanner}>
+                <View style={styles.selectedPlanLeft}>
+                  <MaterialCommunityIcons name="crown" size={18} color="#FBBF24" />
+                  <View>
+                    <Text style={styles.selectedPlanTitle}>
+                      {PRO_PRICING[selectedPlan].title} • {PRO_PRICING[selectedPlan].duration}
+                    </Text>
+                    <Text style={styles.selectedPlanSubtitle}>Total Payable: {PRO_PRICING[selectedPlan].price}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setActiveTab('pricing')}
+                  style={styles.changePlanBtn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.changePlanBtnText}>Change Plan ›</Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.sectionHeader}>1. SELECT LOCAL PAYMENT METHOD</Text>
 
               {/* Payment Methods */}
@@ -546,12 +566,15 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
                 />
 
                 <View style={styles.proofSummary}>
-                  <Text style={styles.proofSummaryTitle}>Ready to Submit:</Text>
+                  <Text style={styles.proofSummaryTitle}>Ready to Submit Verification:</Text>
                   <Text style={styles.proofSummaryLine}>
-                    • Plan: <Text style={{ color: '#FFFFFF' }}>{PRO_PRICING[selectedPlan].title} ({PRO_PRICING[selectedPlan].price})</Text>
+                    • Plan: <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{PRO_PRICING[selectedPlan].title} ({PRO_PRICING[selectedPlan].price} / {PRO_PRICING[selectedPlan].duration})</Text>
                   </Text>
                   <Text style={styles.proofSummaryLine}>
-                    • Device ID: <Text style={{ color: '#FFFFFF' }}>{pro.deviceId}</Text>
+                    • Payment Method: <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{getLivePaymentChannels().find((c) => c.id === selectedChannel)?.name || selectedChannel}</Text>
+                  </Text>
+                  <Text style={styles.proofSummaryLine}>
+                    • Device Hardware ID: <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{pro.deviceId}</Text>
                   </Text>
                 </View>
 
@@ -599,7 +622,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 20) : 44,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 24) + 8) : 48,
   },
   topBar: {
     flexDirection: 'row',
@@ -685,7 +708,45 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 76 : 64,
+  },
+  selectedPlanBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    borderRadius: 14,
+    padding: 12,
+  },
+  selectedPlanLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  selectedPlanTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  selectedPlanSubtitle: {
+    fontSize: 11,
+    color: '#FBBF24',
+    marginTop: 1,
+    fontWeight: '600',
+  },
+  changePlanBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  changePlanBtnText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600',
   },
   tabContent: {
     gap: 16,

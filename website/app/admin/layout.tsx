@@ -24,7 +24,7 @@ export default function AdminLayout({
         minHeight: "100vh",
         background: "#080B10",
         color: "#F1F5F9",
-        fontFamily: "var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "var(--font-body), 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       {children}

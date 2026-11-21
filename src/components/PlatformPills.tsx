@@ -133,13 +133,13 @@ export const PlatformPills: React.FC<PlatformPillsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: 20,
     marginBottom: 16,
   },
   scrollRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingRight: 20,
+    paddingLeft: 20,
+    paddingRight: 32,
   },
   pill: {
     flexDirection: 'row',

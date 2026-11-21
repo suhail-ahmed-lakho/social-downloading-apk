@@ -12,6 +12,7 @@ interface HeaderProps {
   activeDownloadsCount?: number;
   onOpenDownloads?: () => void;
   isPro?: boolean;
+  userName?: string;
   onOpenProUpgrade?: () => void;
   onOpenProfile?: () => void;
 }
@@ -23,9 +24,12 @@ export const Header: React.FC<HeaderProps> = ({
   activeDownloadsCount = 0,
   onOpenDownloads,
   isPro = false,
+  userName,
   onOpenProUpgrade,
   onOpenProfile,
 }) => {
+  const avatarLetter = (userName?.charAt(0) || 'G').toUpperCase();
+
   return (
     <View style={styles.container}>
       {/* Top App Bar */}
@@ -56,12 +60,11 @@ export const Header: React.FC<HeaderProps> = ({
               ) : onOpenProUpgrade ? (
                 <TouchableOpacity
                   testID="header-go-pro-btn"
-                  style={styles.obsidianProPill}
+                  style={styles.freePill}
                   onPress={onOpenProUpgrade}
                   activeOpacity={0.8}
                 >
-                  <MaterialCommunityIcons name="crown" size={12} color="#FBBF24" />
-                  <Text style={styles.obsidianProText}>PRO</Text>
+                  <Text style={styles.freePillText}>FREE</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -120,11 +123,16 @@ export const Header: React.FC<HeaderProps> = ({
               onPress={onOpenProfile}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name={isPro ? 'person' : 'person-outline'}
-                size={16}
-                color={isPro ? '#FBBF24' : COLORS.textSecondary}
-              />
+              {isPro ? (
+                <MaterialCommunityIcons name="crown" size={15} color="#FBBF24" />
+              ) : (
+                <LinearGradient
+                  colors={['#3B82F6', '#1D4ED8']}
+                  style={styles.headerAvatarCircle}
+                >
+                  <Text style={styles.headerAvatarText}>{avatarLetter}</Text>
+                </LinearGradient>
+              )}
             </TouchableOpacity>
           )}
         </View>
@@ -166,6 +174,32 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.accentPrimary,
     letterSpacing: -0.4,
+  },
+  freePill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  freePillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.6,
+  },
+  headerAvatarCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatarText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   obsidianProPill: {
     flexDirection: 'row',
