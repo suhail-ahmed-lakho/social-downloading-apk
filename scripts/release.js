@@ -60,13 +60,15 @@ const versionManifest = {
   mandatory: false,
   downloadUrl: 'https://looknow.cyou/api/download/apk',
   changelog: [
-    `OmniSaver v${newVersion} - Luxury Edition by Lakho's Team`,
+    `OmniSaver v${newVersion} - Luxury User Edition by Lakho's Team`,
+    'Editable Custom Name & Guest ID with 1-tap clipboard copying',
+    'Subscription Remaining Time Countdown (Days / Hours remaining banner)',
+    'Dedicated User Profile Modal with direct WhatsApp VIP Support Desk',
     'Luxury Obsidian Gold PRO Header Badge with metallic VIP styling',
     'Crisp Vector Iconography across all screens (zero Unicode emojis)',
     'Secure In-App TID Activation: 24-hour instant grace period and anti-duplicate protection',
     'Real-Time Dual-Host Telemetry & Active Device Tracking (Cloudflare D1)',
     'Enhanced In-App Browser & Instagram Private Reel Interceptor',
-    'Optimized Pro Comparison Table formatting & PRO BOOST card design',
     'Self-Healing In-App APK Updater with one-tap installation'
   ]
 };

@@ -2,7 +2,7 @@
   "expo": {
     "name": "OmniSaver",
     "slug": "media-downloader",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -36,7 +36,7 @@
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 10018
+      "versionCode": 10019
     },
     "plugins": [
       [

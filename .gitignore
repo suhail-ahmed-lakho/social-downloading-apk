@@ -46,6 +46,8 @@ scratch/
 # website next.js build
 website/.next/
 website/out/
+website/.open-next/
+website/.wrangler/
 
 # local cloned packages
 devintell-npm/
